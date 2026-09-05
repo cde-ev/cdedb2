@@ -8,6 +8,7 @@ contexts for database transactions across arbitrary backend logic.
 This should be the only module which makes subsistantial use of psycopg.
 """
 
+import enum
 import logging
 from collections.abc import Collection, Mapping
 from types import TracebackType
@@ -18,15 +19,9 @@ import psycopg2.extensions
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 from psycopg2.extras import RealDictCursor
 
-from cdedb.common.n_ import n_
-
 # We cannot import cdedb.config here.
 # from cdedb.config import SecretsConfig
 SecretsConfig = Mapping[str, Any]
-
-# We cannot import cdedb.common here.
-# from cdedb.common import Role, RequestState
-Role = str
 
 
 class ConnectionContainer:
@@ -39,6 +34,44 @@ class ConnectionContainer:
     _conn: "IrradiatedConnection"
 
 
+class DBRole(enum.Enum):
+    """
+    Privilege levels available in the SQL database.
+
+    (Where we have less differentiation for the sake of simplicity.)
+
+    The appropriate db role can be determined from a users 'Roles' via 'get_db_role()'.
+
+    >>> from cdedb.common.roles import Roles
+    >>> Roles.cde_admin.get_db_role()
+    <DBRole.admin: 'cdb_admin'>
+    >>> Roles.cde.get_db_role()
+    <DBRole.member: 'cdb_member'>
+    >>> Roles.assembly.get_db_role()
+    <DBRole.member: 'cdb_member'>
+    >>> Roles.persona.get_db_role()
+    <DBRole.persona: 'cdb_persona'>
+    >>> Roles.anonymous.get_db_role()
+    <DBRole.anonymous: 'cdb_anonymous'>
+
+    'get_db_role()' assumes to be called on a fully populated roles object.
+
+    >>> Roles.event.get_db_role()
+    <DBRole.anonymous: 'cdb_anonymous'>
+    >>> Roles.ml.get_db_role()
+    <DBRole.anonymous: 'cdb_anonymous'>
+    >>> Roles.member.get_db_role()
+    <DBRole.anonymous: 'cdb_anonymous'>
+    >>> Roles.searchable.get_db_role()
+    <DBRole.anonymous: 'cdb_anonymous'>
+    """
+
+    admin = "cdb_admin"
+    member = "cdb_member"
+    persona = "cdb_persona"
+    anonymous = "cdb_anonymous"
+
+
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE, None)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY, None)
 
@@ -47,7 +80,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def _create_connection(
     dbname: str,
-    dbuser: str,
+    dbuser: DBRole,
     password: str,
     host: str,
     port: int,
@@ -63,7 +96,7 @@ def _create_connection(
     """
     conn = psycopg2.connect(
         dbname=dbname,
-        user=dbuser,
+        user=dbuser.value,
         password=password,
         host=host,
         port=port,
@@ -78,12 +111,12 @@ def _create_connection(
 
 def connection_pool_factory(
     dbname: str,
-    roles: Collection[Role],
+    roles: Collection[DBRole],
     secrets: SecretsConfig,
     host: str,
     port: int,
     isolation_level: int | None = SERIALIZABLE,
-) -> Mapping[str, "IrradiatedConnection"]:
+) -> Mapping[DBRole, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
 
@@ -107,30 +140,30 @@ def connection_pool_factory(
     # local variable to prevent closure over secrets
     db_passwords = secrets["CDB_DATABASE_ROLES"]
 
-    class InstantConnectionPool(Mapping[Role, "IrradiatedConnection"]):
+    class InstantConnectionPool(Mapping[DBRole, "IrradiatedConnection"]):
         """Dict-like for providing database connections."""
 
-        def __init__(self, roles: Collection[Role]):
+        def __init__(self, roles: Collection[DBRole]):
             self.roles = roles
 
-        def __getitem__(self, role: Role) -> "IrradiatedConnection":
+        def __getitem__(self, role: DBRole) -> "IrradiatedConnection":
             if role not in self.roles:
-                raise ValueError(n_("role %(role)s not available"), {'role': role})
+                raise ValueError("role %(role)s not available", {'role': role})
             return _create_connection(
-                dbname, role, db_passwords[role], host, port, isolation_level
+                dbname, role, db_passwords[role.value], host, port, isolation_level
             )
 
         def __delitem__(self, key: Any) -> NoReturn:
-            raise NotImplementedError(n_("Not available for instant pool"))
+            raise NotImplementedError("Not available for instant pool")
 
         def __len__(self) -> NoReturn:
-            raise NotImplementedError(n_("Not available for instant pool"))
+            raise NotImplementedError("Not available for instant pool")
 
         def __setitem__(self, key: Any, val: Any) -> NoReturn:
-            raise NotImplementedError(n_("Not available for instant pool"))
+            raise NotImplementedError("Not available for instant pool")
 
         def __iter__(self) -> NoReturn:
-            raise NotImplementedError(n_("Not available for instant pool"))
+            raise NotImplementedError("Not available for instant pool")
 
     _LOGGER.debug(f"Initialised instant connection pool for roles {roles}")
     return InstantConnectionPool(roles)
@@ -179,8 +212,8 @@ class Atomizer:
 
     def __exit__(
         self,
-        atype: type[Exception] | None,
-        value: Exception | None,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
         self.rs._conn.decontaminate()
@@ -211,7 +244,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             return self
         else:
             if self.status != psycopg2.extensions.STATUS_READY:
-                raise RuntimeError(n_("Connection in use!"))  # pragma: no cover
+                raise RuntimeError("Connection in use!")  # pragma: no cover
             # clear saved exception
             self._saved_etype = None
             self._saved_evalue = None
@@ -239,7 +272,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
                 # first we rollback the transaction
                 super().__exit__(self._saved_etype, self._saved_evalue, self._saved_tb)
                 # second we raise an exception to complain
-                raise RuntimeError(n_("Suppressed exception detected"))
+                raise RuntimeError("Suppressed exception detected")
             return super().__exit__(etype, evalue, tb)
 
     # Override this to annotate, that we always use a RealDictCursor.
@@ -253,7 +286,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
     def decontaminate(self) -> None:
         """Reduce recursion by one."""
         if self._radiation_level <= 0:
-            raise RuntimeError(n_("No contamination!"))  # pragma: no cover
+            raise RuntimeError("No contamination!")  # pragma: no cover
         self._radiation_level -= 1
 
     @property

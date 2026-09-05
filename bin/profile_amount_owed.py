@@ -27,4 +27,4 @@ with script:
             "event._update_registrations_amount_owed(rs, event_id)",
             str(pathlib.Path(__file__).parent / "../profiles/update_amounts_owed.prof"),
         )
-        print(fcp_parse.parse.cache_info())
+        print(fcp_parse.parse.cache_info())  # type: ignore[attr-defined]

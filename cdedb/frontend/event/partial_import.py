@@ -18,7 +18,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     RequestState,
     get_mandatory_form_fields,
     json_serialize,
@@ -26,6 +25,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PartialImportError
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.filter import enum_entries_filter, safe_filter
 from cdedb.frontend.common import (
@@ -39,7 +39,7 @@ from cdedb.models.event import ReducedCheckinPeriod
 
 
 class EventImportMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def questionnaire_import_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -52,7 +52,7 @@ class EventImportMixin(EventBaseFrontend):
             get_mandatory_form_fields(self.questionnaire_import),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("json_file")
     @REQUESTdata("extend_questionnaire", "skip_existing_fields", "token")
@@ -90,7 +90,7 @@ class EventImportMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.entities_write)
     def partial_import_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -103,7 +103,7 @@ class EventImportMixin(EventBaseFrontend):
             get_mandatory_form_fields(self.partial_import),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.entities_write)
     @REQUESTfile("json_file")
     @REQUESTdata("partial_import_data", "token")
@@ -406,7 +406,7 @@ class EventImportMixin(EventBaseFrontend):
         rs: RequestState,
         event: models.Event,
         courses: dict[vtypes.CourseID, CdEDBObject],
-        lodgements: CdEDBObjectMap,
+        lodgements: dict[vtypes.LodgementID, CdEDBObject],
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation

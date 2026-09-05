@@ -10,6 +10,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, RequestState, merge_dicts, n_
 from cdedb.common.privileges import EventPrivileges
+from cdedb.common.roles import Roles
 from cdedb.frontend.common import (
     REQUESTdatadict,
     access,
@@ -20,7 +21,7 @@ from cdedb.models.droid import OrgaToken
 
 
 class EventDroidMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def orga_token_summary(
         self,
@@ -44,7 +45,7 @@ class EventDroidMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.token)
     def create_orga_token_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -57,7 +58,7 @@ class EventDroidMixin(EventBaseFrontend):
             OrgaToken.mandatory_form_fields(creation=True),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.token)
     @REQUESTdatadict(*OrgaToken.requestdict_fields(creation=True))
     def create_orga_token(
@@ -66,7 +67,7 @@ class EventDroidMixin(EventBaseFrontend):
         """Create a new orga token. The new token will be displayed after a redirect."""
         data['event_id'] = event_id
         data = check(rs, OrgaToken, data, creation=True)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.create_orga_token_form(rs, event_id)
 
         new_id, secret = self.eventproxy.create_orga_token(rs, data)
@@ -76,7 +77,7 @@ class EventDroidMixin(EventBaseFrontend):
 
         return self.orga_token_summary(rs, event_id, new_token=new_token)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.token)
     def change_orga_token_form(
         self, rs: RequestState, event_id: vtypes.EventID, orga_token_id: int
@@ -90,7 +91,7 @@ class EventDroidMixin(EventBaseFrontend):
             OrgaToken.mandatory_form_fields(creation=False),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.token)
     @REQUESTdatadict(*OrgaToken.requestdict_fields(creation=False))
     def change_orga_token(
@@ -103,7 +104,7 @@ class EventDroidMixin(EventBaseFrontend):
         """Change an existing orga token."""
         data['id'] = orga_token_id
         data = check(rs, OrgaToken, data)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.change_orga_token_form(rs, event_id, orga_token_id)
 
         code = self.eventproxy.change_orga_token(rs, data)
@@ -111,7 +112,7 @@ class EventDroidMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/orga_token_summary")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.token)
     def delete_orga_token(
         self, rs: RequestState, event_id: vtypes.EventID, orga_token_id: vtypes.ID
@@ -131,7 +132,7 @@ class EventDroidMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/orga_token_summary")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.token)
     def revoke_orga_token(
         self, rs: RequestState, event_id: vtypes.EventID, orga_token_id: vtypes.ID

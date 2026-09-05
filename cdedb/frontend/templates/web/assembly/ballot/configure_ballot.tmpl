@@ -7,7 +7,7 @@
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% if ambience['ballot'] %}
+    {% if 'ballot' in ambience %}
         {% trans ballot=ambience['ballot']['title'] %}
             Edit {{ ballot }}
         {% endtrans %}
@@ -21,7 +21,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
-    {% if ambience['ballot'] %}
+    {% if 'ballot' in ambience %}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
         {{ util.breadcrumb_link(cdedblink("assembly/change_ballot"), gettext("Edit"), active=True) }}
     {% else %}
@@ -30,7 +30,7 @@
 {% endblock %}
 
 {% block heading %}
-    {% if ambience['ballot'] %}
+    {% if 'ballot' in ambience %}
         {{ util.context_heading(gettext("Edit Ballot"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot")) }}
     {% else %}
         {{ util.context_heading(gettext("Create Ballot"), ambience['assembly']['title'], 'bullhorn',
@@ -39,7 +39,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if ambience['ballot'] %}
+    {% if 'ballot' in ambience %}
         {% set submit_endpoint="assembly/change_ballot" %}
         {% set cancel_endpoint="assembly/show_ballot" %}
     {% else %}

@@ -12,6 +12,7 @@ from typing import Any
 
 from playwright.sync_api import Browser, Page, expect, sync_playwright
 
+from cdedb.common.roles import Realms
 from tests.common import BrowserTest, event_keeper, storage
 
 _LOGGER = logging.getLogger(__file__)
@@ -159,7 +160,7 @@ class TestBrowser(BrowserTest):
         page.get_by_role("button", name="Anmelden").click()
         page.wait_for_url("http://localhost:5000/")
 
-        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.get_by_role("button", name="Account-Administration").click()
         page.wait_for_url("http://localhost:5000/")
         page.locator("#adminshowuserform .selectize-input").click()
         page.locator("#adminshowuserform .selectize-input input").type("emi")
@@ -251,9 +252,9 @@ class TestBrowser(BrowserTest):
 
         page.get_by_role("link", name="Mitglieder").click()
         page.wait_for_url("http://localhost:5000/cde/")
-        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.get_by_role("button", name="Account-Administration").click()
         page.wait_for_url("http://localhost:5000/cde/")
-        page.get_by_role("link", name="Nutzer verwalten", exact=True).click()
+        page.get_by_role("link", name="Accounts verwalten", exact=True).click()
         page.wait_for_url("http://localhost:5000/cde/search/user")
 
         page.get_by_placeholder("– Filter hinzufügen –").click()
@@ -382,7 +383,7 @@ class TestBrowser(BrowserTest):
         ).get_by_text("Gast").click()
         page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
             ".selectize-dropdown"
-        ).get_by_text("Teilnehmer").click()
+        ).get_by_text("Teilnahme").click()
         page.locator("#tab_qf_js .filterfield-list").get_by_text(
             "Familienname"
         ).locator("button").click()
@@ -392,7 +393,7 @@ class TestBrowser(BrowserTest):
         page.screenshot(path="/tmp/screenshot.png", full_page=True)
         expect(page.locator('#query-results')).to_contain_text('Ergebnis [4]')
         expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
-        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmer')
+        expect(page.locator('.filterfield-list')).to_contain_text('Teilnahme')
         expect(page.locator('.filterfield-list')).to_contain_text('Gast')
 
     @storage
@@ -419,7 +420,7 @@ class TestBrowser(BrowserTest):
             },
             "cde": {"#input-file-attachment"},
         }
-        for realm in ("ml", "event", "cde"):
+        for realm in Realms.get_available_genesis_realms():
             with self.subTest(realm=realm):
                 page.goto("http://localhost:5000/")
                 page.get_by_role("link", name="Account anfordern").click()
@@ -427,18 +428,20 @@ class TestBrowser(BrowserTest):
 
                 page.locator("#input-text-given_names").fill("Gregor")
                 page.locator("#input-text-family_name").fill("Genesis")
-                page.locator("#input-text-username").fill(f"gregor-{realm}@example.cde")
-                page.locator("#realm-select").select_option(realm)
+                page.locator("#input-text-username").fill(
+                    f"gregor-{realm.name}@example.cde"
+                )
+                page.locator("#realm-select").select_option(str(realm))
                 page.get_by_label("Begründung (max. 500 Zeichen)").fill("Grund")
 
-                if realm == "ml":
+                if realm == Realms.ml:
                     for id_ in ids_by_realm["event"] | ids_by_realm["cde"]:
                         expect(page.locator(f"{id_}:valid")).to_be_hidden()
                 else:
                     page.get_by_role("button", name="Anfrage abschicken").click()
                     page.wait_for_url("http://localhost:5000/core/genesis/request")
                     expect(page.locator("#input-text-username")).to_have_value(
-                        f"gregor-{realm}@example.cde"
+                        f"gregor-{realm.name}@example.cde"
                     )
                     expect(page.locator("#input-text-given_names")).to_have_value(
                         "Gregor"
@@ -458,10 +461,10 @@ class TestBrowser(BrowserTest):
                             page.locator(f"{id_}:invalid").fill("in the Nowhere")
                         else:
                             expect(page.locator(f"{id_}:valid")).to_be_visible()
-                    if realm == "event":
+                    if realm == Realms.event:
                         for id_ in ids_by_realm["cde"]:
                             expect(page.locator(f"{id_}:valid")).to_be_hidden()
-                    elif realm == "cde":
+                    elif realm == Realms.cde:
                         page.get_by_role("button", name="Anfrage abschicken").click()
                         page.wait_for_url("http://localhost:5000/core/genesis/request")
                         for id_ in ids_by_realm["cde"]:

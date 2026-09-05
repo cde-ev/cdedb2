@@ -29,6 +29,7 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges, is_event_access_limited
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -47,7 +48,7 @@ if TYPE_CHECKING:
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def configure_registration_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -59,7 +60,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             const.QuestionnaireUsages.registration,
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def configure_additional_questionnaire_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -132,7 +133,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     def configure_registration(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -149,7 +150,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/configure_registration_form")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     def configure_additional_questionnaire(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -249,7 +250,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     @abc.abstractmethod
     def get_register_params(self, rs: RequestState) -> "RegisterParams": ...
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("preview")
     def additional_questionnaire_form(
         self,
@@ -307,7 +308,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     def additional_questionnaire(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
@@ -337,14 +338,14 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.additional_questionnaire_form(rs, event_id, internal=True)
 
-        change_note = "Fragebogen durch Teilnehmer bearbeitet."
+        change_note = "Fragebogen durch Teilnehmer:in bearbeitet."
         code = self.eventproxy.set_registration(
             rs, {'id': registration_id, 'fields': data}, change_note, orga_input=False
         )
         rs.notify_return_code(code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("kind")
     def reorder_questionnaire_form(
@@ -401,7 +402,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("order", "kind")
     def reorder_questionnaire(

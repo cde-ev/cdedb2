@@ -7,6 +7,7 @@ querying registrations, courses and lodgements.
 
 import collections
 import itertools
+from collections.abc import Collection, Mapping
 from typing import Any
 
 import werkzeug.exceptions
@@ -38,6 +39,7 @@ from cdedb.common.query.defaults import (
     generate_event_course_default_queries,
     generate_event_registration_default_queries,
 )
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
@@ -58,15 +60,15 @@ from cdedb.frontend.event.query_stats import (
 
 
 class EventQueryMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_stats | EventPrivileges.courses_read)
     def stats(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Present an overview of the basic stats."""
         event_parts = rs.ambience['event'].parts
         tracks = rs.ambience['event'].tracks
-        stat_part_groups: dict[int, models.PartGroup] = {
-            part_group_id: part_group
-            for part_group_id, part_group in rs.ambience['event'].part_groups.items()
+        stat_part_groups = {
+            part_group.id: part_group
+            for part_group in rs.ambience['event'].part_groups.values()
             if part_group.constraint_type == const.EventPartGroupType.Statistic
         }
 
@@ -85,22 +87,19 @@ class EventQueryMixin(EventBaseFrontend):
                     reg['birthday'], event_parts[part_id].part_begin
                 )
 
-        per_part_statistics: dict[
-            EventRegistrationPartStatistic, dict[str, dict[int, set[int]]]
-        ]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
-            _parts: dict[int, set[int]] = {
-                part_id: set(
-                    reg['id']
+            _parts = {
+                part.id: set(
+                    vtypes.RegistrationID(vtypes.ID(reg['id']))
                     for reg in registrations.values()
-                    if reg_stat.test(rs.ambience['event'], reg, part_id)
+                    if reg_stat.test(rs.ambience['event'], reg, part.id)
                 )
-                for part_id in event_parts
+                for part in event_parts.values()
             }
-            _part_groups: dict[int, set[int]] = {
+            _part_groups = {
                 part_group.id: set().union(
-                    *(_parts[part_id] for part_id in part_group.parts)
+                    *(_parts[part.id] for part in part_group.parts.values())
                 )
                 for part_group in stat_part_groups.values()
             }
@@ -112,31 +111,31 @@ class EventQueryMixin(EventBaseFrontend):
         # without list comprehension.
         per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
-        per_track_statistics: dict[
+        per_track_statistics: Mapping[
             EventRegistrationTrackStatistic | EventCourseStatistic,
-            dict[str, dict[int, set[int]]],
+            Mapping[str, Mapping[vtypes.ID, Collection[vtypes.ID]]],
         ]
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:
             for course_stat in EventCourseStatistic:
-                _tracks: dict[int, set[int]] = {
-                    track_id: set(
+                _tracks = {
+                    track.id: set(
                         course.id
                         for course in courses.values()
-                        if course_stat.test(rs.ambience['event'], course, track_id)
+                        if course_stat.test(rs.ambience['event'], course, track.id)
                     )
-                    for track_id in tracks
+                    for track in tracks.values()
                 }
                 _parts = {
                     part.id: set().union(
-                        *(_tracks[track_id] for track_id in part.tracks)
+                        *(_tracks[track.id] for track in part.tracks.values())
                     )
                     for part in event_parts.values()
                 }
                 _part_groups = {
                     part_group.id: set().union(
-                        *(_parts[part_id] for part_id in part_group.parts)
+                        *(_parts[part.id] for part in part_group.parts.values())
                     )
                     for part_group in stat_part_groups.values()
                 }
@@ -147,22 +146,22 @@ class EventQueryMixin(EventBaseFrontend):
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
                 _tracks = {
-                    track_id: set(
-                        reg['id']
+                    track.id: set(
+                        vtypes.RegistrationID(vtypes.ID(reg['id']))
                         for reg in registrations.values()
-                        if reg_track_stat.test(rs.ambience['event'], reg, track_id)
+                        if reg_track_stat.test(rs.ambience['event'], reg, track.id)
                     )
-                    for track_id in tracks
+                    for track in tracks.values()
                 }
                 _parts = {
                     part.id: set().union(
-                        *(_tracks[track_id] for track_id in part.tracks)
+                        *(_tracks[track.id] for track in part.tracks.values())
                     )
                     for part in event_parts.values()
                 }
                 _part_groups = {
                     part_group.id: set().union(
-                        *(_parts[part_id] for part_id in part_group.parts)
+                        *(_parts[part.id] for part in part_group.parts.values())
                     )
                     for part_group in stat_part_groups.values()
                 }
@@ -190,7 +189,7 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("download", "is_search")
     def registration_query(
@@ -260,7 +259,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "query/registration_query", params)
 
-    @access("event", modi={"POST"}, anti_csrf_token_name="store_query")
+    @access(Roles.event, modi={"POST"}, anti_csrf_token_name="store_query")
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_scope")
     @REQUESTdatadict(*models.StoredEventQuery.requestdict_fields(creation=True))
@@ -298,7 +297,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs.notify_return_code(query_id)
         return self.redirect(rs, query_scope.get_target(), query_input)
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_id", "query_scope")
     def delete_event_query(
@@ -320,7 +319,7 @@ class EventQueryMixin(EventBaseFrontend):
             return self.redirect(rs, query_scope.get_target(), query_input)
         return self.redirect(rs, "event/show_event", query_input)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("query_name")
     def event_query_by_name(
@@ -371,7 +370,7 @@ class EventQueryMixin(EventBaseFrontend):
             )
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("scope")
     def custom_filter_summary(
@@ -399,21 +398,21 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def create_registration_filter(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.registration)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def create_course_filter(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.event_course)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def create_lodgement_filter(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -461,7 +460,7 @@ class EventQueryMixin(EventBaseFrontend):
                 KeyError(n_("A filter with this selection of fields already exists.")),
             ))
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=True))
     def create_custom_filter(
@@ -478,17 +477,18 @@ class EventQueryMixin(EventBaseFrontend):
             'event_id': event_id,
         })
         data = check(rs, models.CustomQueryFilter, data, creation=True, query_spec=spec)
-        if data:
+        if not rs.has_validation_errors():
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id=None)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.configure_custom_filter_form(rs, event_id, scope)
+
         code = self.eventproxy.add_custom_query_filter(
             rs, scope=scope, event_id=event_id, data=data
         )
         rs.notify_return_code(code)
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def change_custom_filter_form(
         self, rs: RequestState, event_id: vtypes.EventID, custom_filter_id: int
@@ -504,7 +504,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id, custom_filter.scope, creation=False
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=False))
     def change_custom_filter(
@@ -521,9 +521,9 @@ class EventQueryMixin(EventBaseFrontend):
         data['id'] = custom_filter_id
 
         data = check(rs, models.CustomQueryFilter, data, query_spec=spec)
-        if data:
+        if not rs.has_validation_errors():
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.change_custom_filter_form(rs, event_id, custom_filter_id)
 
         code = self.eventproxy.change_custom_query_filter(rs, data)
@@ -536,7 +536,7 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     def delete_custom_filter(
         self, rs: RequestState, event_id: vtypes.EventID, custom_filter_id: int
@@ -551,7 +551,7 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def course_query(
@@ -610,7 +610,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "query/course_query", params)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def lodgement_query(
@@ -717,7 +717,7 @@ class EventQueryMixin(EventBaseFrontend):
         else:
             return self.render(rs, query.scope.get_target(redirect=False), params)
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("phrase", "kind", "aux")
     def select_registration(
         self, rs: RequestState, phrase: str, kind: str, aux: vtypes.EventID | None
@@ -761,7 +761,7 @@ class EventQueryMixin(EventBaseFrontend):
         else:
             return self.send_json(rs, {})
 
-        data = None
+        data: list[CdEDBObject] | None = None
 
         anid, errs = inspect(vtypes.RegistrationID, phrase, argname="phrase")
         if not errs:

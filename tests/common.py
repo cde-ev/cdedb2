@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """General testing utilities for CdEDB2 testsuite"""
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import collections.abc
 import contextlib
 import copy
@@ -41,7 +43,6 @@ from typing import (
     ClassVar,
     NamedTuple,
     cast,
-    no_type_check,
 )
 
 import lxml.html
@@ -95,11 +96,7 @@ from cdedb.common.query.log_filter import (
     MlLogFilter,
     PastEventLogFilter,
 )
-from cdedb.common.roles import (
-    ADMIN_VIEWS_COOKIE_NAME,
-    ALL_ADMIN_VIEWS,
-    roles_to_db_role,
-)
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -137,7 +134,6 @@ def create_mock_image(file_type: str = "png") -> bytes:
     return afile.read()
 
 
-@no_type_check
 def json_keys_to_int[T](obj: T) -> T:
     """Convert dict keys to integers if possible.
 
@@ -158,7 +154,7 @@ def json_keys_to_int[T](obj: T) -> T:
             ret = [json_keys_to_int(e) for e in obj]
     else:
         ret = obj
-    return ret
+    return ret  # type: ignore[return-value]
 
 
 def _read_sample_data(
@@ -254,12 +250,12 @@ def _make_backend_shim[B: AbstractBackend](
             lang="de",
             translations=translations,
         )
-        rs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        rs._conn = connpool[rs.user.new_roles.get_db_role()]
         rs.conn = rs._conn
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
-                rs.user.realm_roles["complaint"] = {"enforcer"}
-        if "event" in rs.user.roles:
+                rs.user.new_roles |= Roles.complaint_enforcer
+        if Roles.event in rs.user.new_roles:
             if hasattr(backend, "orga_info"):
                 rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
             if hasattr(backend, "caretaker_info"):
@@ -268,9 +264,12 @@ def _make_backend_shim[B: AbstractBackend](
                 rs.user.checkin_helper = backend.checkin_helper_info(
                     rs, rs.user.persona_id
                 )
-        if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
+            if hasattr(backend, "get_event_helpers"):
+                if rs.user.persona_id in backend.get_event_helpers(rs):
+                    rs.user.new_roles |= Roles.event_helper
+        if Roles.ml in rs.user.new_roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
-        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+        if Roles.assembly in rs.user.new_roles and hasattr(backend, "presider_info"):
             rs.user.presider = backend.presider_info(rs, rs.user.persona_id)
         return rs
 
@@ -535,11 +534,9 @@ class BackendTest(CdEDBTest):
                 "Anonymous users not supported for backend tests."  # pragma: no cover
                 " Pass `ANONYMOUS` in place of `self.key` instead."
             )
-        self.key = cast(
-            RequestState,
-            self.core.login(ANONYMOUS, user['username'], user['password'], ip),
-        )
-        if self.key:
+        key = self.core.login(ANONYMOUS, user['username'], user['password'], ip)
+        self.key = cast(RequestState, key)
+        if key:
             self.user = user
         else:
             self.user = USER_DICT["anonymous"]
@@ -572,7 +569,8 @@ class BackendTest(CdEDBTest):
         self.login(new_user)
         yield
         self.logout(allow_anonymous=True)
-        self.login(old_user)
+        if old_user["id"]:
+            self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
@@ -626,8 +624,8 @@ class BackendTest(CdEDBTest):
 
     def assertDictEqual(
         self,
-        dict1: Mapping[Any, object],
-        dict2: Mapping[Any, object],
+        d1: Mapping[Any, object],
+        d2: Mapping[Any, object],
         msg: str | None = None,
     ) -> None:
         """Helper to get more readable diffs of long dicts.
@@ -637,7 +635,7 @@ class BackendTest(CdEDBTest):
         their numerical values or our NearlyNow() objects and datetimes. Thus, only
         output elements that are considered semantically different by python.
         """
-        super().assertDictEqual(*self._generate_diff_dicts(dict1, dict2), msg)
+        super().assertDictEqual(*self._generate_diff_dicts(d1, d2), msg)
 
     @staticmethod
     def _generate_diff_dicts(
@@ -1055,13 +1053,13 @@ def as_users(
     return wrapper
 
 
-def admin_views[F: Callable[..., Any]](*views: str) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](*views: AdminViews) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(self: FrontendTest, *args: Any, **kwargs: Any) -> Any:
-            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
+            self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(views))
             return fun(self, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -1113,7 +1111,7 @@ class FrontendTest(BackendTest):
 
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: "staticmethod[[str], str]"
+    gettext: "Callable[[str], str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse
@@ -1161,10 +1159,10 @@ class FrontendTest(BackendTest):
         super().setUp()
         self.app.reset()
         # Make sure all available admin views are enabled.
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+        self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         if prepsql:
             execsql(prepsql)
-        self.response = None
+        self.response = cast(webtest.TestResponse, None)
 
     def basic_validate(self, verbose: bool = False) -> None:
         if self.response.content_type == "text/html":
@@ -1176,6 +1174,7 @@ class FrontendTest(BackendTest):
 
     def _scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:  # pragma: no cover
+            assert self.response.request
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
@@ -1197,6 +1196,7 @@ class FrontendTest(BackendTest):
     ) -> None:
         if response is None:
             response = self.response
+        assert response.request
         # record performance information during test runs
         logger = logging.getLogger("cdedb.timing")
         msg = "{} {} {} {}".format(
@@ -1209,7 +1209,7 @@ class FrontendTest(BackendTest):
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
-        self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        self.response = self.app.get(url, *args, **kwargs)
         self.follow(**kwargs)
         self.basic_validate(verbose=verbose)
 
@@ -1545,13 +1545,17 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(title.strip(), normalized)
 
+    class _HTMLNode(lxml.html.HtmlElement):
+        def text_content(self) -> str:
+            return super().text_content()
+
     def _get_nodes(
         self,
         selector: str,
         *,
         check_exists: bool = True,
-        root_node: "lxml.html.Element | None" = None,
-    ) -> list["lxml.html.Element"]:
+        root_node: _HTMLNode | None = None,
+    ) -> list[_HTMLNode]:
         """Retrieve all HTML nodes matching the given css selector."""
         if not self.response.content_type == "text/html":
             raise ValueError("Not a HTML page.")
@@ -2355,24 +2359,24 @@ class FrontendTest(BackendTest):
         f['note'] = "Archived for testing."
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse("Nutzer verwalten")
-        self.assertTitle("utzerverwaltung", exact=False)
+        self.traverse("Accounts verwalten")
+        self.assertTitle("ccountverwaltung", exact=False)
         f = self.response.forms['queryform']
         f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("utzerverwaltung", exact=False)
+        self.assertTitle("ccountverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
         # 3: Dearchive user
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
         self.submit(f, check_notification=False, check_mandatory_filled=False)
@@ -2417,7 +2421,10 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn("active", button['class'])
         self.submit(
-            f, button='view_specifier', check_button_attrs=False, value=button['value']
+            f,
+            button=button.attrs["name"],
+            check_button_attrs=False,
+            value=button['value'],
         )
         return button
 
@@ -2469,7 +2476,7 @@ class MultiAppFrontendTest(FrontendTest):
             for _ in range(cls.n)
         ]
         # The super().setUpClass overwrites the property, so reset it here.
-        cls.app = property(fget=cls.get_app, fset=cls.set_app)
+        cls.app = property(fget=cls.get_app, fset=cls.set_app)  # pyrefly: ignore[bad-assignment]
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
@@ -2479,7 +2486,7 @@ class MultiAppFrontendTest(FrontendTest):
         super().setUp(*args, **kwargs)
         for app in self.apps:
             app.reset()
-            app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+            app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         self.current_app = 0
 
     def get_response(self) -> webtest.TestResponse:
@@ -2488,7 +2495,7 @@ class MultiAppFrontendTest(FrontendTest):
     def set_response(self, value: webtest.TestResponse) -> None:
         self.responses[self.current_app] = value
 
-    response = property(fget=get_response, fset=set_response)
+    response = property(fget=get_response, fset=set_response)  # pyrefly: ignore[bad-override]
 
     def get_app(self) -> webtest.TestApp:
         return self.apps[self.current_app]
@@ -2496,7 +2503,7 @@ class MultiAppFrontendTest(FrontendTest):
     def set_app(self, value: webtest.TestApp) -> None:  # pragma: no cover
         self.apps[self.current_app] = value
 
-    app = property(fget=get_app, fset=set_app)
+    app = property(fget=get_app, fset=set_app)  # pyrefly: ignore[bad-override]
 
     def switch_app(self, i: int) -> None:
         """Switch to a different index.
@@ -2618,7 +2625,7 @@ class CronTest(CdEDBTest):
                 def mail_wrapper(
                     rs: RequestState, name: str, *args: Any, **kwargs: Any
                 ) -> str | None:
-                    self.mails.append(MailTrace(front.realm, name, args, kwargs))
+                    self.mails.append(MailTrace(front.realm_str(), name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
 
                 return cast(F, mail_wrapper)

@@ -26,7 +26,7 @@
         [{{ orgas|length }}]
     {% endcall %}
 
-    {% if is_privileged_for("event/add_orgas", admin_view_to_consider="event_mgmt") %}
+    {% if is_privileged_for("event/add_orgas", admin_view_to_consider=AdminViews.event_mgmt) %}
         <form action="{{ cdedblink('event/add_orgas') }}" method="POST" id="addorgasform" class="p">
             {{ util.anti_csrf_token('event/add_orgas') }}
             {% call util.output_errors('orga_ids', wrapper=True) %}
@@ -68,7 +68,7 @@
                     {% for orga in list %}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(orga, include_nickname=True) }}
-                            {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
+                            {% if is_privileged_for("event/remove_orga", admin_view_to_consider=AdminViews.event_mgmt) %}
                                 <form action="{{ cdedblink("event/remove_orga") }}" method="POST"
                                       id="removeorgaform{{ orga.id }}" class="hide-hover display-inline">
                                     {{ util.anti_csrf_token("event/remove_orga") }}
@@ -91,7 +91,7 @@
                 [{{ caretakers|length }}]
             {% endcall %}
 
-            {% if is_privileged_for("event/add_caretakers", admin_view_to_consider="event_mgmt") %}
+            {% if is_privileged_for("event/add_caretakers", admin_view_to_consider=AdminViews.event_mgmt) %}
                 <form action="{{ cdedblink("event/add_caretakers") }}" method="POST" id="addcaretakersform" class="p">
                     {{ util.anti_csrf_token("event/add_caretakers") }}
                     <div class="input-group has-success">
@@ -127,11 +127,11 @@
                 {% for persona_id, caretaker in caretakers.items() %}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(caretaker, include_nickname=True) }}
-                        {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
+                        {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider=AdminViews.event_mgmt) %}
                             <form action="{{ cdedblink("event/remove_caretaker") }}" method="POST"
-                                  id="removcaretakerform{{ persona_id }}" class="hide-hover display-inline">
+                                  id="removecaretakerform{{ persona_id }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token("event/remove_caretaker") }}
-                                {{ util.input_hidden(name="caretaker_id", value=persona_id) }}
+                                {{ util.input_hidden(name="caretaker_id", value=persona_id|cdedbid) }}
                                 {{ util.input_submit(title=gettext("Remove Caretaker"), icon="minus", label="",
                                                      aclass="btn btn-xs btn-danger list-button-float") }}
                                 {{ util.ack_delete("The caretaker will be removed from the event.") }}
@@ -147,7 +147,7 @@
                 [{{ checkin_helpers|length }}]
             {% endcall %}
 
-            {% if is_privileged_for("event/add_checkin_helpers", admin_view_to_consider="event_mgmt") %}
+            {% if is_privileged_for("event/add_checkin_helpers", admin_view_to_consider=AdminViews.event_mgmt) %}
                 <form action="{{ cdedblink("event/add_checkin_helpers") }}" method="POST" id="addcheckinhelpersform" class="p">
                     {{ util.anti_csrf_token("event/add_checkin_helpers") }}
                     <div class="input-group has-success">
@@ -185,11 +185,11 @@
                 {% for persona_id, checkin_helper in checkin_helpers.items() %}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(checkin_helper, include_nickname=True) }}
-                        {% if is_privileged_for("event/remove_checkin_helper", admin_view_to_consider="event_mgmt") %}
+                        {% if is_privileged_for("event/remove_checkin_helper", admin_view_to_consider=AdminViews.event_mgmt) %}
                             <form action="{{ cdedblink("event/remove_checkin_helper") }}" method="POST"
-                                  id="removcheckinhelperform{{ persona_id }}" class="hide-hover display-inline">
+                                  id="removecheckinhelperform{{ persona_id }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token("event/remove_checkin_helper") }}
-                                {{ util.input_hidden(name="checkin_helper_id", value=persona_id) }}
+                                {{ util.input_hidden(name="checkin_helper_id", value=persona_id|cdedbid) }}
                                 {{ util.input_submit(title=gettext("Remove Checkin Helper"), icon="minus", label="",
                                                      aclass="btn btn-xs btn-danger list-button-float") }}
                                 {{ util.ack_delete("The checkin helper will be removed from the event.") }}

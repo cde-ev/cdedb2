@@ -4,6 +4,7 @@ import datetime
 import urllib.parse
 
 from cdedb.common import CdEDBObject
+from cdedb.common.roles import AdminViews
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -503,9 +504,7 @@ class TestPrivacyFrontend(FrontendTest):
         #                                        check_div=False)
 
     @as_users("annika", "ludwig", "nina", "quintus", "viktor", maintain_data=True)
-    @admin_views(
-        "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly", "ml_mod_cdelokal"
-    )
+    @admin_views(*AdminViews.all_mod_views())
     def test_profile_as_relevant_ml_admin(self) -> None:
         ml_admin = 'nina'
         all_ml = (
@@ -532,7 +531,7 @@ class TestPrivacyFrontend(FrontendTest):
                 )
 
     @as_users("simon", "janis")
-    @admin_views("complaint")
+    @admin_views(AdminViews.complaint)
     def test_profile_as_enforcer(self) -> None:
         self.traverse("Maßnahmenübersicht", "Bertå Beispiel", "Maßnahmen$")
         self.assertTitle("Bertå Beispiel – Maßnahmen")
@@ -692,7 +691,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*core):
                     self.get('/core/search/user')
-                    self.assertTitle("Allgemeine Nutzerverwaltung")
+                    self.assertTitle("Allgemeine Accountverwaltung")
                 else:
                     self.get(
                         '/core/search/user',
@@ -702,7 +701,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | cde)):
                     self.get('/cde/search/user')
-                    self.assertTitle("CdE-Nutzerverwaltung")
+                    self.assertTitle("CdE-Accountverwaltung")
                 else:
                     self.get(
                         '/cde/search/user',
@@ -712,7 +711,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | event)):
                     self.get('/event/search/user')
-                    self.assertTitle("Veranstaltungsnutzerverwaltung")
+                    self.assertTitle("Veranstaltungsaccountverwaltung")
                 else:
                     self.get(
                         '/event/search/user',
@@ -722,7 +721,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | ml)):
                     self.get('/ml/search/user')
-                    self.assertTitle("Mailinglistennutzerverwaltung")
+                    self.assertTitle("Mailinglistenaccountverwaltung")
                 else:
                     self.get(
                         '/ml/search/user',
@@ -732,7 +731,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | assembly)):
                     self.get('/assembly/search/user')
-                    self.assertTitle("Versammlungsnutzerverwaltung")
+                    self.assertTitle("Versammlungsaccountverwaltung")
                 else:
                     self.get(
                         '/assembly/search/user',

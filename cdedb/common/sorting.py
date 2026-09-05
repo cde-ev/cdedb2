@@ -61,7 +61,7 @@ def xsorted[T](
 
 
 class Comparable(Protocol):
-    def __lt__(self, other: Any) -> bool: ...
+    def __lt__(self, other: Any, /) -> bool: ...
 
 
 Sortkey = tuple[Comparable, ...]
@@ -89,7 +89,7 @@ def _make_persona_sorter(
         forename = make_persona_forename(persona, include_nickname=include_nickname)
 
         forename = forename.lower()
-        family_name = persona["family_name"].lower()
+        family_name: str = persona["family_name"].lower()
         if family_name_first:
             return (family_name, forename, persona["id"])
         else:
@@ -168,14 +168,6 @@ class EntitySorter:
     @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
-
-    @staticmethod
-    def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (
-            changelog_entry['ctime'],
-            changelog_entry['generation'],
-            changelog_entry['persona_id'],
-        )
 
 
 def mixed_existence_sorter[T: int](

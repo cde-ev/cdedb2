@@ -14,6 +14,8 @@ from tests.other_tests.test_validation import NO_COMPARE, TestValidationBase
 
 EventID = lambda x: vtypes.EventID(vtypes.ID(x))
 CourseID = lambda x: vtypes.CourseID(vtypes.ID(x))
+LodgementID = lambda x: vtypes.LodgementID(vtypes.ID(x))
+LodgementGroupID = lambda x: vtypes.LodgementGroupID(vtypes.ID(x))
 
 
 class TestEventModels(BackendTest):
@@ -820,21 +822,21 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_lodgements(self) -> None:
-        lodgement_id = vtypes.ID(1)
+        lodgement_id = LodgementID(1)
         event_id = EventID(1)
 
         expectation = models.Lodgement(
             id=lodgement_id,
             event_id=event_id,
             group=models.LodgementGroup(
-                id=vtypes.ID(2),
+                id=LodgementGroupID(2),
                 event_id=event_id,
                 title='AußenWohnGruppe',
-                lodgement_ids={1},
+                lodgement_ids={LodgementID(1)},
                 regular_capacity=5,
                 camping_mat_capacity=1,
             ),
-            group_id=vtypes.ID(2),
+            group_id=LodgementGroupID(2),
             title='Warme Stube',
             regular_capacity=vtypes.NonNegativeInt(5),
             camping_mat_capacity=vtypes.NonNegativeInt(1),
@@ -851,17 +853,17 @@ class TestEventModels(BackendTest):
 
         expectation = {
             1: models.Lodgement(
-                id=vtypes.ID(1),
+                id=LodgementID(1),
                 event_id=event_id,
                 group=models.LodgementGroup(
-                    id=vtypes.ID(2),
+                    id=LodgementGroupID(2),
                     event_id=event_id,
                     title="AußenWohnGruppe",
-                    lodgement_ids={1},
+                    lodgement_ids={LodgementID(1)},
                     regular_capacity=5,
                     camping_mat_capacity=1,
                 ),
-                group_id=vtypes.ID(2),
+                group_id=LodgementGroupID(2),
                 title='Warme Stube',
                 regular_capacity=vtypes.NonNegativeInt(5),
                 camping_mat_capacity=vtypes.NonNegativeInt(1),
@@ -869,17 +871,17 @@ class TestEventModels(BackendTest):
                 fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
             ),
             2: models.Lodgement(
-                id=vtypes.ID(2),
+                id=LodgementID(2),
                 event_id=event_id,
                 group=models.LodgementGroup(
-                    id=vtypes.ID(1),
+                    id=LodgementGroupID(1),
                     event_id=event_id,
                     title="Haupthaus",
-                    lodgement_ids={2, 4},
+                    lodgement_ids={LodgementID(2), LodgementID(4)},
                     regular_capacity=11,
                     camping_mat_capacity=2,
                 ),
-                group_id=vtypes.ID(1),
+                group_id=LodgementGroupID(1),
                 title='Kalte Kammer',
                 regular_capacity=vtypes.NonNegativeInt(10),
                 camping_mat_capacity=vtypes.NonNegativeInt(2),
@@ -887,17 +889,17 @@ class TestEventModels(BackendTest):
                 fields=vtypes.EventAssociatedFields({'contamination': 'none'}),
             ),
             3: models.Lodgement(
-                id=vtypes.ID(3),
+                id=LodgementID(3),
                 event_id=event_id,
                 group=models.LodgementGroup(
-                    id=vtypes.ID(3),
+                    id=LodgementGroupID(3),
                     event_id=event_id,
                     title="Sonstige",
-                    lodgement_ids={3},
+                    lodgement_ids={LodgementID(3)},
                     regular_capacity=0,
                     camping_mat_capacity=100,
                 ),
-                group_id=vtypes.ID(3),
+                group_id=LodgementGroupID(3),
                 title='Kellerverlies',
                 regular_capacity=vtypes.NonNegativeInt(0),
                 camping_mat_capacity=vtypes.NonNegativeInt(100),
@@ -905,17 +907,17 @@ class TestEventModels(BackendTest):
                 fields=vtypes.EventAssociatedFields({'contamination': 'low'}),
             ),
             4: models.Lodgement(
-                id=vtypes.ID(4),
+                id=LodgementID(4),
                 event_id=event_id,
                 group=models.LodgementGroup(
-                    id=vtypes.ID(1),
+                    id=LodgementGroupID(1),
                     event_id=event_id,
                     title="Haupthaus",
-                    lodgement_ids={2, 4},
+                    lodgement_ids={LodgementID(2), LodgementID(4)},
                     regular_capacity=11,
                     camping_mat_capacity=2,
                 ),
-                group_id=vtypes.ID(1),
+                group_id=LodgementGroupID(1),
                 title='Einzelzelle',
                 regular_capacity=vtypes.NonNegativeInt(1),
                 camping_mat_capacity=vtypes.NonNegativeInt(0),
@@ -933,26 +935,26 @@ class TestEventModels(BackendTest):
 
         expectation = {
             1: models.LodgementGroup(
-                id=vtypes.ID(1),
+                id=LodgementGroupID(1),
                 event_id=event_id,
                 title="Haupthaus",
-                lodgement_ids={2, 4},
+                lodgement_ids={LodgementID(2), LodgementID(4)},
                 regular_capacity=vtypes.NonNegativeInt(11),
                 camping_mat_capacity=2,
             ),
             2: models.LodgementGroup(
-                id=vtypes.ID(2),
+                id=LodgementGroupID(2),
                 event_id=event_id,
                 title="AußenWohnGruppe",
-                lodgement_ids={1},
+                lodgement_ids={LodgementID(1)},
                 regular_capacity=5,
                 camping_mat_capacity=1,
             ),
             3: models.LodgementGroup(
-                id=vtypes.ID(3),
+                id=LodgementGroupID(3),
                 event_id=event_id,
                 title="Sonstige",
-                lodgement_ids={3},
+                lodgement_ids={LodgementID(3)},
                 regular_capacity=0,
                 camping_mat_capacity=100,
             ),

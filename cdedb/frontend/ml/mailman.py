@@ -6,13 +6,15 @@ This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
 """
 
+import pathlib
+
 import mailmanclient as mmc
 
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
 from cdedb.common import RequestState
 from cdedb.database.constants import EmailStatus, LockType
-from cdedb.frontend.common import cdedburl
+from cdedb.frontend.common import CdEMailmanClient, cdedburl
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.models.ml import Mailinglist
 
@@ -66,7 +68,7 @@ class MlMailmanMixin(MlBaseFrontend):
     def mailman_sync_list_meta(
         self,
         rs: RequestState,
-        mailman: mmc.Client,
+        mailman: CdEMailmanClient,
         db_list: Mailinglist,
         mm_list: mmc.MailingList,
     ) -> None:
@@ -152,18 +154,18 @@ Das Abonnement von $member auf der Mailingliste
     $listname
 wurde deaktiviert, da zu viele Mails nicht zugestellt werden konnten.
 
-Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet
+Dies bedeutet, dass keine weiteren Mails dieser Liste an die Abonnent:in versendet
 werden. Diese Einschränkung ist momentan *nicht* in der CdEDB sichtbar.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 
-Als Workaround kannst du den Nutzer manuell von der Mailingliste entfernen,
+Als Workaround kannst du den Account manuell von der Mailingliste entfernen,
 15 Minuten warten, und ihn danach wieder auf die Liste abonnieren.
 Dadurch wird das Abonnement vorerst wieder aktiviert.
 """.strip(),
@@ -171,20 +173,20 @@ Dadurch wird das Abonnement vorerst wieder aktiviert.
 Eine Email auf der Mailingliste
     $listname
 konnte an $member nicht zugestellt werden.
-Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an den
-Nutzer weiterzuleiten.
-Diese Fehlermeldung wird höchstens einmal pro Tag, Nutzer und Liste versendet,
+Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an die
+Empfänger:in weiterzuleiten.
+Diese Fehlermeldung wird höchstens einmal pro Tag, Account und Liste versendet,
 auch wenn mehrere Emails unzustellbar waren.
 
-Bei Wiederholung wird dies dazu führen, dass dem Nutzer keine Malis dieser Liste
+Bei Wiederholung wird dies dazu führen, dass dem Account keine Mails dieser Liste
 mehr gesendet werden.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 """.strip(),
         }
@@ -245,7 +247,7 @@ The original message as received by Mailman is attached.
                 mm_list.header_matches.add(header, pattern, action)
 
         existing_templates = {t.name: t for t in mm_list.templates}
-        store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
+        store_path: pathlib.Path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
             file_name = f"{db_list.id}__{name}"
             file_path = store_path / file_name
@@ -400,7 +402,7 @@ The original message as received by Mailman is attached.
     def mailman_sync_list(
         self,
         rs: RequestState,
-        mailman: mmc.Client,
+        mailman: CdEMailmanClient,
         db_list: Mailinglist,
         mm_list: mmc.MailingList,
     ) -> None:

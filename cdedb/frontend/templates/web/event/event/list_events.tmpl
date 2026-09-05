@@ -34,10 +34,10 @@
                 {%- endif %})
             {% endif %}
         </div>
-        {% if "event_list" in user.admin_views %}
+        {% if user.admin_views.has(AdminViews.event_list) %}
         <div class="col-sm-3 small">
             {{ util.href(querylink(event['id']), gettext("%s Registrations")|s|format(events_registrations[event.id]),
-                         readonly="event_mgmt" not in user.admin_views or not is_privileged(enums['EventPrivileges'].registrations_read, event_id=event.id)) }},
+                         readonly=not user.admin_views.has(AdminViews.event_mgmt) or not is_privileged(enums['EventPrivileges'].registrations_read, event_id=event.id)) }},
             {% trans count=event['orgas']|length %}
                 {{ count }} Orga
             {%- pluralize count -%}
@@ -48,7 +48,7 @@
     </div>
 {% endmacro %}
 {% block content %}
-    {% if "event_mgmt" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.event_mgmt) %}
     <div class="p">
         {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), aclass="btn btn-success btn-sm",
                 icon="plus") }}
@@ -60,7 +60,7 @@
     <div class="list-group list-group-hover list-group-condensed" id="current-events">
         {% for entry in events.values()|sort %}
             {% if not entry['is_archived'] and
-                    ('event_list' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+                    (user.admin_views.has(AdminViews.event_list) or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}
             {% endif %}
         {% endfor %}
@@ -70,7 +70,7 @@
     <div class="list-group list-group-hover list-group-condensed" id="archived-events">
         {% for entry in events.values()|sort(reverse=True) %}
             {% if entry['is_archived'] and
-                    ('event_list' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+                    (user.admin_views.has(AdminViews.event_list) or user.persona_id in entry['orgas'] or entry['is_visible']) %}
                 {{ format_entry(entry) }}
             {% endif %}
         {% endfor %}

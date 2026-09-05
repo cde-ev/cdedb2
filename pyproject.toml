@@ -8,7 +8,7 @@ dependencies = [
     "click==8.3.3",
     "coverage==7.6.0",
     "cssselect==1.3.0",
-    "cryptography==48.0.1",
+    "cryptography==50.0.0",
     "freezegun==1.5.1",
     "graphviz==0.20.2",
     "gunicorn==23.0.0",
@@ -42,9 +42,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy==2.2.0",
+    "mypy[faster-cache]==2.3.1",
     "lxml-stubs",
-    "ruff==0.15.21",
+    "ruff==0.16.4",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
@@ -54,6 +54,7 @@ dev = [
     "types-python-dateutil",
     "types-tabulate",
     "types-zxcvbn",
+    "pyrefly==1.2.0",
 ]
 # Excluded from dev to ensure better docker cache.
 # Make sure to bump the version in Dockerfile-cdedb!
@@ -179,7 +180,6 @@ warn_no_return = true
 warn_unreachable = true
 warn_unused_ignores = true
 enable_incomplete_feature = [
-    "TypeForm",
 ]
 #This has way too many false positives, due to CdEDBObject = Dict[str, Any]
 #warn_return_any = true
@@ -205,3 +205,34 @@ module = [
     "webtest.utils",
 ]
 ignore_missing_imports = true
+
+[tool.pyrefly]
+min-severity = "info"
+preset = "strict"
+output-format = "min-text"
+
+project-includes = [
+    "cdedb",
+    "tests",
+    "bin",
+]
+project-excludes = [
+    "cdedb/ldap",
+    "bin/archive",
+    "bin/load-test",
+]
+
+python-version = "3.13"
+
+replace-imports-with-any = [
+    "icu",
+    "webtest",
+]
+
+[tool.pyrefly.errors]
+redundant-cast = "warn"
+unused-ignore = "warn"
+bad-override-mutable-attribute = "ignore"
+missing-override-decorator = "ignore"
+implicit-any-empty-container = "ignore"
+implicit-any-lambda = "ignore"

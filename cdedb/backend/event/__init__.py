@@ -43,6 +43,7 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 from cdedb.models.droid import OrgaToken
@@ -58,7 +59,7 @@ class EventBackend(
     EventBaseBackend,
     EventLowLevelBackend,
 ):
-    @access("event_admin")
+    @access(Roles.event_admin)
     def delete_event_blockers(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DeletionBlockers:
@@ -99,7 +100,7 @@ class EventBackend(
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         blockers = {}
 
         # TODO Reduce code duplication
@@ -344,7 +345,7 @@ class EventBackend(
 
         return blockers
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def delete_event(
         self,
         rs: RequestState,
@@ -519,7 +520,7 @@ class EventBackend(
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def partial_import_event(
         self,
         rs: RequestState,
@@ -678,11 +679,14 @@ class EventBackend(
             # noinspection PyPep8Naming
             IDMap = dict[int, int]
 
+            current: CdEDBObject | None
+
             gmap: IDMap = {}
             gdelta: CdEDBOptionalMap = {}
             gprevious: CdEDBOptionalMap = {}
+            group_id: vtypes.LodgementGroupID
             for group_id in mes(data.get('lodgement_groups', {}).keys()):
-                new_group = data['lodgement_groups'][group_id]
+                new_group: CdEDBObject | None = data['lodgement_groups'][group_id]
                 current = all_current_data['lodgement_groups'].get(group_id)
                 if group_id > 0 and current is None:
                     # group was deleted online in the meantime
@@ -693,7 +697,7 @@ class EventBackend(
                     gprevious[group_id] = current
                     if not dryrun:
                         self.delete_lodgement_group(rs, group_id, ("lodgements",))
-                elif group_id < 0:
+                elif group_id < 0 or current is None:
                     gdelta[group_id] = new_group
                     gprevious[group_id] = None
                     if not dryrun:
@@ -714,7 +718,7 @@ class EventBackend(
             ldelta: CdEDBOptionalMap = {}
             lprevious: CdEDBOptionalMap = {}
             for lodgement_id in mes(data.get('lodgements', {}).keys()):
-                new_lodgement = data['lodgements'][lodgement_id]
+                new_lodgement: CdEDBObject | None = data['lodgements'][lodgement_id]
                 current = all_current_data['lodgements'].get(lodgement_id)
                 if lodgement_id > 0 and current is None:
                     # lodgement was deleted online in the meantime
@@ -763,7 +767,7 @@ class EventBackend(
                 )
 
             for course_id in mes(data.get('courses', {}).keys()):
-                new_course = data['courses'][course_id]
+                new_course: CdEDBObject | None = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)
                 if course_id > 0 and current is None:
                     # course was deleted online in the meantime
@@ -779,7 +783,7 @@ class EventBackend(
                             course_id,
                             ("instructors", "course_choices", "course_segments"),
                         )
-                elif course_id < 0:
+                elif course_id < 0 or current is None:
                     cdelta[course_id] = new_course
                     cprevious[course_id] = None
                     if not dryrun:
@@ -822,8 +826,12 @@ class EventBackend(
 
             data_regs = data.get('registrations', {})
             for registration_id in mes(data_regs.keys()):
-                new_registration = data_regs[registration_id]
-                if registration_id < 0 and dup.get(new_registration.get('persona_id')):
+                new_registration: CdEDBObject | None = data_regs[registration_id]
+                if (
+                    registration_id < 0
+                    and new_registration is not None
+                    and dup.get(new_registration.get('persona_id'))
+                ):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
                     registration_id = dup[new_registration.get('persona_id')]
@@ -843,7 +851,7 @@ class EventBackend(
                             "course_choices",
                         )  # fmt: skip
                         self.delete_registration(rs, registration_id, reg_cascade)
-                elif registration_id < 0:
+                elif registration_id < 0 or current is None:
                     rdelta[registration_id] = new_registration
                     rprevious[registration_id] = None
                     if not dryrun:
@@ -853,8 +861,7 @@ class EventBackend(
                             keys = {'course_id', 'course_instructor'}
                             for key in keys:
                                 if track[key] in cmap:
-                                    tmp_id = track[key]
-                                    track[key] = cmap[tmp_id]
+                                    track[key] = cmap[track[key]]
                             new_choices = [
                                 cmap.get(course_id, course_id)
                                 for course_id in track['choices']
@@ -862,8 +869,7 @@ class EventBackend(
                             track['choices'] = new_choices
                         for part in new['parts'].values():
                             if part['lodgement_id'] in lmap:
-                                tmp_id = part['lodgement_id']
-                                part['lodgement_id'] = lmap[tmp_id]
+                                part['lodgement_id'] = lmap[part['lodgement_id']]
                         personalized_fees = new.pop('personalized_fees', {})
                         checkin_periods = new.pop('checkin_periods', [])
                         new_id = self.create_registration(rs, new)
@@ -884,8 +890,7 @@ class EventBackend(
                                     for key in keys:
                                         if key in track:
                                             if track[key] in cmap:
-                                                tmp_id = track[key]
-                                                track[key] = cmap[tmp_id]
+                                                track[key] = cmap[track[key]]
                                     if 'choices' in track:
                                         new_choices = [
                                             cmap.get(course_id, course_id)
@@ -896,15 +901,16 @@ class EventBackend(
                                 for part in changed_reg['parts'].values():
                                     if 'lodgement_id' in part:
                                         if part['lodgement_id'] in lmap:
-                                            tmp_id = part['lodgement_id']
-                                            part['lodgement_id'] = lmap[tmp_id]
+                                            part['lodgement_id'] = lmap[
+                                                part['lodgement_id']
+                                            ]
                             changed_reg['id'] = registration_id
                             # Only set registration of "usual" fields are concerned
                             personalized_fees = changed_reg.pop('personalized_fees', {})
                             checkin_periods = changed_reg.pop('checkin_periods', None)
                             if changed_reg.keys() > {'id'}:
                                 # change_note for log entry for registrations
-                                change_note = "Partieller Import."
+                                change_note: str = "Partieller Import."
                                 if data.get('summary'):
                                     change_note = (
                                         "Partieller Import: " + data['summary']

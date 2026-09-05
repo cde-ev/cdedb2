@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, cast
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, unwrap
 from cdedb.common.n_ import n_
-from cdedb.common.roles import ADMIN_KEYS
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import LOCALE, xsorted
 from cdedb.config import Config
 from cdedb.uncommon.intenum import CdEIntEnum
@@ -35,9 +35,6 @@ _CONFIG = Config()
 
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
-
-type LodgementMap = models.CdEDataclassMap[models.Lodgement]
-type LodgementGroupMap = models.CdEDataclassMap[models.LodgementGroup]
 
 
 @enum.unique
@@ -365,8 +362,8 @@ class QueryScope(CdEIntEnum):
 
     def get_spec(self, *, event: "models.Event | None" = None,
                  courses: "models.CourseMap | None" = None,
-                 lodgements: LodgementMap | None = None,
-                 lodgement_groups: LodgementGroupMap | None = None,
+                 lodgements: "models.LodgementMap | None" = None,
+                 lodgement_groups: "models.LodgementGroupMap | None" = None,
                  ) -> QuerySpec:
         """Return the query spec for this scope.
 
@@ -588,9 +585,9 @@ _QUERY_SPECS = {
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
-                for k in ADMIN_KEYS
+                for k in Roles.all_admin_roles().markers()
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry(
+            ",".join(Roles.all_admin_roles().markers()): QuerySpecEntry(
                 "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
@@ -640,9 +637,9 @@ _QUERY_SPECS = {
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
-                for k in ADMIN_KEYS
+                for k in Roles.all_admin_roles().markers()
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry(
+            ",".join(Roles.all_admin_roles().markers()): QuerySpecEntry(
                 "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "weblink": QuerySpecEntry("str", n_("WWW")),
             "specialisation": QuerySpecEntry("str", n_("Specialisation")),
@@ -687,9 +684,9 @@ _QUERY_SPECS = {
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
-                for k in ADMIN_KEYS
+                for k in Roles.all_admin_roles().markers()
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry(
+            ",".join(Roles.all_admin_roles().markers()): QuerySpecEntry(
                 "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
@@ -1106,13 +1103,13 @@ def _get_course_choices(courses: "models.CourseMap | None") -> QueryChoices:
     return dict((c.id, c.label) for c in xsorted(courses.values()))
 
 
-def _get_lodgement_choices(lodgements: LodgementMap | None) -> QueryChoices:
+def _get_lodgement_choices(lodgements: "models.LodgementMap | None") -> QueryChoices:
     if lodgements is None:
         return {}
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: LodgementGroupMap | None,
+def _get_lodgement_group_choices(lodgement_groups: "models.LodgementGroupMap | None",
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
@@ -1121,8 +1118,8 @@ def _get_lodgement_group_choices(lodgement_groups: LodgementGroupMap | None,
 
 def make_registration_query_spec(event: "models.Event",
                                  courses: "models.CourseMap | None" = None,
-                                 lodgements: LodgementMap | None = None,
-                                 lodgement_groups: LodgementGroupMap | None = None,
+                                 lodgements: "models.LodgementMap | None" = None,
+                                 lodgement_groups: "models.LodgementGroupMap | None" = None,
                                  ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
@@ -1381,7 +1378,7 @@ def make_registration_query_spec(event: "models.Event",
         if constraint := part_group.get('constraint_type'):
             if constraint != const.EventPartGroupType.Statistic:
                 continue
-        part_ids = part_group['parts'].keys()
+        part_ids: Collection[int] = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids,
@@ -1427,8 +1424,8 @@ def make_registration_query_spec(event: "models.Event",
 
 def make_course_query_spec(event: "models.Event",
                            courses: "models.CourseMap | None" = None,
-                           lodgements: LodgementMap | None = None,
-                           lodgement_groups: LodgementGroupMap | None = None,
+                           lodgements: "models.LodgementMap | None" = None,
+                           lodgement_groups: "models.LodgementGroupMap | None" = None,
                            ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
@@ -1573,8 +1570,8 @@ def make_course_query_spec(event: "models.Event",
 
 def make_lodgement_query_spec(event: "models.Event",
                               courses: "models.CourseMap | None" = None,
-                              lodgements: LodgementMap | None = None,
-                              lodgement_groups: LodgementGroupMap | None = None,
+                              lodgements: "models.LodgementMap | None" = None,
+                              lodgement_groups: "models.LodgementGroupMap | None" = None,
                               ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 
@@ -1652,7 +1649,7 @@ def make_lodgement_query_spec(event: "models.Event",
     sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
     sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
-        part_ids = part_group['parts'].keys()
+        part_ids: Collection[int] = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids,

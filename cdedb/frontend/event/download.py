@@ -20,6 +20,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     AgeClasses,
     CdEDBObjectMap,
+    Notification,
     PrivilegeError,
     RequestState,
     asciificator,
@@ -30,6 +31,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import REQUESTdata, access
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
@@ -37,7 +39,7 @@ from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 
 
 class EventDownloadMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def downloads(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Offer documents like nametags for download."""
@@ -48,7 +50,7 @@ class EventDownloadMixin(EventBaseFrontend):
             lodgements_exist = True
         return self.render(rs, "downloads", {'lodgements_exist': lodgements_exist})
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_nametags(
@@ -108,7 +110,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename = f"{rs.ambience['event'].shortname}_nametags.tex"
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
-            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
+            src: pathlib.Path = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
             shutil.copy(src, work_dir / "orga-logo.png")
             shutil.copy(src, work_dir / "minor-pictogram.png")
@@ -124,7 +126,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 rs.notify("info", n_("Empty PDF."))
                 return self.redirect(rs, "event/downloads")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_course_puzzle(
@@ -194,7 +196,7 @@ class EventDownloadMixin(EventBaseFrontend):
             rs.notify("info", n_("Empty PDF."))
             return self.redirect(rs, "event/downloads")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_lodgement_puzzle(
@@ -226,6 +228,7 @@ class EventDownloadMixin(EventBaseFrontend):
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
         rwish = collections.defaultdict(list)
+        problems: list[Notification]
         if event.lodge_field:
             wishes, problems = detect_lodgement_wishes(
                 registrations, personas, event, None
@@ -267,7 +270,7 @@ class EventDownloadMixin(EventBaseFrontend):
             rs.notify("info", n_("Empty PDF."))
             return self.redirect(rs, "event/downloads")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_course_lists(
@@ -340,11 +343,13 @@ class EventDownloadMixin(EventBaseFrontend):
             filename = "{}_course_lists.tex".format(rs.ambience['event'].shortname)
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
-            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
+            src: pathlib.Path = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "event-logo.png")
             for course_id in courses:
                 dest = work_dir / f"course-logo-{course_id}.png"
-                path = self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
+                path: pathlib.Path = (
+                    self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
+                )
                 if path.exists():
                     shutil.copy(path, dest)
                 else:
@@ -362,7 +367,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 rs.notify("info", n_("Empty PDF."))
                 return self.redirect(rs, "event/downloads")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
     def download_lodgement_lists(
@@ -402,7 +407,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename = "{}_lodgement_lists.tex".format(rs.ambience['event'].shortname)
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
-            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
+            src: pathlib.Path = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs,
@@ -417,7 +422,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 rs.notify("info", n_("Empty PDF."))
                 return self.redirect(rs, "event/downloads")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs", "landscape", "orgas_only", "part_ids")
     def download_participant_list(
@@ -455,7 +460,7 @@ class EventDownloadMixin(EventBaseFrontend):
             rs.notify("info", n_("Empty PDF."))
             return self.redirect(rs, "event/downloads")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_read)
     def download_dokuteam_courselist(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -483,7 +488,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_dokuteam_courselist.txt",
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     def download_dokuteam_participant_list(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -552,7 +557,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 rs, path=zippath, inline=False, filename=f"{zipname}.zip"
             )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     def download_csv_courses(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -584,7 +589,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_courses",
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     def download_csv_lodgements(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -617,7 +622,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_lodgements",
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     def download_csv_registrations(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -656,7 +661,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_registrations",
         )
 
-    @access("event", modi={"GET"})
+    @access(Roles.event, modi={"GET"})
     @event_guard(EventPrivileges.all_read)
     def download_export(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Retrieve all data for this event to initialize an offline instance."""
@@ -673,7 +678,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_export_event.json",
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.all_read)
     def download_partial_export(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -692,7 +697,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_partial_export_event.json",
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def download_questionnaire_export(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -714,7 +719,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename=f"{rs.ambience['event'].shortname}_questionnaire_export.json",
         )
 
-    @access("droid_orga")
+    @access(Roles.droid_orga)
     @event_guard(EventPrivileges.all_read)
     def droid_partial_export(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -726,14 +731,14 @@ class EventDownloadMixin(EventBaseFrontend):
             rs, mimetype="application/json", data=json_serialize(data, sort_keys=True)
         )
 
-    @access("droid_orga")
+    @access(Roles.droid_orga)
     def droid_partial_export_dispatch(self, rs: RequestState) -> Response:
         event_id = unwrap(rs.user.orga)
         if not event_id:
             raise werkzeug.exceptions.Forbidden(n_("User is not a valid orga droid."))
         return self.redirect(rs, "event/droid_partial_export", {'event_id': event_id})
 
-    @access("droid_quick_partial_export")
+    @access(Roles.droid_quick_partial_export)
     def download_quick_partial_export(self, rs: RequestState) -> Response:
         """Retrieve data for third-party applications in offline mode.
 

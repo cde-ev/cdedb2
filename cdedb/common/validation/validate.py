@@ -71,7 +71,7 @@ import string
 import typing
 import unicodedata
 import urllib.parse
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from types import TracebackType
 from typing import (
     Any,
@@ -137,7 +137,7 @@ from cdedb.common.query import (
     QuerySpec,
 )
 from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
-from cdedb.common.roles import ADMIN_KEYS, extract_roles
+from cdedb.common.roles import Realms, Roles, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # noqa: F403
@@ -180,7 +180,7 @@ class ValidationSummary(ValueError, Sequence[Exception]):
     @contextlib.contextmanager
     def callback(
         self, callback: Callable[[Iterable[Exception]], Iterable[Exception]]
-    ) -> Iterator[Self]:
+    ) -> Generator[Self]:
         """
         Context manager that allows modifying the collected errors before appending them.
         """
@@ -189,7 +189,7 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         self.extend(callback(tmp))
 
     @contextlib.contextmanager
-    def as_argname(self, argname: str, replace: bool = False) -> Iterator[Self]:
+    def as_argname(self, argname: str, replace: bool = False) -> Generator[Self]:
         """
         Context manager that collects all validation errors raised inside under the given argname.
 
@@ -207,7 +207,7 @@ class ValidationSummary(ValueError, Sequence[Exception]):
             yield self
 
     @contextlib.contextmanager
-    def modify_argname(self, *, prefix: str = "", suffix: str = "") -> Iterator[Self]:
+    def modify_argname(self, *, prefix: str = "", suffix: str = "") -> Generator[Self]:
 
         def callback(errors: Iterable[Exception]) -> list[Exception]:
             ret = [
@@ -224,8 +224,8 @@ class ValidationSummary(ValueError, Sequence[Exception]):
 
     def __exit__(
         self,
-        exc_type: type[Exception] | None,
-        exc_val: Exception | None,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> bool:
         if isinstance(exc_val, self.__class__):
@@ -234,11 +234,19 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return False
 
 
-class ValidatorStorage[T](dict[TypeForm[T], Callable[..., T]]):
-    def __setitem__(self, type_: TypeForm[T], validator: Callable[..., T]) -> None:
+class ValidatorStorage(dict[TypeForm[Any], Callable[..., Any]]):
+    def __setitem__[T](self, type_: TypeForm[T], validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
-    def __getitem__(self, type_: TypeForm[T]) -> Callable[..., T]:
+    @overload
+    def __getitem__[T: CdEDataclass](
+        self, type_: TypeForm[T]
+    ) -> Callable[..., CdEDBObject]: ...
+
+    @overload
+    def __getitem__[T](self, type_: TypeForm[T]) -> Callable[..., T]: ...
+
+    def __getitem__[T](self, type_: TypeForm[T]) -> Callable[..., Any]:
         origin = typing.get_origin(type_)
         if is_optional_type(type_):
             return cast(
@@ -272,10 +280,14 @@ class ValidatorStorage[T](dict[TypeForm[T], Callable[..., T]]):
             for model_namespace in model_namespaces:
                 try:
                     return self[
-                        type_._evaluate(
-                            vars(model_namespace),
-                            {},
-                            recursive_guard=set(),
+                        cast(
+                            type[Any],
+                            type_._evaluate(
+                                vars(model_namespace),
+                                {},
+                                recursive_guard=frozenset(),
+                                type_params=(),
+                            ),
                         )
                     ]
                 except NameError:
@@ -283,16 +295,18 @@ class ValidatorStorage[T](dict[TypeForm[T], Callable[..., T]]):
             raise NameError(
                 f"Failed to resolve forward Reference {type_} from model namespaces {model_namespaces}"
             )
+        elif isinstance(type_, typing.TypeAliasType):
+            return self[type_.__value__]  # type: ignore[unreachable]
 
         return super().__getitem__(type_)
 
 
-_ALL_TYPED: ValidatorStorage[Any] = ValidatorStorage()
+_ALL_TYPED = ValidatorStorage()
 
 
 @overload
-def validate_assert(
-    type_: type[CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
+def validate_assert[T: CdEDataclass](
+    type_: TypeForm[T], value: Any, ignore_warnings: bool, **kwargs: Any
 ) -> CdEDBObject: ...
 
 
@@ -303,7 +317,7 @@ def validate_assert[T](
 
 
 def validate_assert[T](
-    type_: TypeForm[T] | type[CdEDataclass],
+    type_: TypeForm[T],
     value: Any,
     ignore_warnings: bool,
     **kwargs: Any,
@@ -374,7 +388,7 @@ def validate_check[T](
         raise RuntimeError("Not allowed to set 'ignore_warnings' as kwarg.")
     try:
         val = _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
-        return val, []
+        return val, []  # type: ignore[return-value]
     except ValidationSummary as errs:
         old_format = [
             (
@@ -438,9 +452,9 @@ def _add_typed_validator[F: Callable[..., Any]](
 ) -> F:
     """Mark a typed function for processing into validators."""
     # TODO get rid of dynamic return types for enum
-    if not return_type:
+    if return_type is None:
         return_type = get_type_hints(fun)["return"]
-    assert return_type
+    assert return_type is not None
     if return_type in _ALL_TYPED:
         raise RuntimeError(f"Type {return_type} already registered")
     _ALL_TYPED[return_type] = fun
@@ -689,6 +703,8 @@ _add_typed_validator(_id, InvolvedID)
 _add_typed_validator(_id, RegistrationID)
 _add_typed_validator(_id, EventID)
 _add_typed_validator(_id, CourseID)
+_add_typed_validator(_id, LodgementID)
+_add_typed_validator(_id, LodgementGroupID)
 
 
 @_add_typed_validator
@@ -931,7 +947,7 @@ def _realm(
     with errs:
         if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
             raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
-        if supports_genesis and val not in models_core.GenesisCase.available_realms:
+        if supports_genesis and val not in Realms.get_available_genesis_realms():
             raise ValidationSummary(
                 ValueError(n_("This realm is not supported for genesis."))
             )
@@ -943,7 +959,7 @@ def _realm(
 @_add_typed_validator
 def _persona_id(val: Any, argname: str | None = None, **kwargs: Any) -> PersonaID:
     if isinstance(val, int):
-        return _ALL_TYPED[ID](val, argname, **kwargs)
+        return PersonaID(_ALL_TYPED[ID](val, argname, **kwargs))
     val = _str(val, argname, **kwargs).strip()
     match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
     if not match:
@@ -1163,7 +1179,7 @@ def make_dict_validator[K, V](type_: type[dict[K, V]]) -> DictValidator[K, V]:
         if errs:
             raise errs
 
-        return new_val
+        return new_val  # type: ignore[return-value]
 
     return dict_validator
 
@@ -1531,16 +1547,16 @@ def _persona(
             **kwargs,
         )
         temp.update({'is_archived': False, 'is_purged': False})
-        temp.update({k: False for k in ADMIN_KEYS})
-        roles = extract_roles(temp)
+        temp.update({k: False for k in Roles.all_admin_roles().markers()})
+        roles = extract_roles(temp, introspection_only=True)
         optional_fields: TypeMapping = {}
         mandatory_fields: dict[str, Any] = {
             **PERSONA_TYPE_FIELDS,
             **PERSONA_BASE_CREATION,
         }
-        if "cde" in roles:
+        if Roles.cde in roles:
             mandatory_fields.update(PERSONA_CDE_CREATION)
-        if "event" in roles:
+        if Roles.event in roles:
             mandatory_fields.update(PERSONA_EVENT_CREATION)
         # ml and assembly define no custom fields
     elif transition:
@@ -1883,8 +1899,6 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-PRIVILEGE_CHANGE_OPTIONAL_FIELDS: TypeMapping = {k: bool | None for k in ADMIN_KEYS}
-
 
 @_add_typed_validator
 def _privilege_change(
@@ -1893,7 +1907,10 @@ def _privilege_change(
     val = _mapping(val, argname, **kwargs)
 
     val = _examine_dictionary_fields(
-        val, PRIVILEGE_CHANGE_COMMON_FIELDS, PRIVILEGE_CHANGE_OPTIONAL_FIELDS, **kwargs
+        val,
+        PRIVILEGE_CHANGE_COMMON_FIELDS,
+        {k: bool | None for k in Roles.all_admin_roles().markers()},
+        **kwargs,
     )
 
     return PrivilegeChange(val)
@@ -1904,7 +1921,7 @@ def _privilege_change(
 def _input_file(val: Any, argname: str | None = None, **kwargs: Any) -> InputFile:
     if not isinstance(val, werkzeug.datastructures.FileStorage):
         raise ValidationSummary(TypeError(argname, n_("Not a FileStorage.")))
-    blob = val.read()
+    blob: bytes = val.read()
     if not blob:
         raise ValidationSummary(ValueError(argname, n_("Empty FileStorage.")))
     return InputFile(blob)
@@ -2374,12 +2391,10 @@ def _event(
 
     errs = ValidationSummary()
 
-    configuration_keys: set[str] = set().union(
-        *map(
-            dict.keys,  # type: ignore[arg-type]
-            models_event._EventConfigurationMixin.validation_fields(creation=creation),
-        )
+    mandatory, optional = models_event._EventConfigurationMixin.validation_fields(
+        creation=creation
     )
+    configuration_keys = set(mandatory) | optional.keys()
     configuration_fields = {k: v for k, v in val.items() if k in configuration_keys}
     if configuration_fields:
         with errs:
@@ -2566,6 +2581,9 @@ def _event_track(
     id_: int,
     **kwargs: Any,
 ) -> CdEDBObject:
+
+    min_choices: int
+    num_choices: int
     if creation:
         min_choices = val["min_choices"]
         num_choices = val["num_choices"]
@@ -3220,7 +3238,7 @@ def _questionnaire_magic_row(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.QuestionnaireRow,  # type: ignore[type-abstract]
+    models_event.questionnaire.QuestionnaireRow,
     allow_superfluous=True,
     pass_superfluous=True,
 )
@@ -3258,7 +3276,7 @@ def _questionnaire(
     available_magic_roles = all_questionnaires.get_available_magic_roles(kind)
 
     # Map list position to "id" to display errors at the correct place in the frontend.
-    pos_to_id = {}
+    pos_to_id: dict[int, int] = {}
 
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
@@ -3466,6 +3484,7 @@ def _partial_course(
 
     val = _mapping(val, argname, **kwargs)
 
+    mandatory_fields: TypeMapping
     if creation:
         mandatory_fields = {**PARTIAL_COURSE_COMMON_FIELDS}
         optional_fields = {**PARTIAL_COURSE_OPTIONAL_FIELDS}
@@ -3481,7 +3500,8 @@ def _partial_course(
         val,
         mandatory_fields,
         optional_fields,
-        **dict(kwargs, association=const.FieldAssociations.course),
+        association=const.FieldAssociations.course,
+        **kwargs,
     )
 
     errs = ValidationSummary()
@@ -3519,6 +3539,7 @@ def _partial_lodgement_group(
     """
     val = _mapping(val, argname, **kwargs)
 
+    mandatory_fields: TypeMapping
     if creation:
         mandatory_fields = {**PARTIAL_LODGEMENT_GROUP_FIELDS}
         optional_fields: TypeMapping = {}
@@ -3552,6 +3573,7 @@ def _partial_lodgement(
     """
     val = _mapping(val, argname, **kwargs)
 
+    mandatory_fields: TypeMapping
     if creation:
         mandatory_fields = {**PARTIAL_LODGEMENT_COMMON_FIELDS}
         optional_fields = {**PARTIAL_LODGEMENT_OPTIONAL_FIELDS}
@@ -3567,7 +3589,8 @@ def _partial_lodgement(
         val,
         mandatory_fields,
         optional_fields,
-        **dict(kwargs, association=const.FieldAssociations.lodgement),
+        association=const.FieldAssociations.lodgement,
+        **kwargs,
     )
 
     return PartialLodgement(val)
@@ -3619,6 +3642,7 @@ def _partial_registration(
 
     val = _mapping(val, argname, **kwargs)
 
+    mandatory_fields: TypeMapping
     if creation:
         mandatory_fields = dict(PARTIAL_REGISTRATION_COMMON_FIELDS, persona_id=ID)
         optional_fields = {
@@ -3639,7 +3663,8 @@ def _partial_registration(
         val,
         mandatory_fields,
         optional_fields,
-        **dict(kwargs, association=const.FieldAssociations.registration),
+        association=const.FieldAssociations.registration,
+        **kwargs,
     )
 
     errs = ValidationSummary()
@@ -3881,7 +3906,7 @@ def _serialized_event_questionnaire(
             f.field_name: f for f in all_questionnaires.event.fields.values()
         }
     else:
-        val['fields'] = {}
+        val['fields'] = {}  # pyrefly: ignore[implicit-any-empty-container]
 
     if 'questionnaire' in val:
         new_questionnaires = {}
@@ -3913,7 +3938,7 @@ def _serialized_event_questionnaire(
                 new_questionnaires[kind] = existing.as_dicts()
         val['questionnaire'] = new_questionnaires
     else:
-        val['questionnaire'] = {}
+        val['questionnaire'] = {}  # pyrefly: ignore[implicit-any-empty-container]
 
     if errs:
         raise errs
@@ -3942,9 +3967,9 @@ def _serialized_event_configuration(
             )
 
     # Check registration time compatibility.
-    start = val.get('registration_start')
-    soft = val.get('registration_soft_limit')
-    hard = val.get('registration_hard_limit')
+    start: datetime.datetime | None = val.get('registration_start')
+    soft: datetime.datetime | None = val.get('registration_soft_limit')
+    hard: datetime.datetime | None = val.get('registration_hard_limit')
     if current:
         start = start or current.registration_start
         soft = soft or current.registration_soft_limit
@@ -4337,9 +4362,11 @@ def _ballot_candidate(
     """
     val = _mapping(val, argname, ignore_warnings=ignore_warnings, **kwargs)
 
+    mandatory_fields: TypeMapping
+    optional_fields: TypeMapping
     if creation:
         mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
-        optional_fields: TypeMapping = {}
+        optional_fields = {}
     else:
         mandatory_fields = {}
         optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
@@ -4805,7 +4832,7 @@ def _query(val: Any, argname: str | None = None, **kwargs: Any) -> Query:
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[type-abstract, type-var]
         except ValidationSummary as e:
             errs.extend(e)
             continue

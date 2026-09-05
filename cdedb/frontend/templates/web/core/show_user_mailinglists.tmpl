@@ -1,3 +1,4 @@
+{% if ambience['persona']['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}

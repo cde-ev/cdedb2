@@ -36,6 +36,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     BALLOT_CANDIDATE_COMMON_FIELDS,
@@ -68,8 +69,6 @@ ASSEMBLY_BAR_ABBREVIATION = "#"
 class AssemblyBallotMixin(AssemblyBaseFrontend):
     """Organize congregations and vote on ballots."""
 
-    realm = "assembly"
-
     def _group_ballots(
         self, rs: RequestState, assembly_id: int
     ) -> GroupedBallots | None:
@@ -97,7 +96,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         return self.assemblyproxy.group_ballots(rs, assembly_id)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def list_ballots(self, rs: RequestState, assembly_id: int) -> Response:
         """View available ballots for an assembly."""
         if not self.assemblyproxy.may_assemble(
@@ -128,7 +127,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             },
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def ballot_template(
         self, rs: RequestState, assembly_id: int, ballot_id: int
     ) -> Response:
@@ -165,7 +164,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             mandatory_fields=get_mandatory_form_fields(self.ballot_template_redirect),
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     @REQUESTdata("target_assembly_id", "source_id")
     def ballot_template_redirect(
         self,
@@ -187,7 +186,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             },
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     @REQUESTdata("source_id", _postpone_validation=True)
     @assembly_guard
     def create_ballot_form(
@@ -239,7 +238,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS),
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     # the linked_attachments must be passed here since we expect a list
     @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS, ("linked_attachments", "[str]"))
@@ -255,7 +254,6 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         data = check(rs, vtypes.Ballot, data, creation=True)
         if rs.has_validation_errors():
             return self.create_ballot_form(rs, assembly_id)
-        assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
         code = self._set_ballot_attachments(rs, new_id, data["linked_attachments"])
         rs.notify_return_code(code)
@@ -275,7 +273,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         attachment_ids_ = set(filter(None, attachment_ids))
         return self.assemblyproxy.set_ballot_attachments(rs, ballot_id, attachment_ids_)
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @REQUESTdata("secret")
     def show_old_vote(
         self, rs: RequestState, assembly_id: int, ballot_id: int, secret: str
@@ -289,7 +287,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             return self.show_ballot_result(rs, assembly_id, ballot_id)
         return self.show_ballot_result(rs, assembly_id, ballot_id, secret.strip())
 
-    @access("assembly")
+    @access(Roles.assembly)
     def show_ballot(
         self, rs: RequestState, assembly_id: int, ballot_id: int
     ) -> Response:
@@ -373,7 +371,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         # Get ids of managed assemblies.
         assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
-        if "assembly_presider" not in rs.user.admin_views:
+        if AdminViews.assembly_presider not in rs.user.admin_views:
             assembly_ids &= rs.user.presider
 
         return self.render(
@@ -394,7 +392,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             },
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def show_ballot_result(
         self,
         rs: RequestState,
@@ -447,7 +445,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
-                    "Against all Candidates"
+                    "\"Against all\" option"
                 )
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
@@ -727,7 +725,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             )
         return store
 
-    @access("assembly")
+    @access(Roles.assembly)
     def summary_ballots(self, rs: RequestState, assembly_id: int) -> Response:
         """Give an online summary of all tallied ballots of an assembly."""
         if not self.assemblyproxy.may_assemble(
@@ -756,7 +754,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             },
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def change_ballot_form(
         self, rs: RequestState, assembly_id: int, ballot_id: int
@@ -791,7 +789,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             get_mandatory_form_fields(BALLOT_EXPOSED_FIELDS),
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     # the linked_attachments must be passed here since we expect a list
     @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS, ("linked_attachments", "[str]"))
@@ -807,14 +805,13 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         data = check(rs, vtypes.Ballot, data)
         if rs.has_validation_errors():
             return self.change_ballot_form(rs, assembly_id, ballot_id)
-        assert data is not None
 
         code = self._set_ballot_attachments(rs, ballot_id, data['linked_attachments'])
         code *= self.assemblyproxy.set_ballot(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def reschedule_ballots_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form allowing to select some ballots for rescheduling."""
@@ -830,7 +827,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             get_mandatory_form_fields(self.reschedule_ballots),
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata("ballot_ids", "vote_begin", "vote_end", "vote_extension_end")
     def reschedule_ballots(
@@ -880,7 +877,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         return self.redirect(rs, "assembly/summary_ballots")
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def comment_concluded_ballot_form(
         self, rs: RequestState, assembly_id: int, ballot_id: int
@@ -891,7 +888,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         merge_dicts(rs.values, rs.ambience['ballot'])
         return self.render(rs, "ballot/comment_ballot")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata("comment")
     def comment_concluded_ballot(
@@ -906,7 +903,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     def ballot_start_voting(
         self, rs: RequestState, assembly_id: int, ballot_id: int
@@ -937,7 +934,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         time.sleep(0.1)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @ack_delete()
     def delete_ballot(
@@ -961,7 +958,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/list_ballots")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     def vote(self, rs: RequestState, assembly_id: int, ballot_id: int) -> Response:
         """Decide on the options of a ballot.
 
@@ -1027,7 +1024,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_result(
         self, rs: RequestState, assembly_id: int, ballot_id: int
     ) -> Response:
@@ -1044,13 +1041,13 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             rs, path=path, inline=False, filename=f"ballot_{ballot_id}_result.json"
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     def edit_candidates(
         self, rs: RequestState, assembly_id: int, ballot_id: int
     ) -> Response:
         """Create, edit and delete candidates of a ballot."""
-        existing_candidates = rs.ambience['ballot']['candidates'].keys()
+        existing_candidates: set[int] = set(rs.ambience['ballot']['candidates'])
         candidates = process_dynamic_input(
             rs,
             vtypes.BallotCandidate,

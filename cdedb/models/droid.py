@@ -234,8 +234,12 @@ class StaticAPIToken(APIToken):
         return cls._get_token_string(cls.get_droid_name(), secret)
 
 
-class ResolveToken(StaticAPIToken):
+class CyberAkaResolveToken(StaticAPIToken):
     name = "resolve"  #:
+
+
+class ZammadResolveToken(StaticAPIToken):
+    name = "zammad_resolve"  #:
 
 
 class QuickPartialExportToken(StaticAPIToken):

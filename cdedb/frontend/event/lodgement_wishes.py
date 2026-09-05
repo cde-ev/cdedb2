@@ -133,7 +133,7 @@ def detect_lodgement_wishes(
                 continue
             other_registration = registrations[other_registration_id]
 
-            wishes_raw = registration['fields'].get(wish_field_name, '')
+            wishes_raw: str = registration['fields'].get(wish_field_name, '')
             match = pattern.search(wishes_raw)
             if not match:
                 continue
@@ -298,8 +298,8 @@ def create_lodgement_wishes_graph(
     rs: RequestState,
     registrations: models.RegistrationMap,
     wishes: list[LodgementWish],
-    lodgements: models.CdEDataclassMap[models.Lodgement],
-    lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
+    lodgements: models.LodgementMap,
+    lodgement_groups: models.LodgementGroupMap,
     event: models.Event,
     personas: CdEDataclassMap[EventPersona],
     camping_mat_field_names: Mapping[int, str | None],
@@ -394,7 +394,7 @@ def create_lodgement_wishes_graph(
         referenced_registraion_ids.add(wish.wishing)
 
     # We offer clustering by lodgement and/or by lodgement group.
-    lodgement_clusters: dict[int, graphviz.Digraph] = {}
+    lodgement_clusters: dict[vtypes.LodgementID, graphviz.Digraph] = {}
     if cluster_by_lodgement:
         for lodgement_id, lodgement in lodgements.items():
             lodgement_clusters[lodgement_id] = graphviz.Digraph(

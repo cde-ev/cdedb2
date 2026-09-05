@@ -70,7 +70,9 @@ if TYPE_CHECKING:
 # meta
 #
 
-EventDataclassMap = CdEDataclassMap["Event"]
+type EventDataclassMap = CdEDataclassMap[Event]
+
+type EventAssociatedFieldsType = type[vtypes.EventAssociatedFields]  # pyrefly: ignore[invalid-annotation]
 
 
 @dataclasses.dataclass
@@ -636,7 +638,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         return self
 
     @property  # type: ignore[misc]
-    def tracks(self) -> CdEDataclassMap["CourseTrack"]:
+    def tracks(self) -> CdEDataclassMap["CourseTrack"]:  # pyrefly: ignore[bad-override]
         return {self.id: self}
 
     @tracks.setter
@@ -712,6 +714,7 @@ class EventFee(EventDataclass):
     def visual_debug(self) -> str:
         if not self.is_conditional():
             return ""
+        assert self.condition is not None
         parse_result = fcp_parsing.parse(self.condition)
         return fcp_roundtrip.visual_debug(
             parse_result,
@@ -953,7 +956,8 @@ class CustomQueryFilter(EventDataclass):
         Return a sorted list of titles of existing fields and potentially names
         of deleted fields.
         """
-        valid, invalid = [], []
+        valid: list[str] = []
+        invalid: list[str] = []
         for f in self.fields:
             if f in spec:
                 valid.append(spec[f].get_title(g))
@@ -1069,7 +1073,7 @@ class TrackGroup(EventDataclass):
         return self.constraint_type, self.sortkey, self.title
 
 
-class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
+class SyncTrackGroup(TrackGroup, CourseChoiceObject):
     constraint_type = const.CourseTrackGroupType.course_choice_sync
 
     def is_complex(self) -> bool:
@@ -1080,7 +1084,7 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
         return list(self.tracks.values())[0]
 
     @property
-    def num_choices(self) -> vtypes.NonNegativeInt:
+    def num_choices(self) -> vtypes.NonNegativeInt:  # pyrefly: ignore[bad-override]
         return self.reference_track.num_choices
 
     @num_choices.setter
@@ -1089,7 +1093,7 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
             track.num_choices = value
 
     @property
-    def min_choices(self) -> vtypes.NonNegativeInt:
+    def min_choices(self) -> vtypes.NonNegativeInt:  # pyrefly: ignore[bad-override]
         return self.reference_track.min_choices
 
     @min_choices.setter
@@ -1172,7 +1176,7 @@ class Course(EventDataclass):
     notes: str | None
 
     fields: vtypes.EventAssociatedFields = dataclasses.field(
-        default_factory=cast(type[vtypes.EventAssociatedFields], dict),
+        default_factory=cast(EventAssociatedFieldsType, dict),
         metadata=Meta.request_exclude.as_dict,
     )
 
@@ -1214,7 +1218,9 @@ class Course(EventDataclass):
             if "segments" in ret:
                 # During validation we also accept None, meaning to delete the segment,
                 #  i.e. it is not (or no longer) offered.
-                ret["segments"] = CdEDataclassMap[CourseSegment | None]
+                ret["segments"] = cast(
+                    TypeForm[Any], CdEDataclassMap[CourseSegment | None]
+                )
         return mandatory, optional
 
 
@@ -1256,18 +1262,22 @@ class CourseSegment(EventDataclass):
 # get_lodgement_group + get_lodgement
 #
 
+type LodgementGroupMap = dict[vtypes.LodgementGroupID, LodgementGroup]
+
 
 @dataclasses.dataclass
 class LodgementGroup(EventDataclass):
     database_table = "event.lodgement_groups"
 
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.LodgementGroupID = dataclasses.field(
+        metadata=(Meta.input_exclude).as_dict
+    )
 
     # event: Event
     event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     title: str
 
-    lodgement_ids: set[int] = dataclasses.field(
+    lodgement_ids: set[vtypes.LodgementID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
     regular_capacity: int = dataclasses.field(
@@ -1309,12 +1319,15 @@ class LodgementGroup(EventDataclass):
 LODGEMENT_GROUP_PLACEHOLDER_ID = vtypes.ID(1)
 
 
+type LodgementMap = dict[vtypes.LodgementID, Lodgement]
+
+
 @dataclasses.dataclass
 class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
 
-    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    id: vtypes.LodgementID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     event: Event = dataclasses.field(
         init=False,
@@ -1325,7 +1338,7 @@ class Lodgement(EventDataclass):
     )
     event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     group: LodgementGroup
-    group_id: vtypes.ID
+    group_id: vtypes.LodgementGroupID
 
     title: str
     regular_capacity: vtypes.NonNegativeInt
@@ -1333,7 +1346,7 @@ class Lodgement(EventDataclass):
     notes: str | None
 
     fields: vtypes.EventAssociatedFields = dataclasses.field(
-        default_factory=cast(type[vtypes.EventAssociatedFields], dict)
+        default_factory=cast(EventAssociatedFieldsType, dict)
     )
 
     @classmethod

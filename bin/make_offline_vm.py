@@ -297,7 +297,7 @@ def work(
             make_meta_info(cur)
             for table in tables:
                 print("Populating table {}".format(table))
-                values = copy.deepcopy(data[table])
+                values: CdEDBObject = copy.deepcopy(data[table])
                 # Prevent forward references
                 if table == 'event.events':
                     for key in ('lodge_field_id', 'reimbursement_iban_field_id'):

@@ -32,7 +32,6 @@ from cdedb.common import (
     CdEDBObject,
     Error,
     RequestState,
-    Role,
     diacritic_patterns,
     make_proxy,
     unwrap,
@@ -41,6 +40,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import GenericLogFilter
+from cdedb.common.roles import Realms, Roles, RoleSet
 from cdedb.common.validation import validate
 from cdedb.config import Config
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -105,14 +105,13 @@ def singularize[T](
     return singularized
 
 
-def access[F: Callable[..., Any]](*roles: Role) -> Callable[[F], F]:
+def access[F: Callable[..., Any]](*roles: RoleSet | Roles) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
     Think of this as an RPC interface, only published functions are
     accessible (and only by users with the necessary roles).
 
-    Any of the specfied roles suffices. To require more than one role, you can
-    chain two decorators together.
+    Any of the specfied roles suffices. Combined roles need to be fulfilled entirely.
     """
 
     def decorator(function: F) -> F:
@@ -120,13 +119,13 @@ def access[F: Callable[..., Any]](*roles: Role) -> Callable[[F], F]:
         def wrapper(
             self: "AbstractBackend", rs: RequestState, *args: Any, **kwargs: Any
         ) -> Any:
-            if rs.user.all_roles.isdisjoint(roles):
+            if not rs.user.new_roles.has_any(*roles):
                 raise PrivilegeError(
                     n_(
                         "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
                     ),
                     {
-                        "user_roles": rs.user.all_roles,
+                        "user_roles": rs.user.new_roles,
                         "roles": roles,
                         "method": function.__name__,
                     },
@@ -166,14 +165,20 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     which is sufficient for some cases).
     """
 
-    #: abstract str to be specified by children
-    realm: ClassVar[str]
+    realm: ClassVar[str | Realms]
+    admin_role: ClassVar[Roles | None] = None
+
+    @classmethod
+    def realm_str(cls) -> str:
+        if isinstance(cls.realm, str):
+            return cls.realm
+        return cls.realm.name
 
     def __init__(self) -> None:
         self.conf = Config()
         # initialize logging
         # logger are thread-safe!
-        self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
+        self.logger = logging.getLogger(f"cdedb.backend.{self.realm_str()}")
         self.logger.debug(f"Instantiated {self} with config {self.conf}.")
         # make the logger available to the query mixin
         super().__init__(self.logger)
@@ -194,14 +199,19 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
 
     @classmethod
-    @abc.abstractmethod
     def is_admin(cls, rs: RequestState) -> bool:
         """We abstract away the admin privilege.
 
         Maybe this can be beefed up to check for orgas and moderators too,
         but for now it only checks the admin role.
         """
-        return f"{cls.realm}_admin" in rs.user.roles
+        if cls.admin_role:
+            admin_role = cls.admin_role
+        elif isinstance(cls.realm, Realms):
+            admin_role = cls.realm.admin_role
+        else:
+            raise RuntimeError
+        return admin_role in rs.user.new_roles
 
     # coverage: We do not expect to trigger an exception to be logged by this.
     def cgitb_log(self) -> None:  # pragma: no cover
@@ -534,7 +544,10 @@ class Silencer:
         self.rs.is_quiet = True
 
     def __exit__(
-        self, atype: type[Exception], value: Exception, tb: TracebackType
+        self,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         self.rs.is_quiet = False
 
@@ -613,7 +626,10 @@ class DatabaseLock:
         return self if was_locking_successful else None
 
     def __exit__(
-        self, atype: type[Exception], value: Exception, tb: TracebackType
+        self,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
+        tb: TracebackType | None,
     ) -> Literal[False]:
         if self.rs._conn.status == psycopg2.extensions.STATUS_IN_TRANSACTION:
             # We are not atomized so a commit is always possible
@@ -629,8 +645,8 @@ class DatabaseLock:
 
 
 @overload
-def affirm_validation(
-    assertion: type[CdEDataclass], value: Any, **kwargs: Any
+def affirm_validation[T: CdEDataclass](
+    assertion: TypeForm[T], value: Any, **kwargs: Any
 ) -> CdEDBObject: ...
 
 
@@ -639,7 +655,7 @@ def affirm_validation[T](assertion: TypeForm[T], value: Any, **kwargs: Any) -> T
 
 
 def affirm_validation[T](
-    assertion: TypeForm[T] | type[CdEDataclass], value: Any, **kwargs: Any
+    assertion: TypeForm[T], value: Any, **kwargs: Any
 ) -> T | CdEDBObject:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
@@ -652,8 +668,8 @@ def affirm_validation[T](
 
 
 @overload
-def inspect_validation(
-    type_: type[CdEDataclass],
+def inspect_validation[T: CdEDataclass](
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = True,
@@ -663,7 +679,7 @@ def inspect_validation(
 
 @overload
 def inspect_validation[T](
-    type_: type[T],
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = True,
@@ -672,7 +688,7 @@ def inspect_validation[T](
 
 
 def inspect_validation[T](
-    type_: type[T | CdEDataclass],
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = True,

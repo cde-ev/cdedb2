@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 
 {% block title %}
-    {% if ambience['part_group'] %}
+    {% if 'part_group' in ambience %}
         {% trans event_title=ambience['event']['title'] %}
             Change part group ({{ event_title }})
         {% endtrans %}
@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block heading %}
-    {% if ambience['part_group'] %}
+    {% if 'part_group' in ambience %}
         {{ util.context_heading(gettext("Change part group"),
                                 ambience['part_group']['title'], 'bullseye', gettext('Part Group'),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
@@ -31,7 +31,7 @@
     {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
     {{ util.breadcrumb_link(cdedblink("event/group_summary"), gettext("Groups_[[part or track]]")) }}
-    {% if ambience['part_group'] %}
+    {% if 'part_group' in ambience %}
         {{ util.breadcrumb_link("", ambience['part_group']['title'], icon="bullseye", readonly=True) }}
         {{ util.breadcrumb_link(cdedblink("event/change_part_group_form"), gettext("Change"), active=True) }}
     {% else %}
@@ -40,7 +40,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if ambience['part_group'] %}
+    {% if 'part_group' in ambience %}
         {% set action = 'event/change_part_group' %}
     {% else %}
         {% set action = 'event/add_part_group' %}
@@ -50,7 +50,7 @@
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes")) }}
-        {% if ambience['part_group'] %}
+        {% if 'part_group' in ambience %}
             {{ util.form_input_static(
                     label=gettext("Type"), value=util.make_icon(ambience['part_group']['constraint_type'].get_icon())
                                                  + nbsp + gettext(ambience['part_group']['constraint_type']|string)) }}

@@ -125,6 +125,7 @@
             /* Remove names from prototype row to avoid interference with new rows */
             $element.find('.drow-prototype .drow-input').removeAttr('name');
 
+            reorder_by_pos();
             refresh();
         };
 
@@ -183,6 +184,43 @@
         }
 
         /**
+         * Reorder the rows in the DOM on first load, according to the initial value of their pos inputs.
+         *
+         * This ensures that moved and inserted rows remain at their correct positions if the form is rendered
+         * again with validation errors.
+         */
+        var reorder_by_pos = function () {
+            // Gather all non-prototype rows and map them by the value of their pos input if it exists.
+            let all_rows = $element.find(".drow-row,.drow-new").not(".drow-prototype");
+            let rows_by_pos = {};
+            all_rows.each(function () {
+                let pos = $(this).find(".input-pos").val();
+                if (pos !== undefined) {
+                    rows_by_pos[pos] = $(this);
+                }
+            })
+
+            // Build a list of rows sorted by pos values. This assumes that the positions are contiguous from 0 to n-1.
+            let sorted = [];
+            for (let i = 0; i < all_rows.length; i++) {
+                if (rows_by_pos[i] !== undefined) {
+                    sorted.push(rows_by_pos[i]);
+                }
+            }
+
+            // If sorted list equals initial list in length, detach all rows from the DOM, then reinsert them in sort order
+            // above the prototype row.
+            if (all_rows.length == sorted.length) {
+                let prototype = $element.find(".drow-prototype");
+                all_rows.detach();
+                sorted.forEach(function (elem) {
+                    prototype.before(elem);
+                })
+                // console.log("Great Success!")
+            }
+        };
+
+        /**
          * To be called after adding a new row or moving rows.
          *
          * Sets the 'pos' input for all rows according to their position in the DOM, if it exists.
@@ -200,7 +238,7 @@
 
             // Iterate over all new rows to ensure there are no gaps in the drow ids.
             //  This changes the input names, and thus the extraction order, but the
-            //  final order can determined by position anyway.
+            //  final order can be determined by position anyway.
             i = -1;
             $element.find('.drow-new').each(function() {
                 setDRowID($(this), i);

@@ -10,7 +10,7 @@ import collections
 import dataclasses
 from collections.abc import Collection, Iterator
 from functools import cached_property
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -24,7 +24,6 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
     DeletionBlockers,
     PsycoJson,
@@ -37,6 +36,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
@@ -67,7 +67,7 @@ class LodgementInhabitants:
 
 class EventLodgementBackend(EventBaseBackend, abc.ABC):
     def _get_event_id_from_group_id(
-        self, rs: RequestState, group_id: int
+        self, rs: RequestState, group_id: vtypes.LodgementGroupID
     ) -> vtypes.EventID:
         q = f"SELECT event_id FROM {models.LodgementGroup.database_table} WHERE id = %s"
         event_id = unwrap(self.query_one(rs, q, [group_id]))
@@ -77,23 +77,26 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             )
         return event_id
 
-    @access("event")
+    @access(Roles.event)
     def get_lodgement_groups(
         self, rs: RequestState, event_id: vtypes.EventID
-    ) -> models.CdEDataclassMap[models.LodgementGroup]:
+    ) -> models.LodgementGroupMap:
         event_id = affirm(vtypes.EventID, event_id)
         with Atomizer(rs):
             group_data = self.query_all(
                 rs, *models.LodgementGroup.get_select_query((event_id,))
             )
-        return models.LodgementGroup.many_from_database(group_data)
+        return cast(
+            models.LodgementGroupMap,
+            models.LodgementGroup.many_from_database(group_data),
+        )
 
-    @access("event")
+    @access(Roles.event)
     def set_lodgement_group(
-        self, rs: RequestState, group_id: int, data: CdEDBObject
+        self, rs: RequestState, group_id: vtypes.LodgementGroupID, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Update some keys of a lodgement group."""
-        group_id = affirm(vtypes.ID, group_id)
+        group_id = affirm(vtypes.LodgementGroupID, group_id)
         data = affirm(models.LodgementGroup, data)
         data['id'] = group_id
         ret = 1
@@ -118,9 +121,9 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement_group_blockers(
-        self, rs: RequestState, group_id: int
+        self, rs: RequestState, group_id: vtypes.LodgementGroupID
     ) -> DeletionBlockers:
         """Determine what keeps a lodgement group from being deleted.
 
@@ -131,7 +134,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        group_id = affirm(vtypes.ID, group_id)
+        group_id = affirm(vtypes.LodgementGroupID, group_id)
         blockers = {}
 
         lodgements = self.sql_select(
@@ -146,16 +149,19 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return blockers
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement_group(
-        self, rs: RequestState, group_id: int, cascade: Collection[str] | None = None
+        self,
+        rs: RequestState,
+        group_id: vtypes.LodgementGroupID,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Delete a lodgement group.
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        group_id = affirm(vtypes.ID, group_id)
+        group_id = affirm(vtypes.LodgementGroupID, group_id)
         event_id = self._get_event_id_from_group_id(rs, group_id)
         if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged to modify lodgement groups."))
@@ -182,7 +188,9 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                         lodgement_cascade = ("inhabitants",)
                         for lodgement_id in blockers["lodgements"]:
                             ret *= self.delete_lodgement(
-                                rs, lodgement_id, lodgement_cascade
+                                rs,
+                                vtypes.LodgementID(vtypes.ID(lodgement_id)),
+                                lodgement_cascade,
                             )
 
                 blockers = self.delete_lodgement_group_blockers(rs, group_id)
@@ -203,16 +211,20 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def list_lodgements(
-        self, rs: RequestState, event_id: vtypes.EventID, group_id: int | None = None
-    ) -> dict[int, str]:
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        group_id: vtypes.LodgementGroupID | None = None,
+    ) -> dict[vtypes.LodgementID, str]:
         """List all lodgements for an event.
 
         :param group_id: If given, limit to lodgements in this group.
         :returns: dict mapping ids to names
         """
         event_id = affirm(vtypes.EventID, event_id)
+        group_id = affirm(vtypes.LodgementGroupID | None, group_id)
         if not is_privileged(rs, EventPrivileges.lodgements_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         if group_id:
@@ -236,15 +248,15 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         )
         return {e['id']: e['title'] for e in data}
 
-    @access("event")
+    @access(Roles.event)
     def new_get_lodgements(
         self,
         rs: RequestState,
         lodgement_ids: Collection[int],
         *,
         _event: models.Event | None = None,
-    ) -> models.CdEDataclassMap[models.Lodgement]:
-        lodgement_ids = affirm(set[vtypes.ID], lodgement_ids)
+    ) -> models.LodgementMap:
+        lodgement_ids = affirm(set[vtypes.LodgementID], lodgement_ids)
         with Atomizer(rs):
             lodgement_data = self.query_all(
                 rs, *models.Lodgement.get_select_query(lodgement_ids)
@@ -264,28 +276,33 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 event = _event
             else:
                 event = self.get_event(rs, event_id)
-        return models.Lodgement.many_from_database([
-            {
-                **lodge,
-                'group': groups[lodge['group_id']],
-                'event': event,
-            }
-            for lodge in lodgement_data
-        ])
+        return cast(
+            models.LodgementMap,
+            models.Lodgement.many_from_database([
+                {
+                    **lodge,
+                    'group': groups[lodge['group_id']],
+                    'event': event,
+                }
+                for lodge in lodgement_data
+            ]),
+        )
 
     class _NewGetLodgementProtocol(Protocol):
-        def __call__(self, rs: RequestState, lodgement_id: int) -> models.Lodgement: ...
+        def __call__(
+            self, rs: RequestState, lodgement_id: vtypes.LodgementID
+        ) -> models.Lodgement: ...
 
     new_get_lodgement: _NewGetLodgementProtocol = singularize(
         new_get_lodgements, "lodgement_ids", "lodgement_id"
     )
 
-    @access("event")
+    @access(Roles.event)
     def set_lodgement(
-        self, rs: RequestState, lodgement_id: int, data: CdEDBObject
+        self, rs: RequestState, lodgement_id: vtypes.LodgementID, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Update some keys of a lodgement."""
-        lodgement_id = affirm(vtypes.ID, lodgement_id)
+        lodgement_id = affirm(vtypes.LodgementID, lodgement_id)
         with Atomizer(rs):
             current = self.new_get_lodgement(rs, lodgement_id)
             groups = self.get_lodgement_groups(rs, current.event_id)
@@ -347,10 +364,10 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def create_lodgement(
         self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
-    ) -> DefaultReturnCode:
+    ) -> vtypes.LodgementID:
         """Make a new lodgement."""
         event_id = affirm(vtypes.EventID, event_id)
 
@@ -373,11 +390,11 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 event_id,
                 change_note=data['title'],
             )
-        return new_id
+        return vtypes.LodgementID(vtypes.ID(new_id))
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement_blockers(
-        self, rs: RequestState, lodgement_id: int
+        self, rs: RequestState, lodgement_id: vtypes.LodgementID
     ) -> DeletionBlockers:
         """Determine what keeps a lodgement from beeing deleted.
 
@@ -389,7 +406,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        lodgement_id = affirm(vtypes.ID, lodgement_id)
+        lodgement_id = affirm(vtypes.LodgementID, lodgement_id)
         blockers = {}
 
         inhabitants = self.sql_select(
@@ -404,11 +421,11 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return blockers
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement(
         self,
         rs: RequestState,
-        lodgement_id: int,
+        lodgement_id: vtypes.LodgementID,
         cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Delete a lodgement.
@@ -416,7 +433,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        lodgement_id = affirm(vtypes.ID, lodgement_id)
+        lodgement_id = affirm(vtypes.LodgementID, lodgement_id)
         lodgement = self.new_get_lodgement(rs, lodgement_id)
         event_id = lodgement.event_id
         if not is_privileged(rs, EventPrivileges.lodgements_write, event_id=event_id):
@@ -468,19 +485,20 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def get_grouped_inhabitants(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        lodgement_ids: Collection[int] | None = None,
+        lodgement_ids: Collection[vtypes.LodgementID] | None = None,
         involved: bool | None = None,
         _registrations: models.RegistrationMap | None = None,
-    ) -> dict[int, dict[int, LodgementInhabitants]]:
+    ) -> dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.EventID, event_id)
+        lodgement_ids = affirm(set[vtypes.LodgementID] | None, lodgement_ids)
         involved = affirm(bool | None, involved)
-        _registrations = affirm(CdEDBObjectMap | None, _registrations)
+        _registrations = affirm(models.RegistrationMap | None, _registrations)
 
         if not is_privileged(
             rs,
@@ -493,7 +511,6 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         if lodgement_ids is None:
             condition = "rp.lodgement_id IS NOT NULL"
         else:
-            lodgement_ids = affirm(set[vtypes.ID], lodgement_ids)
             condition = "rp.lodgement_id = ANY(%s)"
             params.append(lodgement_ids)
         if involved is not None:
@@ -536,7 +553,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             WHERE ep.event_id = %s AND {condition}
             GROUP BY lodgement_id, part_id, is_camping_mat
         """
-        ret: dict[int, dict[int, LodgementInhabitants]]
+        ret: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
         ret = collections.defaultdict(
             lambda: collections.defaultdict(LodgementInhabitants)
         )
@@ -552,15 +569,19 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             ret[e['lodgement_id']][e['part_id']] += inhabitants
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def move_lodgements(
         self,
         rs: RequestState,
-        group_id: int,
-        target_group_id: int | None,
+        group_id: vtypes.LodgementGroupID,
+        target_group_id: vtypes.LodgementGroupID | None,
         delete_group: bool,
     ) -> DefaultReturnCode:
         """Move lodgements from one group to another or delete them with the group."""
+        group_id = affirm(vtypes.LodgementGroupID, group_id)
+        target_group_id = affirm(vtypes.LodgementGroupID | None, target_group_id)
+        delete_group = affirm(bool, delete_group)
+
         ret = 1
         with Atomizer(rs):
             event_id = self._get_event_id_from_group_id(rs, group_id)

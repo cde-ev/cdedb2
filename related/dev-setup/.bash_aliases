@@ -18,7 +18,8 @@ alias lint="uv run --directory=/cdedb2 ruff format --check; uv run --directory=/
 alias format="uv run --directory=/cdedb2 ruff format"
 alias ruff-cdedb="uv run --directory=/cdedb2 ruff check"
 alias mypy-cdedb="uv run --directory=/cdedb2 mypy"
-alias dmypy-cdedb="uv run --directory=/cdedb2 dmypy run cdedb tests bin/*.py"
+alias dmypy-cdedb="uv run --directory=/cdedb2 dmypy run"
+alias pyrefly-cdedb="uv run --directory=/cdedb2 pyrefly check"
 
 alias app-logs="sudo journalctl --no-hostname -u cdedb-app -p info"
 alias ldap-logs="sudo journalctl --no-hostname -u cde-ldap -p info"
@@ -26,3 +27,5 @@ alias all-logs="sudo journalctl --no-hostname -u cdedb-app -u cde-ldap -p info"
 
 alias test-logs="sudo journalctl --no-hostname -t cdedb-test -p info"
 alias test-logs-ldap="sudo journalctl --no-hostname -u cde-ldap-test -p info"
+
+alias doctest="uv run --directory=/cdedb2 --with pytest pytest --doctest-modules cdedb --ignore cdedb/database/evolutions --ignore cdedb/.i18n_additional.py"

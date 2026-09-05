@@ -7,7 +7,7 @@ import datetime
 import decimal
 import pathlib
 import pprint
-from typing import Any
+from typing import Any, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -52,7 +52,7 @@ def make_counter(
     return f'{prefix}{name}{num:010}{suffix}'
 
 
-def persona(context: Context) -> int:
+def persona(context: Context) -> vtypes.PersonaID:
     rs = context.script.rs()
     data = {
         'is_cde_realm': True,
@@ -119,7 +119,7 @@ def persona(context: Context) -> int:
             success = cur.rowcount
     if not success:
         raise RuntimeError("Failed password reset.")
-    return ret
+    return cast(vtypes.PersonaID, ret)
 
 
 def event(context: Context) -> int:
@@ -482,7 +482,7 @@ def mailinglist(context: Context) -> int:
         additional_footer=None,
         mod_policy=const.ModerationPolicy.unmoderated,
         moderators={
-            persona(context)  # type: ignore[misc]
+            persona(context)
             for _ in range(1 if context.quick else 3)
         },
         whitelist=set(),

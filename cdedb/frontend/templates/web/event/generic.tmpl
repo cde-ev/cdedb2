@@ -248,12 +248,14 @@
         {% endcall %}
     {% elif row.name == "CourseChoices" %}
         {% if choice_objects %}
-            {{ util.h("Course Choices", level=3, underline=True) }}
+            {% set heading = row.get_toc_entries()[0] %}
+            {{ util.h(heading.title, level=heading.level, underline=True) }}
             {{ select_all_course_choices(involved_tracks=involved_tracks) }}
         {% endif %}
     {% elif row.name == "PartSelection" %}
         {% if ambience['event'].parts|length > 1 %}
-            {{ util.h("Registration", level=3, underline=True) }}
+            {% set heading = row.get_toc_entries()[0] %}
+            {{ util.h(heading.title, level=heading.level, underline=True) }}
             {{ util.form_input_checkboxes(
                     name="parts", label=gettext("Event Parts"), entries=part_options, readonly=(registration and not preview),
                     defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.")
@@ -304,13 +306,14 @@
     {% elif row.name == "TableOfContents" %}
         <div class="toc">
             <ul>
-                {% for other_row in row.questionnaire.text_rows if other_row.title %}
-                    <li>{{ util.href("#" + "_".join(other_row.title.split()), other_row.title) }}</li>
+                {% for heading in row.questionnaire.get_toc_entries() %}
+                    <li>{{ util.href("#" + heading.anchor, gettext(heading.title) if heading.translate else heading.title) }}</li>
                 {% endfor %}
             </ul>
         </div>
     {% elif row.name == "MyData" %}
-        {{ util.h("My Data", level=3, underline=True) }}
+        {% set heading = row.get_toc_entries()[0] %}
+        {{ util.h(heading.title, level=heading.level, underline=True) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
@@ -396,7 +399,7 @@
                     "pos_" ~ part_id, defaultvalue=part_id, aclass="input-pos drow-input",
                     attributes={"data-basename": "pos_"}|xmlattr) }}
             {% if newrow %}
-                <div style="width: 75%;">
+                <div>
                     {{ util.form_input_select(
                             "role_" ~ part_id, label=gettext("Role"),
                             entries=available_magic_roles|enum_entries(processing=gettext),
@@ -407,7 +410,7 @@
                         ) }}
                 </div>
             {% else %}
-                <h3 class="panel-title" style="margin: 5px 0 0">
+                <h3 class="panel-title">
                     {% set role = values["role_" ~ part_id] %}
                     {% if role is string %}
                         {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
@@ -421,7 +424,7 @@
             {% endif %}
             <div style="clear:both;"></div>
         </div>
-        <div class="panel-body" style="padding: 10px 10px 10px 15px;">
+        <div class="panel-body">
             <div class="row">
                 <div class="col-md-6">
                     {{ util.form_input_select(
@@ -451,7 +454,7 @@
                                     "data-basename": "readonly_",
                                     "data-show_for_role": get_roles_with_field("readonly")|map("string")|list,
                                 }|xmlattr,
-                                readonly=(not values["readonly_" ~ part_id] and (kind and not kind.allow_readonly()))
+                                readonly=(("readonly_" ~ part_id not in values or not values["readonly_" ~ part_id]) and (kind and not kind.allow_readonly()))
                             ) }}
                         {{ util.output_errors("readonly_" ~ part_id, wrapper=True) }}
                     </div>
@@ -698,7 +701,7 @@
                         <td></td>
                     {% endif %}
                 {% elif js_preview %}
-                    {% if ambience['registration'] and fee.id in ambience['registration']['personalized_fees'] %}
+                    {% if 'registration' in ambience and fee.id in ambience['registration']['personalized_fees'] %}
                         {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id], fee.id) }}
                     {% else %}
                         {{ _fee_amount_td(None, fee.id) }}

@@ -7,6 +7,7 @@ import enum
 import logging
 import re
 import threading
+import zoneinfo
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -28,6 +29,7 @@ import bleach
 import freezegun.api
 import icu
 import jinja2
+import jinja2.filters
 import markdown
 import markdown.extensions.toc
 import markupsafe
@@ -156,7 +158,7 @@ def datetime_filter(
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
             icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale
         )
-        zone = _CONFIG["DEFAULT_TIMEZONE"].key
+        zone: zoneinfo.ZoneInfo = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         # isinstance check is always true since freezegun overiddes __instancecheck__
         # if isinstance(val, freezegun.api.FakeDatetime):
@@ -198,12 +200,12 @@ def money_filter(val: None, currency: str = "EUR", lang: str = "de") -> None: ..
 
 @overload
 def money_filter(
-    val: decimal.Decimal, currency: str = "EUR", lang: str = "de"
+    val: decimal.Decimal | int, currency: str = "EUR", lang: str = "de"
 ) -> str: ...
 
 
 def money_filter(
-    val: decimal.Decimal | None, currency: str = "EUR", lang: str = "de"
+    val: decimal.Decimal | int | None, currency: str = "EUR", lang: str = "de"
 ) -> str | None:
     """Custom jinja filter to format ``decimal.Decimal`` objects.
 
@@ -372,10 +374,10 @@ def tex_escape_filter(val: None) -> None: ...
 
 
 @overload
-def tex_escape_filter(val: str) -> str: ...
+def tex_escape_filter(val: Any) -> str: ...
 
 
-def tex_escape_filter(val: str | None) -> str | None:
+def tex_escape_filter(val: Any | None) -> str | None:
     """Custom jinja filter for escaping LaTeX-relevant charakters."""
     if val is None:
         return None
@@ -758,7 +760,7 @@ def dict_entries_filter[S](
     Example::
 
         >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
-                     (2, {'id': 2, 'name': 'b', 'active': False})]
+        ...          (2, {'id': 2, 'name': 'b', 'active': False})]
         >>> dict_entries_filter(items, 'name', 'active')
         [('a', True), ('b', False)]
 
@@ -786,13 +788,6 @@ def entries_filter(
     include: Container[int] | None = None,
 ) -> list[tuple[Any, ...]] | dict[Any, list[tuple[Any, ...]]]:
     """Transform a dict of dataclasses into a list of tuples of specified fields.
-
-    Example::
-
-        >>> entities = {1: Dataclass(id=1, name=a, active=True),
-                        2: Dataclass(id=2, name=b, active=False)}
-        >>> entries_filter(entities, 'name', 'active')
-        [('a', True), ('b', False)]
 
     :param entities: A dict of CdEDataclasses.
     :param args: Additional positional arguments describing which keys of
