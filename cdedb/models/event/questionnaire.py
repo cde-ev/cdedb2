@@ -97,6 +97,10 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         """Return ToC-entries resulting from this row."""
         return []
 
+    @classmethod
+    def get_footer_texts(cls, event: Event) -> list[tuple[str, CdEDBObject]]:
+        return []
+
     @staticmethod
     def get_class(
         role: const.QuestionnaireRowRole,
@@ -274,6 +278,19 @@ class CourseChoices(QuestionnaireMagicRow):
     _toc_entries = [n_("Course Choices")]
     _icon = "book"
 
+    @classmethod
+    def get_footer_texts(cls, event: Event) -> list[tuple[str, CdEDBObject]]:
+        if not event.tracks:
+            return [
+                (
+                    n_(
+                        "This event does not have any course tracks, therefore this questionnaire row won't actually be displayed. It still needs to exist."
+                    ),
+                    {},
+                )
+            ]
+        return []
+
 
 @dataclasses.dataclass
 class PartSelection(QuestionnaireMagicRow):
@@ -283,6 +300,19 @@ class PartSelection(QuestionnaireMagicRow):
     }
     _toc_entries = [n_("Registration")]
     _icon = "clock"
+
+    @classmethod
+    def get_footer_texts(cls, event: Event) -> list[tuple[str, CdEDBObject]]:
+        if len(event.parts) <= 1:
+            return [
+                (
+                    n_(
+                        "This event only has a single event part, therefore this questionnaire row won't actually be displayed. It still needs to exist."
+                    ),
+                    {},
+                )
+            ]
+        return []
 
 
 @dataclasses.dataclass

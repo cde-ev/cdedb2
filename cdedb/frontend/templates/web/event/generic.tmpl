@@ -363,6 +363,10 @@
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro questionnaire_config_entry(part_id, kind, aclass="", newrow=False) %}
+    {% set role = None if newrow else values["role_" ~ part_id] or None %}
+    {% if role is string %}
+        {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
+    {% endif %}
     <div class="panel panel-default {{ aclass }}" data-drow-id="{{ part_id }}">
         <div class="panel-heading">
             <div class="pull-right">
@@ -411,16 +415,12 @@
                 </div>
             {% else %}
                 <h3 class="panel-title">
-                    {% set role = values["role_" ~ part_id] %}
-                    {% if role is string %}
-                        {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
-                    {% endif %}
                     {% if role %}
                         {{ util.make_icon(role.get_class().get_icon()) }}
+                        {{ gettext(values["role_" ~ part_id]|string) }}
+                        {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
                     {% endif %}
-                    {{ gettext(values["role_" ~ part_id]|string) }}
                 </h3>
-                {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
             {% endif %}
             <div style="clear:both;"></div>
         </div>
@@ -504,6 +504,16 @@
                     }|xmlattr
                 ) }}
         </div>
+        {% set footer_texts = [] if role is none else role.get_class().get_footer_texts(ambience["event"]) %}
+        {% if footer_texts %}
+            <div class="panel-footer">
+                <div class="text-info">
+                    {% for text, params in footer_texts %}
+                        {{ util.output_info(gettext(text)|format(**params), aclass="help-block") }}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
     </div>
 {% endmacro %}
 

@@ -807,6 +807,9 @@ tr.drow-delete>td, tr.drow-delete1>td {
     &.questionnaire-row-magic .panel-body {
         display: none;
     }
+    & .panel-footer {
+        padding: 3px 10px 3px 15px;
+    }
 }
 .panel.drow-new, .panel.drow-new {
     border-color: #d6e9c6;

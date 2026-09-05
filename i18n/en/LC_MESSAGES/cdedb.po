@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-01 15:37+0200\n"
+"POT-Creation-Date: 2026-09-05 22:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -14808,6 +14808,16 @@ msgid "External fee does not check 'is_member'."
 msgstr ""
 
 msgid "Non-external fee depends on 'is_member'."
+msgstr ""
+
+msgid ""
+"This event does not have any course tracks, therefore this questionnaire row "
+"won't actually be displayed. It still needs to exist."
+msgstr ""
+
+msgid ""
+"This event only has a single event part, therefore this questionnaire row "
+"won't actually be displayed. It still needs to exist."
 msgstr ""
 
 #, python-format

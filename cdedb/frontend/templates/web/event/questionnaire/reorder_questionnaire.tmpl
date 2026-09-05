@@ -121,11 +121,9 @@
                             {{ generic_event.fee_breakdown_by_kind(fake_complex_fee) }}
                         </div>
                     {% elif entry.name == "CourseChoices" %}
-                        {% if choice_objects %}
-                            <div class="miniature-heading">
-                                {% trans %}Course Choices{% endtrans %}
-                            </div>
-                        {% endif %}
+                        <div class="miniature-heading">
+                            {{ gettext(entry.get_toc_entries()[0].title) }}
+                        </div>
                         {% for cco in choice_objects %}
                             {% if choice_objects|length > 1 %}
                                 <div class="miniature-heading small">
