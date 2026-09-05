@@ -204,6 +204,10 @@ ul.slim {
 }
 .help-block {
     margin-bottom: 6px;
+    color: inherit;
+    &.no-color {
+        color: #737373;
+    }
 }
 hr.strong {
     border-top: 1px solid #ddd;
