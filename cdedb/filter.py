@@ -811,7 +811,7 @@ def entries_filter(
 
 
 def hasattr_filter(entity: object, attr: Any) -> bool:
-    return hasattr(entity, attr)
+    return hasattr(entity, attr) or isinstance(entity, Mapping) and attr in entity
 
 
 #: Dictionary of custom filters we make available in the templates.
