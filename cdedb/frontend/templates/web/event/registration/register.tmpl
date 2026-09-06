@@ -25,7 +25,9 @@
                             readonly=not (ambience['event'].is_visible_for(user, is_registered=False, privileged=False)
                                           or orga_view or user.admin_views.has(AdminViews.event_mgmt))) }}
     {% if preview %}
-        {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire_form"), gettext("Configure Questionnaires")) }}
+        {{ util.breadcrumb_link(
+                cdedblink("event/configure_questionnaire_form") + "#tab_" + kind.name,
+                gettext("Configure Questionnaires")) }}
         {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
                                 gettext("Registration Preview"), active=True) }}
     {% else %}
@@ -44,6 +46,9 @@
             {{ util.href(
                     cdedblink("event/configure_questionnaire_form") + "#tab_" + kind.name, gettext("Configure Registration"),
                     aclass="btn btn-sm btn-warning", icon=kind.get_edit_icon()) }}
+            {{ util.href(cdedblink("event/reorder_questionnaire_form") + "#tab_" + kind.name, gettext("Reorder Registration"),
+                         aclass="btn btn-warning btn-sm", icon=kind.get_sort_icon(),
+                         readonly=not is_privileged_for("reorder_questionnaire_form")) }}
             {% if not preview %}
                 {{ util.href(
                         cdedblink("event/register_form", {"preview": True}), gettext("Registration Preview"),

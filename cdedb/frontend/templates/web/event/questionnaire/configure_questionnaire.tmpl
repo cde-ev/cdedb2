@@ -30,7 +30,7 @@
 {% block content %}
     <div class="p button-par">
         {{ util.href(cdedblink("event/reorder_questionnaire_form"), gettext("Reorder Questionnaires"),
-                     aclass="btn btn-warning btn-sm", icon="sort",
+                     aclass="btn btn-warning btn-sm", icon=enums["QuestionnaireUsages"].get_sort_icon(),
                      readonly=not is_privileged_for("reorder_questionnaire_form")) }}
         {{ util.href(cdedblink("event/questionnaire_import_form"), gettext("Questionnaire Import"),
                      aclass="btn btn-warning btn-sm", icon="file-upload",

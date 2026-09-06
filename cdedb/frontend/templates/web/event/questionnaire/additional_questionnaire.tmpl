@@ -24,7 +24,8 @@
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience["event"].title, icon="chalkboard-teacher") }}
     {% if preview %}
         {{ util.breadcrumb_link(
-                cdedblink("event/configure_questionnaire_form"), gettext("Configure Questionnaires")) }}
+                cdedblink("event/configure_questionnaire_form") + "#tab_" + kind.name,
+                gettext("Configure Questionnaires")) }}
         {{ util.breadcrumb_link(
                 cdedblink("event/additional_questionnaire", {"preview": True}),
                 gettext("Questionnaire Preview"), active=True) }}
@@ -43,14 +44,12 @@
         {{ util.href(
                 cdedblink("event/configure_questionnaire_form") + "#tab_" + kind.name, gettext("Configure Questionnaire"),
                 aclass="btn btn-sm btn-warning", icon=kind.get_icon()) }}
+        {{ util.href(cdedblink("event/reorder_questionnaire_form") + "#tab_" + kind.name, gettext("Reorder Questionnaire"),
+                     aclass="btn btn-warning btn-sm", icon=kind.get_sort_icon(),
+                     readonly=not is_privileged_for("reorder_questionnaire_form")) }}
         {{ util.href(
                 cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
                 aclass="btn btn-info btn-sm", icon=enums["QuestionnaireUsages"].registration.get_preview_icon()) }}
-        {% if not preview %}
-            {{ util.href(
-                    cdedblink("event/additional_questionnaire_form", {"preview": True}), gettext("Questionnaire Preview"),
-                    aclass="btn btn-info btn-sm", icon=kind.get_preview_icon()) }}
-        {% endif %}
     </div>
 {% endmacro %}
 
@@ -61,8 +60,9 @@
     {% else %}
         {% if is_privileged_for("event/configure_questionnaire") %}
             <div class="p button-par">
-                {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
-                             gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
+                {{ util.href(
+                        cdedblink("event/additional_questionnaire_form", {"preview": True}), gettext("Questionnaire Preview"),
+                        aclass="btn btn-info btn-sm", icon=kind.get_preview_icon()) }}
             </div>
         {% endif %}
         <form action="{{ cdedblink('event/additional_questionnaire') }}" method="POST" id="questionnaireform"

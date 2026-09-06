@@ -214,6 +214,10 @@ class QuestionnaireUsages(CdEIntEnum):
     def get_edit_icon(cls) -> str:
         return "edit"
 
+    @classmethod
+    def get_sort_icon(cls) -> str:
+        return "sort"
+
     @property
     def title_level(self) -> int:
         """Heading-level for custom titles in this kind of questionnaire."""

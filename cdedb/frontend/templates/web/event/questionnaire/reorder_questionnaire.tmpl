@@ -248,6 +248,18 @@
 {% endmacro %}
 
 {% block content %}
+    <div class="p button-par">
+        {{ util.href(
+                cdedblink("event/configure_questionnaire_form"), gettext("Configure Questionnaires"),
+                aclass="btn btn-sm btn-warning", icon=enums["QuestionnaireUsages"].registration.get_edit_icon()) }}
+        {{ util.href(
+                cdedblink("event/register_form", {"preview": True}), gettext("Registration Preview"),
+                aclass="btn btn-info btn-sm", icon=enums["QuestionnaireUsages"].registration.get_preview_icon()) }}
+        {{ util.href(
+                cdedblink("event/additional_questionnaire_form", {"preview": True}), gettext("Questionnaire Preview"),
+                aclass="btn btn-info btn-sm", icon=enums["QuestionnaireUsages"].additional.get_preview_icon()) }}
+    </div>
+
     {% set nav_tabs = {} %}
     {% for kind in enums["QuestionnaireUsages"] %}
         {% do nav_tabs.__setitem__(kind, {
