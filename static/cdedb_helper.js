@@ -39,7 +39,7 @@
         $forms.each(function() {
             $form = $(this);
             // Store current state
-            $form.data('serialize',$(this).serialize());
+            $form.data('serialize',$(this).find(":input:not(.no-protect)").serialize());
 
             // Add submit and abort handlers to suppress unwanted confirms
             $form.submit(function() {
@@ -55,7 +55,7 @@
         window.addEventListener('beforeunload', function(e) {
             var changed = false;
             $forms.each(function(){
-                changed = $(this).serialize() !== $(this).data('serialize') && !$(this).data('clean_exit');
+                changed = $(this).find(":input:not(.no-protect)").serialize() !== $(this).data('serialize') && !$(this).data('clean_exit');
                 return !changed;
             });
             if (changed) {

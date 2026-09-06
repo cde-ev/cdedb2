@@ -65,7 +65,7 @@
           id="configurequestionnaireform" class="protect">
         {{ util.anti_csrf_token("event/configure_questionnaire") }}
         {% call generic.tabs("usages", nav_tabs.values()) %}
-            {{ util.input_hidden("nav_tab_active") }}
+            {{ util.input_hidden("nav_tab_active", aclass="no-protect") }}
             {% for kind, tab_data in nav_tabs.items() %}
                 {% call generic.tab_pane(
                         tab_data["target"][1:],
