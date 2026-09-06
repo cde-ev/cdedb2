@@ -417,10 +417,10 @@
                     {% endif %}
                     {% if role %}
                         {{ util.make_icon(role.get_class().get_icon()) }}
+                        {{ gettext(values[drow_name("role", part_id, kind.name)]|string) }}
+                        {{ util.input_hidden(drow_name("role", part_id, kind.name), aclass="input-role") }}
                     {% endif %}
-                    {{ gettext(values[drow_name("role", part_id, kind.name)]|string) }}
                 </h3>
-                {{ util.input_hidden(drow_name("role", part_id, kind.name), aclass="input-role") }}
             {% endif %}
             <div style="clear:both;"></div>
         </div>

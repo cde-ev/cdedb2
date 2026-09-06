@@ -60,6 +60,12 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             for key, value in entry.as_dict().items()
         }
         merge_dicts(rs.values, current)
+        # Determine the max of previously submitted rows and current rows.
+        for kind in const.QuestionnaireUsages:
+            max_index = 0
+            while drow_name("role", max_index, kind.name) in rs.values:
+                max_index += 1
+            rs.values[drow_basename("current", kind.name)] = max_index
 
         checksum = get_hash(json_serialize(all_questionnaires).encode())
 
@@ -153,13 +159,16 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             new_questionnaire = []
             marker = 0
             while True:
-                if unwrap(
-                    request_extractor(rs, {drow_name("role", marker, kind.name): bool})
-                ):
+                key = drow_name("role", marker, kind.name)
+                if unwrap(request_extractor(rs, {key: bool})):
                     if row := self._extract_questionnaire_row(rs, marker, kind):
                         new_questionnaire.append(row)
-                elif marker >= len(questionnaire):
-                    break
+                else:
+                    # The request_extractor check leaves an entry in the values that
+                    #  we do not want.
+                    rs.values.pop(key, None)
+                    if marker >= len(questionnaire):
+                        break
                 marker += 1
 
             marker = 1

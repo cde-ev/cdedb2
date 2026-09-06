@@ -77,8 +77,8 @@
 
                     <div id="drow-container-{{ kind.name }}">
                         {# Old items, already stored in the database #}
-                        {% for entry in all_questionnaires[kind] %}
-                            {{ generic_event.questionnaire_config_entry(loop.index0, kind, aclass="drow-row") }}
+                        {% for i in range(values.get(drow_basename("current", kind.name), 0)) %}
+                            {{ generic_event.questionnaire_config_entry(i, kind, aclass="drow-row") }}
                         {% endfor %}
 
                         {# Items that were added by the user but failed validation. They are still new and have no official id. #}
