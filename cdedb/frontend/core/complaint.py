@@ -1216,6 +1216,36 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/show_user_measures", params)
 
+    @access(Roles.complaint_admin)
+    def list_companions(self, rs: RequestState) -> Response:
+        companions_to_cases = self.complaintproxy.list_companions(rs)
+        personas = xsorted(
+            self.coreproxy.get_personas(rs, companions_to_cases.keys()).values(),
+        )
+        case_ids = set().union(*(e for e in companions_to_cases.values()))
+        cases = self.complaintproxy.get_cases(rs, case_ids)
+        active_companions = {
+            companion_id
+            for companion_id, case_ids in companions_to_cases.items()
+            # Both case and companion are active
+            if any(
+                case.is_active
+                and companion_id not in case.get_companions(is_active=False)
+                for case in cases.values()
+            )
+        }
+
+        return self.render(
+            rs,
+            "complaint/list_companions",
+            {
+                "companions_to_cases": companions_to_cases,
+                "active_companions": active_companions,
+                "cases": cases,
+                "personas": personas,
+            },
+        )
+
     @access(Roles.complaint_admin, Roles.complaint_enforcer)
     def list_complaint_helpers(self, rs: RequestState) -> Response:
         """View list of enforcers and monitors."""
