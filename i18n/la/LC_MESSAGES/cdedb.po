@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-04 01:30+0200\n"
+"POT-Creation-Date: 2026-09-06 12:15+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -14181,6 +14181,10 @@ msgstr "Interrogatio"
 msgid "Configure Questionnaire"
 msgstr "Interrogatio"
 
+#, fuzzy
+msgid "Reorder Questionnaire"
+msgstr "Interrogatio"
+
 msgid "Submit"
 msgstr ""
 
@@ -14223,6 +14227,10 @@ msgstr "(ab %(date)s annuntiari potest)"
 
 #, fuzzy
 msgid "Reorder Questionnaires"
+msgstr "Interrogatio"
+
+#, fuzzy
+msgid "Shown to orgas on the \"Configure Questionnaires\" page."
 msgstr "Interrogatio"
 
 msgid "true"
@@ -14523,6 +14531,10 @@ msgstr "(ab %(date)s annuntiari potest)"
 
 #, fuzzy
 msgid "Configure Registration"
+msgstr "Annuntiationes"
+
+#, fuzzy
+msgid "Reorder Registration"
 msgstr "Annuntiationes"
 
 msgid "All data except Event Parts can be changed until the registration ends."

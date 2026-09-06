@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-04 01:30+0200\n"
+"POT-Creation-Date: 2026-09-06 12:15+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -14059,6 +14059,9 @@ msgstr "Teilnehmenden-Fragebogen"
 msgid "Configure Questionnaire"
 msgstr "Fragebogen konfigurieren"
 
+msgid "Reorder Questionnaire"
+msgstr "Fragebögen umordnen"
+
 msgid "Submit"
 msgstr "Abschicken"
 
@@ -14110,6 +14113,9 @@ msgstr "Fragebögen konfigurieren (%(title)s)"
 
 msgid "Reorder Questionnaires"
 msgstr "Fragebögen umordnen"
+
+msgid "Shown to orgas on the \"Configure Questionnaires\" page."
+msgstr "Wird auf der \"Datenfelder bearbeiten\"-Seite für Orgas angezeigt."
 
 msgid "true"
 msgstr "wahr"
@@ -14424,6 +14430,9 @@ msgstr "Anmeldung für %(title)s"
 
 msgid "Configure Registration"
 msgstr "Anmeldung konfigurieren"
+
+msgid "Reorder Registration"
+msgstr "Anmeldung umordnen"
 
 msgid "All data except Event Parts can be changed until the registration ends."
 msgstr ""
