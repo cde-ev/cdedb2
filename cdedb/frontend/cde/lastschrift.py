@@ -29,6 +29,7 @@ from cdedb.common import (
     lastschrift_reference,
     merge_dicts,
     now,
+    sanitize_filename,
     unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning
@@ -796,8 +797,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "Form could not be created. Please refrain from using "
             "special characters if possible."
         )
+
+        filename = full_name or "lastschrift_subscription_form"
+        if db_id:
+            filename = cdedbid_filter(db_id) + " " + filename
         pdf = self.serve_latex_document(
-            rs, tex, "lastschrift_subscription_form", errormsg=errormsg, runs=1
+            rs, tex, sanitize_filename(filename), errormsg=errormsg, runs=1
         )
         if pdf:
             return pdf

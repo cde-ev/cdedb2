@@ -1673,8 +1673,18 @@ class TestCdEFrontend(FrontendTest):
         )
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
+        # test expected filename
+        if self.user_in("charly"):
+            f["full_name"] = ""
+            expected_filename = "DB-3-5_lastschrift_subscription_form.pdf"
+        else:
+            expected_filename = "DB-22-1_Vera_Verwaltung.pdf"
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.assertEqual(
+            self.response.headers["Content-Disposition"],
+            f"inline; filename={expected_filename}",
+        )
 
     @as_users("inga")
     def test_lastschrift_subscription_form_fill_fail(self) -> None:
