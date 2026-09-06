@@ -391,4 +391,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
         code = self.eventproxy.set_questionnaires(rs, event_id, new_all_questionnaires)
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
+        return self.redirect(
+            rs,
+            "event/reorder_questionnaire_form",
+            anchor=f"tab_{submitted_kind.name}",
+        )
