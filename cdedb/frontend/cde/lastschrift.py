@@ -10,7 +10,6 @@ Everything else here requires the "finance_admin" role.
 import datetime
 import random
 import string
-from collections import OrderedDict
 from collections.abc import Collection
 
 import dateutil.easter
@@ -95,18 +94,18 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 active_lastschrifts[anid]['persona_id']
             ].get_sortkey(),
         )
-        active_lastschrifts = OrderedDict(
-            (anid, active_lastschrifts[anid]) for anid in active_last_order
-        )
+        active_lastschrifts = {
+            anid: active_lastschrifts[anid] for anid in active_last_order
+        }
         inactive_last_order = xsorted(
             inactive_lastschrifts.keys(),
             key=lambda anid: personas[
                 inactive_lastschrifts[anid]['persona_id']
             ].get_sortkey(),
         )
-        inactive_lastschrifts = OrderedDict(
-            (anid, inactive_lastschrifts[anid]) for anid in inactive_last_order
-        )
+        inactive_lastschrifts = {
+            anid: inactive_lastschrifts[anid] for anid in inactive_last_order
+        }
 
         def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
             lastschrift_id = transaction["lastschrift_id"]

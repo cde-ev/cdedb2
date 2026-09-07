@@ -1624,16 +1624,14 @@ class CoreBaseFrontend(AbstractFrontend):
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: dict[str, dict[Any, str]] = {
-            'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))
-            ),
-            'gender': collections.OrderedDict(
+            'pevent_id': dict(xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': dict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext,
                 )
             ),
-            'country': collections.OrderedDict(get_localized_country_codes(rs)),
+            'country': dict(get_localized_country_codes(rs)),
         }
         if query and query.scope == QueryScope.core_user:
             query.constraints.append(("is_archived", QueryOperators.equal, False))
