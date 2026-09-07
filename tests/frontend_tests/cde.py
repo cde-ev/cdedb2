@@ -2881,7 +2881,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNotification(msg, 'info')
         self.assertNonPresence("BuB")
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_list_past_events_admin(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
@@ -2932,7 +2932,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
         self.assertPresence("Ferdinand Findus")
 
-    @as_users("vera", "berta", "charly", "ferdinand", "inga", maintain_data=True)
+    @as_users(
+        "vera", "annika", "berta", "charly", "ferdinand", "inga", maintain_data=True
+    )
     def test_show_past_event_gallery(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
@@ -2940,7 +2942,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
-        if self.user_in(22):
+        if self.user_in("vera", "annika"):
             self.assertPresence(
                 "Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.",
@@ -2952,7 +2954,7 @@ class TestCdEFrontend(FrontendTest):
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen."
             )
         # inga is no participant nor admin
-        if self.user_in(9):
+        if self.user_in("inga"):
             self.assertNonPresence(
                 "Mediensammlung https://pa14:secret@example.cde/pa14/"
             )
@@ -2962,7 +2964,7 @@ class TestCdEFrontend(FrontendTest):
                 div='gallery-link',
             )
 
-    @as_users("vera", "berta", "charly", "garcia", "inga", maintain_data=True)
+    @as_users("vera", "annika", "berta", "charly", "garcia", "inga", maintain_data=True)
     def test_show_past_event_privacy(self) -> None:
 
         def _traverse_back() -> None:
@@ -2984,7 +2986,7 @@ class TestCdEFrontend(FrontendTest):
             self.assertPresence("Ferdinand", div='list-participants')
 
         # non-searchable users are only visible to admins and participants
-        if self.user_in("berta", "charly", "vera"):
+        if self.user_in("berta", "charly", "vera", "annika"):
             # members and participants
             self.assertPresence("Charly", div='list-participants')
             self.assertPresence("Emilia", div='list-participants')
@@ -3005,7 +3007,7 @@ class TestCdEFrontend(FrontendTest):
                 self.assertPresence("und 3 weitere", div='count-extra-participants')
 
         # links to non-searchable users are only displayed for admins
-        if self.user_in("vera"):
+        if self.user_in("vera", "annika"):
             # admin
             self.traverse('Charly Clown')
             _traverse_back()
@@ -3073,7 +3075,7 @@ class TestCdEFrontend(FrontendTest):
                     # requested user not searchable.
                     self.assertNoLink(content="Charly")
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_change_past_event(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'},
@@ -3095,7 +3097,7 @@ class TestCdEFrontend(FrontendTest):
             "https://zelda:hyrule@link.cde", div='gallery-link', exact=True
         )
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_create_past_event(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'},
@@ -3119,7 +3121,7 @@ class TestCdEFrontend(FrontendTest):
             "https://zelda:hyrule@link.cde", div='gallery-link', exact=True
         )
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_create_past_event_with_courses(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'},
@@ -3146,7 +3148,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("2. Abseilen", div='list-courses')
         self.assertPresence("3. Tretbootfahren", div='list-courses')
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_delete_past_event(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
@@ -3165,7 +3167,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("PfingstAkademie 2014")
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_change_past_course(self) -> None:
         self.traverse(
             'Veranstaltungen',
@@ -3184,7 +3186,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Loud and proud.", div='description', exact=True)
         self.assertPresence("Bertå (Bindi) Beispiel", div='list-participants')
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_create_past_course(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'},
@@ -3201,7 +3203,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Abstract Nonsense (PfingstAkademie 2014)")
         self.assertPresence("Lots of arrows.", div='description')
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_delete_past_course(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'},
@@ -3221,7 +3223,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Abstract Nonsense")
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_participant_manipulation(self) -> None:
         self.traverse(
             {'description': 'Veranstaltungen'},
@@ -3319,7 +3321,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("–", div="year-stats-unique_participants_per_year-2010")
         self.assertNonPresence("–", div="year-stats-unique_participants_per_year-2014")
 
-    @as_users("vera")
+    @as_users("vera", "annika")
     def test_past_log(self) -> None:
         # First: generate data
         logs = []
