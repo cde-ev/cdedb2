@@ -1631,10 +1631,6 @@ class TestCdEFrontend(FrontendTest):
         self.get("/cde/lastschrift/form/download")
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
-    def test_lastschrift_subscription_form_anonymous(self) -> None:
-        self.get("/cde/lastschrift/form/download")
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-
     @as_users("vera", "charly")
     def test_lastschrift_subscription_form_fill(self) -> None:
         self.traverse(
@@ -1643,16 +1639,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
         # test expected filename
-        if self.user_in("charly"):
-            f["full_name"] = ""
-            expected_filename = "DB-3-5_lastschrift_subscription_form.pdf"
-        else:
-            expected_filename = "DB-22-1_Vera_Verwaltung.pdf"
+        expected_filename = "_".join(
+            [self.user["DB-ID"]] + self.user["default_name_format"].split()
+        )
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertEqual(
+            f"inline; filename={expected_filename}.pdf",
             self.response.headers["Content-Disposition"],
-            f"inline; filename={expected_filename}",
         )
 
     @as_users("inga")
@@ -1671,14 +1665,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Checksumme stimmt nicht")
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Ungültige Checksumme")
-
-    def test_lastschrift_subscription_form_fill_anonymous(self) -> None:
-        self.get("/cde/lastschrift/form/fill")
-        self.assertTitle("Einzugsermächtigung ausfüllen")
-        f = self.response.forms['filllastschriftform']
-        f["iban"] = "DE12500105170648489890"
-        self.submit(f)
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @storage
     @as_users("vera")

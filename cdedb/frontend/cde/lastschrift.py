@@ -698,19 +698,14 @@ class CdELastschriftMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access(Roles.anonymous)
+    @access(Roles.cde)
     def lastschrift_subscription_form_fill(self, rs: RequestState) -> Response:
         """Generate a form for configuring direct debit authorization.
 
-        If we are not anonymous we prefill this with known information.
+        We prefill this with known information and allow the user to edit.
         """
-        persona = None
-        not_minor = False
-        if rs.user.persona_id:
-            persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-            not_minor = not determine_age_class(
-                persona.birthday, now().date()
-            ).is_minor()
+        persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        not_minor = not determine_age_class(persona.birthday, now().date()).is_minor()
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
         return self.render(
@@ -725,7 +720,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             get_mandatory_form_fields(self.lastschrift_subscription_form),
         )
 
-    @access(Roles.anonymous)
+    @access(Roles.cde)
     @REQUESTdata(
         "full_name", "db_id", "username", "address_supplement", "address",
         "postal_code", "location", "country", "iban", "donation", "account_holder",
@@ -777,7 +772,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "special characters if possible."
         )
 
-        filename = full_name or "lastschrift_subscription_form"
+        persona = self.coreproxy.get_persona(rs, rs.user.persona_id)
+        filename = persona.get_name() or "lastschrift_subscription_form"
         if db_id:
             filename = cdedbid_filter(db_id) + " " + filename
         pdf = self.serve_latex_document(
