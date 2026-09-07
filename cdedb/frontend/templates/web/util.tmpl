@@ -1020,7 +1020,7 @@ mailto:
 
 {% macro username_mailto(persona, email=none) -%}
     {# At query results, we have dicts instead of dataclasses. So we need containment instead of attribute checks sometimes. #}
-    {% if persona is iterable %}
+    {% if persona is mapping %}
         {# *registration* query results additionally prefix "persona.", which the persona_name filter cannot handle #}
         {% set email = email or (persona["username"] if "username" in persona) or (persona["persona.username"] if "persona.username" in persona) or "" %}
         {% set name = "{} {}".format(
