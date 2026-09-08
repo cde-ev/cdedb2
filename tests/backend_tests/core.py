@@ -1083,7 +1083,7 @@ class TestCoreBackend(BackendTest):
             "username": 'zelda@example.cde',
         }
         case_data = {
-            'realm': "ml",
+            'realm': Realms.ml,
             'notes': "Some blah",
             'attachment_hash': None,
             'pevent_id': None,
