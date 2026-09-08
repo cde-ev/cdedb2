@@ -12,6 +12,7 @@ from typing import Any
 
 from playwright.sync_api import Browser, Page, expect, sync_playwright
 
+from cdedb.common import now
 from cdedb.common.roles import Realms
 from tests.common import BrowserTest, FrontendTest, event_keeper, storage
 
@@ -59,24 +60,37 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                         try:
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
-                            if page.video:
-                                _LOGGER.info(
-                                    f"Saved video of failed test at {page.video.path()!r}."
-                                )
-                                path = pathlib.Path(page.video.path()).with_suffix(
-                                    ".png"
-                                )
-                                page.screenshot(full_page=True, path=path)
-                                _LOGGER.info(
-                                    f"Saved screenshot at point of failure to '{path}'."
-                                )
+                            failed = True
+                            screenshot = page.screenshot(full_page=True, timeout=5000)
                             raise
                         else:
-                            if page.video:  # pragma: no cover
-                                pathlib.Path(page.video.path()).unlink()
-                                _LOGGER.info(f"Removed '{page.video.path()}'.")
-                    context.close()
-                    browser.close()
+                            failed = False
+                            screenshot = None
+                        finally:
+                            context.close()
+
+                            if failed and page.video and video_dir:  # pragma: no cover
+                                video_path = pathlib.Path(video_dir) / (
+                                    now()
+                                    .isoformat(timespec="seconds")
+                                    .removesuffix("+00:00")
+                                    + ".webm"
+                                )
+                                page.video.save_as(video_path)
+                                page.video.delete()
+                                _LOGGER.info(
+                                    f"Saved video of failed test at {video_path!r}."
+                                )
+                                if screenshot:
+                                    path = video_path.with_suffix(".png")
+                                    path.write_bytes(screenshot)
+                                    _LOGGER.info(
+                                        f"Saved screenshot at point of failure to '{path}'."
+                                    )
+                            elif page.video:  # pragma: no cover
+                                page.video.delete()
+
+                            browser.close()
 
         return new_func
 
