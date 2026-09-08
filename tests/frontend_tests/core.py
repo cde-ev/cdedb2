@@ -25,7 +25,7 @@ from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import AdminViews, Realms, Roles, RoleSet
-from cdedb.filter import iban_filter
+from cdedb.filter import cdedbid_filter, iban_filter
 from tests.common import (
     ANONYMOUS,
     USER_DICT,
@@ -3386,7 +3386,7 @@ class TestCoreFrontend(FrontendTest):
         )
         self.assertPresence("(archiviert)", div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
-        f['persona_id'] = hades['id']
+        f['persona_id'] = hades["DB-ID"]
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         self.assertPresence("Account aktualisiert.", div="notifications")
 
@@ -3398,7 +3398,7 @@ class TestCoreFrontend(FrontendTest):
     ) -> None:
         f = self.response.forms['genesisdecisionform']
         if persona_id:
-            f['persona_id'] = persona_id
+            f['persona_id'] = cdedbid_filter(persona_id)
         self.submit(f, button='decision', value=str(decision), check_notification=check)
 
     @as_users("annika")
