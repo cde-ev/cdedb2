@@ -39,10 +39,12 @@ from typing import (
 
 import phonenumbers
 import psycopg2.extras
+import requests
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
+from cachetools.func import ttl_cache
 from schulze_condorcet.types import Candidate
 from typing_extensions import TypeForm
 
@@ -1564,3 +1566,24 @@ EPSILON = 10 ** (-6)  #:
 #: Specification for the output date format of money transfers.
 #: Note how this differs from the input in that we use 4 digit years.
 PARSE_OUTPUT_DATEFORMAT = "%d.%m.%Y"
+
+
+@ttl_cache(ttl=60 * 60)  # 'ttl' is in seconds, so refresh the cache once per hour.
+def get_tor_exit_nodes() -> set[str]:
+    headers = {"accept": "application/json"}
+    try:
+        response = requests.get(
+            "https://check.torproject.org/torbulkexitlist", headers=headers
+        )
+        response.raise_for_status()
+        return {line.strip() for line in response.text.splitlines() if line.strip()}
+    except Exception:
+        _LOGGER.exception("Exception during tor exit node check.")
+        return set()
+
+
+def is_tor_exit_node(ip: str) -> bool:
+    exit_nodes = get_tor_exit_nodes()
+    if not exit_nodes:
+        _LOGGER.error(f"No TOR exit nodes found while checking {ip}")
+    return ip.strip() in get_tor_exit_nodes()

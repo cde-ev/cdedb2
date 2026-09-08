@@ -49,6 +49,7 @@ import lxml.html
 import PIL.Image
 import webtest
 import webtest.utils
+import werkzeug
 from psycopg2.extras import RealDictCursor
 
 import cdedb.common.validation.types as vtypes
@@ -186,6 +187,7 @@ _SAMPLE_DATA = _read_sample_data()
 
 def _make_backend_shim[B: AbstractBackend](
     backend: B,
+    ip: str | None = None,
     internal: bool = False,
     allow_private: bool = False,
 ) -> B:
@@ -200,6 +202,7 @@ def _make_backend_shim[B: AbstractBackend](
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
+    ip = ip or "127.0.0.0"
 
     sessionproxy = SessionBackend()
     secrets = SecretsConfig()
@@ -214,7 +217,7 @@ def _make_backend_shim[B: AbstractBackend](
 
     def setup_requeststate(
         key: str | None,
-        ip: str = "127.0.0.0",
+        ip: str,
     ) -> RequestState:
         """
         Turn a provided sessionkey or apitoken into a RequestState object.
@@ -244,7 +247,7 @@ def _make_backend_shim[B: AbstractBackend](
             sessionkey=sessionkey,
             apitoken=apitoken,
             user=user,
-            request=None,  # type: ignore[arg-type]
+            request=werkzeug.Request({"REMOTE_ADDR": ip}),
             notifications=[],
             mapadapter=None,  # type: ignore[arg-type]
             requestargs=None,
@@ -295,7 +298,7 @@ def _make_backend_shim[B: AbstractBackend](
 
             @functools.wraps(attr)
             def wrapper(key: str | None, *args: Any, **kwargs: Any) -> Any:
-                rs = setup_requeststate(key)
+                rs = setup_requeststate(key, cast(str, ip))  # pyrefly: ignore[redundant-cast]  # mypy bug.
                 try:
                     return attr(rs, *args, **kwargs)
                 except FileNotFoundError as e:
@@ -308,8 +311,8 @@ def _make_backend_shim[B: AbstractBackend](
         def __setattr__(self, key: str, value: Any) -> None:
             return setattr(backend, key, value)
 
-        def get_rs(self, key: str) -> RequestState:
-            return setup_requeststate(key)
+        def get_rs(self, key: str, ip: str = cast(str, ip)) -> RequestState:  # pyrefly: ignore[redundant-cast]  # mypy bug.
+            return setup_requeststate(key, ip)
 
     return cast(B, Proxy())
 
@@ -668,12 +671,16 @@ class BackendTest(CdEDBTest):
         return backendcls()
 
     @classmethod
-    def initialize_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True, allow_private=False)
+    def initialize_backend[B: AbstractBackend](
+        cls, backendcls: type[B], ip: str | None = None
+    ) -> B:
+        return _make_backend_shim(backendcls(), ip, internal=True, allow_private=False)
 
     @classmethod
-    def initialze_private_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True, allow_private=True)
+    def initialze_private_backend[B: AbstractBackend](
+        cls, backendcls: type[B], ip: str | None = None
+    ) -> B:
+        return _make_backend_shim(backendcls(), ip, internal=True, allow_private=True)
 
 
 class BrowserTest(CdEDBTest):
@@ -1280,6 +1287,7 @@ class FrontendTest(BackendTest):
         verbose: bool = False,
         value: str | None = None,
         check_mandatory_filled: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Submit a form.
 
@@ -1322,7 +1330,7 @@ class FrontendTest(BackendTest):
             )  # pragma: no cover
         if not form.get(button, index=0, default=None):
             self.fail(f"No submit button {button!r} found.")
-        self.response = form.submit(button, value=value)
+        self.response = form.submit(button, value=value, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:

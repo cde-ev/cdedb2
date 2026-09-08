@@ -9,11 +9,13 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import affirm_validation as affirm
+from cdedb.backend.core import CoreBackend
 from cdedb.common import (
     CdEDBObject,
     GenesisDecision,
     RequestState,
     get_hash,
+    get_tor_exit_nodes,
     merge_dicts,
     nearly_now,
     now,
@@ -1070,6 +1072,27 @@ class TestCoreBackend(BackendTest):
                 self.key, self.core.get_genesis_attachment_usage
             ),
         )
+
+    def test_genesis_tor_block(self) -> None:
+        persona_data = {
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
+            "username": 'zelda@example.cde',
+        }
+        case_data = {
+            'realm': "ml",
+            'notes': "Some blah",
+            'attachment_hash': None,
+            'pevent_id': None,
+            'pcourse_id': None,
+        }
+        new_core = self.initialize_backend(
+            CoreBackend, next(iter(get_tor_exit_nodes()))
+        )
+        with self.assertRaisesRegex(
+            RuntimeError, "Blocked genesis request from TOR exit node."
+        ):
+            new_core.genesis_request(ANONYMOUS, {**persona_data, **case_data})
 
     def test_genesis_verify_multiple(self) -> None:
         self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))
