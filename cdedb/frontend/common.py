@@ -112,6 +112,11 @@ from cdedb.common import (
     _tdelta,
     asciificator,
     decode_parameter,
+    drow_basename,
+    drow_create,
+    drow_delete,
+    drow_last_index,
+    drow_name,
     encode_parameter,
     get_hash,
     get_mandatory_form_fields,
@@ -3158,26 +3163,6 @@ def make_event_fee_reference(
         fn=asciificator(persona.family_name),
         cdedbid=cdedbid_filter(persona.id),
     )
-
-
-def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
-    return drow_basename(field_name, prefix) + str(entity_id)
-
-
-def drow_basename(field_name: str, prefix: str = "") -> str:
-    return f"{prefix + "_" if prefix else ""}{field_name}_"
-
-
-def drow_create(entity_id: int, prefix: str = "") -> str:
-    return drow_name("create", entity_id, prefix)
-
-
-def drow_delete(entity_id: int, prefix: str = "") -> str:
-    return drow_name("delete", entity_id, prefix)
-
-
-def drow_last_index(prefix: str = "") -> str:
-    return drow_basename("create_last_index", prefix)
 
 
 @overload

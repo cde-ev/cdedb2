@@ -112,6 +112,8 @@ from cdedb.common import (
     LineResolutions,
     asciificator,
     compute_checkdigit,
+    drow_basename,
+    drow_name,
     get_mandatory_type,
     is_optional_type,
     normalize_field_entries,
@@ -3287,8 +3289,6 @@ def _questionnaire(
 ) -> Questionnaire:
     val = _ALL_TYPED[list[dict[str, Any]]](val, argname, **kwargs)
 
-    from cdedb.frontend.common import drow_basename, drow_name  # noqa: PLC0415
-
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
     for pos, row in enumerate(val):
@@ -3394,7 +3394,6 @@ def _all_questionnaires(
     field_id_counts = collections.Counter(
         row["field_id"] for rows in ret.values() for row in rows if row.get("field_id")
     )
-    from cdedb.frontend.common import drow_name  # noqa: PLC0415
 
     for kind, rows in ret.items():
         for row in rows:
