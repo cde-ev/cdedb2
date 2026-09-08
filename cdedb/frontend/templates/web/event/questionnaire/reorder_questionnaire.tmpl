@@ -43,7 +43,7 @@
         {{ util.input_hidden(name="kind") }}
         <div class="orderrow-container" id="rowlist">
             {% for entry in questionnaire %}
-            <div class="orderrow-outer" data-id="{{ loop.index0 }}" tabindex="0">
+            <div class="orderrow-outer {{ entry.entry_get_drow_html_classes()|join(" ") }}" data-id="{{ loop.index0 }}" tabindex="0">
                 <div class="orderrow-inner clearfix" draggable="true">
                     <div class="orderrow-indicator">
                         <span class="label label-primary">
