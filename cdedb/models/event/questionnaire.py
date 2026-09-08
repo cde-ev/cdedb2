@@ -84,8 +84,11 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         return cls._frequency.get(kind, QuestionnaireFrequency.disallowed)
 
     @classmethod
-    def get_drow_html_classes(cls) -> list[str]:
+    def class_get_drow_html_classes(cls) -> list[str]:
         return ["questionnaire-row-config"]
+
+    def entry_get_drow_html_classes(self) -> list[str]:
+        return self.class_get_drow_html_classes()
 
     _icon: ClassVar[str]
 
@@ -97,8 +100,7 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         """Return ToC-entries resulting from this row."""
         return []
 
-    @classmethod
-    def get_footer_texts(cls, event: Event) -> list[tuple[str, CdEDBObject]]:
+    def get_footer_texts(self, event: Event) -> list[tuple[str, CdEDBObject]]:
         return []
 
     @staticmethod
@@ -265,8 +267,8 @@ class QuestionnaireMagicRow(QuestionnaireRow):
         )
 
     @classmethod
-    def get_drow_html_classes(cls) -> list[str]:
-        return super().get_drow_html_classes() + ["questionnaire-row-magic"]
+    def class_get_drow_html_classes(cls) -> list[str]:
+        return super().class_get_drow_html_classes() + ["questionnaire-row-magic"]
 
 
 @dataclasses.dataclass
@@ -278,18 +280,9 @@ class CourseChoices(QuestionnaireMagicRow):
     _toc_entries = [n_("Course Choices")]
     _icon = "book"
 
-    @classmethod
-    def get_footer_texts(cls, event: Event) -> list[tuple[str, CdEDBObject]]:
-        if not event.tracks:
-            return [
-                (
-                    n_(
-                        "This event does not have any course tracks, therefore this questionnaire row won't actually be displayed. It still needs to exist."
-                    ),
-                    {},
-                )
-            ]
-        return []
+    def entry_get_drow_html_classes(self) -> list[str]:
+        if not self.questionnaire.all_questionnaires.event.tracks:
+            return self.class_get_drow_html_classes() + ["softhide"]
 
 
 @dataclasses.dataclass
@@ -301,18 +294,9 @@ class PartSelection(QuestionnaireMagicRow):
     _toc_entries = [n_("Registration")]
     _icon = "clock"
 
-    @classmethod
-    def get_footer_texts(cls, event: Event) -> list[tuple[str, CdEDBObject]]:
-        if len(event.parts) <= 1:
-            return [
-                (
-                    n_(
-                        "This event only has a single event part, therefore this questionnaire row won't actually be displayed. It still needs to exist."
-                    ),
-                    {},
-                )
-            ]
-        return []
+    def entry_get_drow_html_classes(self) -> list[str]:
+        if len(self.questionnaire.all_questionnaires.event.parts) <= 1:
+            return self.class_get_drow_html_classes() + ["softhide"]
 
 
 @dataclasses.dataclass

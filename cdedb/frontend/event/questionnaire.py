@@ -113,7 +113,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             role for role, spec in spec_per_role.items() if key in spec
         ]
         drow_classes_by_role = {
-            str(kind): kind.get_class().get_drow_html_classes()
+            str(kind): kind.get_class().class_get_drow_html_classes()
             for kind in const.QuestionnaireRowRole
         }
         return self.render(

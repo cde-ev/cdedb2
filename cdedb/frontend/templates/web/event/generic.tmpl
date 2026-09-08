@@ -362,16 +362,13 @@
 {# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro questionnaire_config_entry(part_id, kind, aclass="", newrow=False) %}
-    {% set role = None if newrow else values["role_" ~ part_id] or None %}
-    {% if role is string %}
-        {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
-    {% endif %}
-    <div class="panel panel-default {{ aclass }}" data-drow-id="{{ part_id }}">
+{% macro questionnaire_config_entry(part_id, kind, aclass="", entry=none) %}
+    <div class="panel panel-default {{ aclass }} {{ entry.entry_get_drow_html_classes()|join(" ") if entry }}"
+         data-drow-id="{{ part_id }}">
         <div class="panel-heading">
             <div class="pull-right">
                 <span class="drow-hide">
-                    {% if newrow %}
+                    {% if not entry %}
                         {{ util.input_checkbox(
                                 "create_" ~ part_id, label=gettext("Add"), aclass='drow-indicator',
                                 attributes={"data-basename": "create_"}|xmlattr
@@ -402,7 +399,7 @@
             {{ util.input_hidden(
                     "pos_" ~ part_id, defaultvalue=part_id, aclass="input-pos drow-input",
                     attributes={"data-basename": "pos_"}|xmlattr) }}
-            {% if newrow %}
+            {% if not entry %}
                 <div>
                     {{ util.form_input_select(
                             "role_" ~ part_id, label=gettext("Role"),
@@ -415,11 +412,9 @@
                 </div>
             {% else %}
                 <h3 class="panel-title">
-                    {% if role %}
-                        {{ util.make_icon(role.get_class().get_icon()) }}
-                        {{ gettext(values["role_" ~ part_id]|string) }}
-                        {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
-                    {% endif %}
+                    {{ util.make_icon(entry.get_icon()) }}
+                    {{ gettext(values["role_" ~ part_id]|string) }}
+                    {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
                 </h3>
             {% endif %}
             <div style="clear:both;"></div>
@@ -504,7 +499,7 @@
                     }|xmlattr
                 ) }}
         </div>
-        {% set footer_texts = [] if role is none else role.get_class().get_footer_texts(ambience["event"]) %}
+        {% set footer_texts = entry.get_footer_texts(ambience["event"]) if entry else [] %}
         {% if footer_texts %}
             <div class="panel-footer">
                 <div class="text-info">
