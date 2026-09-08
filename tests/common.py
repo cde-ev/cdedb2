@@ -2015,8 +2015,8 @@ class FrontendTest(BackendTest):
         content: str | None = None,
         verbose: bool = False,
     ) -> None:
-        """Assert that no tag that matches specific criteria is found. Possible
-        criteria include:
+        """Assert that no tag that matches specific criteria is found.
+        Possible criteria include:
 
         * The tags href_attr matches the href_pattern (regex)
         * The tags content matches the content (regex)
@@ -2024,6 +2024,45 @@ class FrontendTest(BackendTest):
         This is a ripoff of webtest.response._find_element, which is used by
         traverse internally.
         """
+        if ret := self._find_link(href_pattern, tag, href_attr, content, verbose):
+            href, el_content = ret
+            self.fail(
+                f"Tag '{tag}' with {href_attr} == {href!r}"
+                f" and content {el_content!r} has been found."
+            )
+
+    def assertHasLink(
+        self,
+        href_pattern: str | Pattern[str] | None = None,
+        tag: str = 'a',
+        href_attr: str = 'href',
+        content: str | None = None,
+        verbose: bool = False,
+    ) -> None:
+        """Assert that a tag that matches specific criteria is found.
+
+        Possible criteria include:
+
+        * The tags href_attr matches the href_pattern (regex)
+        * The tags content matches the content (regex)
+
+        This is a ripoff of webtest.response._find_element, which is used by
+        traverse internally.
+        """
+        if not self._find_link(href_pattern, tag, href_attr, content, verbose):
+            self.fail(
+                f"No Tag '{tag}' with {href_attr} == {href_pattern!r}"
+                f" and content {content!r} has been found."
+            )
+
+    def _find_link(
+        self,
+        href_pattern: str | Pattern[str] | None,
+        tag: str,
+        href_attr: str,
+        content: str | None,
+        verbose: bool,
+    ) -> tuple[str, str] | None:
         href_pat = webtest.utils.make_pattern(href_pattern)
         content_pat = webtest.utils.make_pattern(content)
 
@@ -2045,10 +2084,8 @@ class FrontendTest(BackendTest):
                 printlog("  Skipped: doesn't match description")
                 continue
             printlog("  Link found")  # pragma: no cover
-            self.fail(
-                f"Tag '{tag}' with {href_attr} == {element[href_attr]}"
-                f" and content '{el_content}' has been found."
-            )
+            return element[href_attr], el_content
+        return None
 
     def assertLogEqual(
         self, log_expectation: Sequence[CdEDBObject], realm: str, **kwargs: Any
