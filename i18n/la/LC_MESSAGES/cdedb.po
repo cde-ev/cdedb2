@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-07 09:32+0200\n"
+"POT-Creation-Date: 2026-09-08 15:05+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3468,6 +3468,9 @@ msgstr "vestigium novum crea"
 #, fuzzy
 msgid "Unknown message id."
 msgstr "inscriptio electronica nova"
+
+msgid "Blocked genesis request from TOR exit node."
+msgstr ""
 
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""

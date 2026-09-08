@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-07 09:32+0200\n"
+"POT-Creation-Date: 2026-09-08 15:05+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3176,6 +3176,9 @@ msgstr "Datenbank für Wartungsarbeiten gesperrt."
 
 msgid "Unknown message id."
 msgstr "Unbekannte Nachrichten-ID."
+
+msgid "Blocked genesis request from TOR exit node."
+msgstr "Accountanfrage via TOR exit node blockiert."
 
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
