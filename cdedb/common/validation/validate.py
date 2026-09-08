@@ -3278,7 +3278,6 @@ def _questionnaire_row(
     return _ALL_TYPED[cls](val, **kwargs)
 
 
-@_add_typed_validator
 def _questionnaire(
     val: Any,
     argname: str = "questionnaire",
@@ -3286,7 +3285,7 @@ def _questionnaire(
     kind: const.QuestionnaireUsages,
     pos_to_id: dict[int, int],
     **kwargs: Any,
-) -> Questionnaire:
+) -> list[CdEDBObject]:
     val = _ALL_TYPED[list[dict[str, Any]]](val, argname, **kwargs)
 
     errs = ValidationSummary()
@@ -3334,7 +3333,7 @@ def _questionnaire(
     if errs:
         raise errs
 
-    return Questionnaire(ret)
+    return ret
 
 
 @_add_typed_validator
@@ -3344,7 +3343,7 @@ def _all_questionnaires(
     *,
     all_questionnaires: models_event.questionnaire.QuestionnaireContainer,
     **kwargs: Any,
-) -> dict[const.QuestionnaireUsages, Questionnaire]:
+) -> AllQuestionnaires:
 
     val = _ALL_TYPED[dict[const.QuestionnaireUsages, list[dict[str, Any]]]](
         val, argname, **kwargs
@@ -3373,7 +3372,7 @@ def _all_questionnaires(
         available_fields = all_questionnaires[kind].get_available_fields()
         available_magic_roles = all_questionnaires[kind].get_available_magic_roles()
         with errs:
-            ret[kind] = _ALL_TYPED[Questionnaire](
+            ret[kind] = _questionnaire(
                 rows,
                 kind=kind,
                 available_fields=available_fields,
@@ -3387,7 +3386,7 @@ def _all_questionnaires(
     # Fill in missing questionnaires with existing ones for the following checks.
     for kind, existing in all_questionnaires.items():
         if kind not in ret:
-            ret[kind] = Questionnaire(existing.as_dicts())
+            ret[kind] = existing.as_dicts()
 
     # Check against duplicate field usage across all questionnaires.
     fields = all_questionnaires.event.fields
@@ -3412,7 +3411,7 @@ def _all_questionnaires(
     if errs:
         raise errs
 
-    return ret
+    return AllQuestionnaires(ret)
 
 
 # TODO move above
@@ -3919,9 +3918,6 @@ def _serialized_event_questionnaire_upload(
     )
 
 
-# TODO: adjust or drop:
-
-
 @_add_typed_validator
 def _serialized_event_questionnaire(
     val: Any,
@@ -3990,9 +3986,9 @@ def _serialized_event_questionnaire(
                 new_questionnaires[kind] = rows
 
         with errs.modify_argname(prefix=f"questionnaire[{kind.name}]."):
-            val['questionnaire'] = _ALL_TYPED[
-                dict[const.QuestionnaireUsages, Questionnaire]
-            ](new_questionnaires, all_questionnaires=all_questionnaires)
+            val['questionnaire'] = _ALL_TYPED[AllQuestionnaires](
+                new_questionnaires, all_questionnaires=all_questionnaires
+            )
     else:
         val['questionnaire'] = {}  # pyrefly: ignore[implicit-any-empty-container]
 

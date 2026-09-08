@@ -190,7 +190,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
         new_all_questionnaires = check(
             rs,
-            dict[const.QuestionnaireUsages, vtypes.Questionnaire],
+            vtypes.AllQuestionnaires,
             new_all_questionnaires,
             all_questionnaires=all_questionnaires,
         )

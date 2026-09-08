@@ -19,7 +19,7 @@ import collections
 import copy
 import datetime
 import decimal
-from collections.abc import Collection, Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol, cast
 
@@ -1394,7 +1394,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        data: Mapping[const.QuestionnaireUsages, Collection[CdEDBObject]],
+        data: Mapping[const.QuestionnaireUsages, Sequence[CdEDBObject]],
     ) -> DefaultReturnCode:
         """Replace the questionnaires for the given kinds for the given event.
 
@@ -1404,7 +1404,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.EventID, event_id)
         all_questionnaires = self.get_all_questionnaires(rs, event_id)
         questionnaires = affirm(
-            dict[const.QuestionnaireUsages, vtypes.Questionnaire],
+            vtypes.AllQuestionnaires,
             data,
             all_questionnaires=all_questionnaires,
         )
@@ -2039,7 +2039,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: vtypes.EventID,
         fields: CdEDBObjectMap,
-        questionnaires: Mapping[const.QuestionnaireUsages, Collection[CdEDBObject]],
+        questionnaires: Mapping[const.QuestionnaireUsages, Sequence[CdEDBObject]],
     ) -> DefaultReturnCode:
         """Special import for custom datafields and questionnaire rows."""
         event_id = affirm(vtypes.EventID, event_id)

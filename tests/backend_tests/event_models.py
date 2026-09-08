@@ -1009,7 +1009,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
         all_questionnaires = self.event.get_all_questionnaires(self.key, event.id)
         # Check required field id for full questionnaire validation.
         self.do_validator_test(
-            dict[const.QuestionnaireUsages, vtypes.Questionnaire],
+            vtypes.AllQuestionnaires,
             [
                 (
                     {
@@ -1030,7 +1030,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
         )
 
         self.do_validator_test(
-            dict[const.QuestionnaireUsages, vtypes.Questionnaire],
+            vtypes.AllQuestionnaires,
             [
                 # Check that course choices may not be duplicated.
                 (
