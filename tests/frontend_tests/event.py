@@ -3525,6 +3525,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("\nAnmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [3]")
         self.assertPresence("Beispiel")
+        # test for https://tracker.cde-ev.de/cdedb/cdedb2/issues/4736
+        self.assertPresence("berta@example.cde")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertPresence("Deutschland", div="query-result")

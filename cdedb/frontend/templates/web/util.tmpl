@@ -1019,17 +1019,19 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
-    {% set email = email or (persona["username"] if persona|hasattr("username")) or (persona["persona.username"] if persona|hasattr("persona.username")) or "" %}
-    {{ href(
-        mailto(
-            address=email,
-            name="{} {}".format(
-                (persona["given_names"] if persona|hasattr("given_names")) or (persona["persona.given_names"] if persona|hasattr("persona.given_names")) or "",
-                (persona["family_name"] if persona|hasattr("family_name")) or (persona["persona.family_name"] if persona|hasattr("persona.family_name")) or "",
-            )
-        ),
-        email
-    ) }}
+    {# At query results, we have dicts instead of dataclasses. So we need containment instead of attribute checks sometimes. #}
+    {% if persona is mapping %}
+        {# *registration* query results additionally prefix "persona.", which the persona_name filter cannot handle #}
+        {% set email = email or (persona["username"] if "username" in persona) or (persona["persona.username"] if "persona.username" in persona) or "" %}
+        {% set name = "{} {}".format(
+                (persona["given_names"] if "given_names" in persona) or (persona["persona.given_names"] if "persona.given_names" in persona) or "",
+                (persona["family_name"] if "family_name" in persona) or (persona["persona.family_name"] if "persona.family_name" in persona) or "",
+            ) %}
+    {% else %}
+        {% set email = email or (persona["username"] if persona|hasattr("username")) or "" %}
+        {% set name = persona|persona_name %}
+    {% endif %}
+    {{ href(mailto(address=email, name=name), email) }}
 {%- endmacro %}
 
 {% macro meta_info_banner(fieldname) %}
