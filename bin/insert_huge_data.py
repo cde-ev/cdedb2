@@ -119,7 +119,7 @@ def persona(context: Context) -> vtypes.PersonaID:
             success = cur.rowcount
     if not success:
         raise RuntimeError("Failed password reset.")
-    return cast(vtypes.PersonaID, ret)
+    return ret
 
 
 def event(context: Context) -> int:

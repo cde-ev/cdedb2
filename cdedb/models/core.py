@@ -681,7 +681,7 @@ class GenesisCase(CdEDataclass):
     reviewer: vtypes.ID | None = dataclasses.field(
         default=None, metadata=Meta.input_exclude.as_dict
     )
-    persona_id: vtypes.ID | None = dataclasses.field(
+    persona_id: vtypes.PersonaID | None = dataclasses.field(
         default=None, metadata=Meta.input_exclude.as_dict
     )
 
@@ -905,7 +905,9 @@ class GenesisUpgrade(GenesisCase):
 
     notes: str = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     realm: Realms = dataclasses.field(metadata=Meta.input_exclude.as_dict)
-    persona_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    persona_id: vtypes.PersonaID = dataclasses.field(
+        metadata=Meta.input_exclude.as_dict
+    )
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":

@@ -455,15 +455,15 @@ class CoreGenesisBackend(CoreBaseBackend):
         rs: RequestState,
         case_id: int,
         decision: GenesisDecision,
-        persona_id: int | None = None,
-    ) -> DefaultReturnCode:
+        persona_id: vtypes.PersonaID | None = None,
+    ) -> vtypes.PersonaID | None:
         """Final step in the genesis process. Create or modify an account or do nothing.
 
         :returns: The id of the newly created or modified user if any, -1 if rejected.
         """
         case_id = affirm(vtypes.ID, case_id)
         decision = affirm(GenesisDecision, decision)
-        persona_id = affirm(vtypes.ID | None, persona_id)
+        persona_id = affirm(vtypes.PersonaID | None, persona_id)
 
         with Atomizer(rs):
             # Privilege check is done in genesis_get_case, since it requires the case.
@@ -572,4 +572,4 @@ class CoreGenesisBackend(CoreBaseBackend):
                     )
 
             # Special return value for rejected cases.
-            return persona_id or -1
+            return persona_id
