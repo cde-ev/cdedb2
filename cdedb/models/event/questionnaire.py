@@ -283,6 +283,7 @@ class CourseChoices(QuestionnaireMagicRow):
     def entry_get_drow_html_classes(self) -> list[str]:
         if not self.questionnaire.all_questionnaires.event.tracks:
             return self.class_get_drow_html_classes() + ["softhide"]
+        return super().entry_get_drow_html_classes()
 
 
 @dataclasses.dataclass
@@ -297,6 +298,7 @@ class PartSelection(QuestionnaireMagicRow):
     def entry_get_drow_html_classes(self) -> list[str]:
         if len(self.questionnaire.all_questionnaires.event.parts) <= 1:
             return self.class_get_drow_html_classes() + ["softhide"]
+        return super().entry_get_drow_html_classes()
 
 
 @dataclasses.dataclass
