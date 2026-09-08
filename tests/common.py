@@ -205,7 +205,7 @@ def _make_backend_shim[B: AbstractBackend](
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"],
         DATABASE_ROLES,
-        secrets,
+        secrets["CDB_DATABASE_ROLES"],
         backend.conf["DB_HOST"],
         backend.conf["DB_PORT"],
     )
@@ -253,7 +253,7 @@ def _make_backend_shim[B: AbstractBackend](
             lang="de",
             translations=translations,
         )
-        rs._conn = connpool[rs.user.new_roles.get_db_role()]
+        rs._conn = connpool(rs.user.new_roles.get_db_role())
         rs.conn = rs._conn
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
