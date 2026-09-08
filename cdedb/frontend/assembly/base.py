@@ -4,7 +4,6 @@
 
 import datetime
 import importlib.metadata
-import os
 import pathlib
 import shutil
 import subprocess
