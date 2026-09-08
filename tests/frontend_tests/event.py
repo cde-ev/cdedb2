@@ -9566,3 +9566,19 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["track3.course_instructor"] = 5
         self.submit(f)
         self.assertPresence("Arbeitssitzung (Zweite Hälfte) Geleiteter Kurs ε. Backup")
+
+    @as_users("anton")
+    def test_markdown_footnotes(self) -> None:
+        event_id = EventID(1)
+        text = """
+Text mit Fußnote [^1]
+
+[^1]: Die Fußnote
+        """.strip()
+        self.event.set_event(self.key, event_id, {"description": text, "notes": text})
+
+        self.get(f"/event/event/{event_id}/freetexts")
+        self.assertTitle("Große Testakademie 2222 – Freitexte")
+
+        self.assertNoLink(r".*#fn:\d+$")
+        self.assertHasLink(r".*#fn:\d+-\d+$")
