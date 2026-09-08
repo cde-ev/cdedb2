@@ -585,3 +585,98 @@ class TestBrowser(BrowserTest):
             row_texts.index("Bli bla Blubb"),
             row_texts.index("Test-Überschrift ¶"),
         )
+
+        page.get_by_role("link", name="Fragebögen konfigurieren").first.click()
+        page.wait_for_url("http://localhost:5000/event/event/1/questionnaire/config")
+
+        page.get_by_role("button", name="Neue Zeile hierüber einfügen").filter(
+            visible=True
+        ).first.click()
+
+        role_select = page.locator("*:focus")
+        expect(role_select).to_be_visible()
+        role_select.select_option("Datenfeld")
+        role_select.press("Tab")
+        field_inp = page.locator("*:focus")
+        field_form_group = page.locator(".form-group:has(*:focus)")
+        expect(field_inp).to_be_visible()
+        expect(field_form_group).not_to_contain_class("has-error")
+        field_inp.select_option("brings_balls")
+        expect(field_form_group).to_contain_class("has-error")
+        expect(page.locator("#tab_registration .has-error")).to_have_count(1)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(1)
+
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Anmeldung")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Zusätzlicher Fragebogen")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+
+        page.locator("#usages_tablist").get_by_role("presentation").filter(
+            has_text="Zusätzlicher Fragebogen"
+        ).click()
+
+        other_field_inp = page.locator("#tab_additional .has-error .input-field")
+        expect(other_field_inp).to_have_value("1")
+        other_field_inp.select_option("brings_balls")
+        expect(other_field_inp).to_have_value("1")
+
+        other_field_inp.click()
+        other_field_inp.select_option("transportation")
+        expect(page.locator(".form-group:has(*:focus)")).to_contain_class("has-error")
+        expect(page.locator("#tab_registration .has-error")).to_have_count(0)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(2)
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Anmeldung")
+            .locator(".nav-tab-error")
+        ).not_to_be_visible()
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Zusätzlicher Fragebogen")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+
+        page.get_by_role("button").get_by_text("Speichern").filter(visible=True).click()
+        expect(page.locator("#notifications .alert")).to_be_visible()
+        expect(page.locator("#notifications .alert")).to_contain_class("alert-danger")
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Anmeldung")
+            .locator(".nav-tab-error")
+        ).not_to_be_visible()
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Zusätzlicher Fragebogen")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+
+        expect(page.locator("#tab_additional .has-error")).to_have_count(2)
+        page.locator("#tab_additional .has-error .input-field").first.select_option(
+            "may_reserve"
+        )
+        for elem in page.locator(".form-group").all():
+            expect(elem).not_to_contain_class("has-error")
+        for elem in page.locator(".nav-tab-error").all():
+            expect(elem).not_to_be_visible()
+
+        page.get_by_role("button").get_by_text("Speichern").filter(visible=True).click()
+        expect(page.locator("#notifications .alert")).to_be_visible()
+        expect(page.locator("#notifications .alert")).to_contain_class("alert-success")
