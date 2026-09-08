@@ -5751,7 +5751,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
         # row included twice
         f = self.response.forms['reorderquestionnaireform']
-        f['additional_order_'] = "0,1,1,3,4,5,6"
+        f['additional_order_'] = "0,1,1,2,3,4,5,6"
         self.submit(f, button="submitted_kind", check_notification=False)
         self.assertValidationError(
             "additional_order_", "Jede Zeile darf nur genau einmal vorkommen."
@@ -5763,8 +5763,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertValidationError(
             "additional_order_", "Jede Zeile darf nur genau einmal vorkommen."
         )
+        # valid input
         f = self.response.forms['reorderquestionnaireform']
-        f['additional_order_'] = '5,3,1,0,2,4'
         f['additional_order_'] = '6,4,2,0,1,3,5'
         self.submit(f, button="submitted_kind")
         self.assertTitle("Fragebögen umordnen (Große Testakademie 2222)")

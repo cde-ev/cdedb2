@@ -1396,7 +1396,11 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id: vtypes.EventID,
         data: Mapping[const.QuestionnaireUsages, Collection[CdEDBObject]],
     ) -> DefaultReturnCode:
-        """Replace the current questionnaire of the given kind for the given event."""
+        """Replace the questionnaires for the given kinds for the given event.
+
+        Questionnaire kinds that are not given in 'data' will not be affected.
+        To delete a questionnaire kind, pass an empty list for that kind.
+        """
         event_id = affirm(vtypes.EventID, event_id)
         all_questionnaires = self.get_all_questionnaires(rs, event_id)
         questionnaires = affirm(
@@ -1404,15 +1408,23 @@ class EventBaseBackend(EventLowLevelBackend):
             data,
             all_questionnaires=all_questionnaires,
         )
+
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=event_id)
+
+        for rows in questionnaires.values():
+            for row in rows:
+                # The questionnaire import allows specifying fields by name.
+                #  We cannot remove this before, due to validation idempotency.
+                row.pop("field_name", None)
+
         with Atomizer(rs):
             ret = 1
             for kind, rows in questionnaires.items():
                 # Skip questionnaire kinds that didn't change.
                 if len(rows) == len(all_questionnaires[kind]) and all(
-                    k == "field_name" or row_new[k] == row_existing[k]
+                    row_new[k] == row_existing[k]
                     for row_new, row_existing in zip(
                         rows, all_questionnaires[kind].as_dicts()
                     )
@@ -1432,9 +1444,6 @@ class EventBaseBackend(EventLowLevelBackend):
                 for pos, row in enumerate(rows):
                     new_row = copy.deepcopy(row)
                     new_row['event_id'] = event_id
-                    # The questionnaire import allows specifying fields by name.
-                    #  We cannot remove this before, due to validation idempotency.
-                    new_row.pop("field_name", None)
                     cls = models.questionnaire.QuestionnaireRow.get_class(
                         new_row["role"]
                     )

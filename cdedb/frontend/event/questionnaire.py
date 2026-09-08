@@ -137,15 +137,15 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("submitted_kind")
+    @REQUESTdata("submitted_kind", "checksum")
     def configure_questionnaire(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
         submitted_kind: const.QuestionnaireUsages,
+        checksum: str | None,
     ) -> Response:
-        """Deduplicated code to set questionnaire rows of one kind."""
-        checksum = request_extractor(rs, {"checksum": str | None})["checksum"]
+        """Set questionnaires (of all kinds at once)."""
         all_questionnaires, old_checksum = self._prepare_questionnaire_form(
             rs, event_id
         )
@@ -385,15 +385,16 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             order = request_extractor(rs, {key: list[int]})[key]
             expected = set(range(len(all_questionnaires[kind])))
 
-            if order is not None and not set(order) == expected:
-                rs.append_validation_error((
-                    key,
-                    ValueError(n_("Every row must occur exactly once.")),
-                ))
-            elif order is not None:
-                new_all_questionnaires[kind] = [
-                    all_questionnaires[kind][i] for i in order
-                ]
+            if order is not None:
+                if set(order) != expected or len(order) != len(expected):
+                    rs.append_validation_error((
+                        key,
+                        ValueError(n_("Every row must occur exactly once.")),
+                    ))
+                else:
+                    new_all_questionnaires[kind] = [
+                        all_questionnaires[kind][i] for i in order
+                    ]
 
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id)
