@@ -297,7 +297,7 @@
                         {% endif %}
                         {% if data['id'] == user.persona_id and data.is_false('is_cde_realm') and data.is_true('is_event_realm') %}
                             {# Button should be btn-warning, but the default user does not know that "adding a realm" means "editing your account" #}
-                            {{ util.href(cdedblink("core/genesis_upgrade"), gettext("Request membership"), icon=util.realm_icon("is_cde_realm"),
+                            {{ util.href(cdedblink("core/genesis_request_upgrade"), gettext("Request membership"), icon=util.realm_icon("is_cde_realm"),
                                     aclass="btn btn-xs btn-success") }}
                         {% endif %}
                     </dd>

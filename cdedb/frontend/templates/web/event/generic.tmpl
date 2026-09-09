@@ -251,7 +251,7 @@
                                 Because you are not a CdE-Member, you might have to pay an additional "External Fee".
                             {% endtrans %}
                             <br />
-                            {% trans link=util.href(cdedblink("core/genesis_upgrade"), gettext("request a CdE membership")) %}
+                            {% trans link=util.href(cdedblink("core/genesis_request_upgrade"), gettext("request a CdE membership")) %}
                                 You can also {{ link }} instead. Note that it can take a couple of days before we can process your request.
                             {% endtrans %}
                         </p>
@@ -267,7 +267,7 @@
                                     {% endtrans %}
                                 {% else %}
                                     <br />
-                                    {% trans link=util.href(cdedblink("core/genesis_upgrade"), gettext("request a CdE membership")) %}
+                                    {% trans link=util.href(cdedblink("core/genesis_request_upgrade"), gettext("request a CdE membership")) %}
                                         You can also {{ link }} instead. Note that it can take a couple of days before we can process your request.
                                     {% endtrans %}
                                 {% endif %}

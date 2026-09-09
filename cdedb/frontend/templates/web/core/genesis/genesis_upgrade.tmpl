@@ -9,7 +9,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("core/genesis_upgrade") , gettext("Request CdE Membership"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("core/genesis_request_upgrade") , gettext("Request CdE Membership"), active="True") }}
 {% endblock %}
 {% block content %}
     <div class="row">
@@ -48,8 +48,8 @@
             {% endtrans %}
         </p>
     </div>
-    <form id="genesis-upgrade" action="{{ cdedblink('core/genesis_upgrade') }}" method="POST" class="form-horizontal" enctype="multipart/form-data">
-        {{ util.anti_csrf_token("core/genesis_upgrade") }}
+    <form id="genesis-upgrade" action="{{ cdedblink('core/genesis_request_upgrade') }}" method="POST" class="form-horizontal" enctype="multipart/form-data">
+        {{ util.anti_csrf_token("core/genesis_request_upgrade") }}
         {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
         {% set attachment_restrictions = " " + gettext("The file must be a PDF. The maximum allowed filesize is 8 MB.") %}
         {{ util.form_input_attachment(link=cdedblink("core/genesis_get_attachment", {'attachment_hash': values.get('attachment_hash') }),
