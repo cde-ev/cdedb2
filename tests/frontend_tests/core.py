@@ -3513,16 +3513,14 @@ class TestCoreFrontend(FrontendTest):
 
                 # Submitting an upgrade request multiple times is disallowed
                 self.get("/core/genesis/upgrade")
-                self.assertNotification(
-                    "Du hast bereits eine laufende Account Upgrade Anfrage."
-                )
+                self.assertNotification("Du hast bereits eine laufende Upgradeanfrage.")
 
         _submit_emilia()
 
         # Approve both upgrade requests.
         with self.switch_user("quintus"):
             self.traverse("Accountanfragen", "Details")
-            self.assertTitle("Account Upgrade Anfrage von Emilia Eventis")
+            self.assertTitle("Upgradeanfrage von Emilia Eventis")
             self.assertPresence("PfingstAkademie 2014")
             f = self.response.forms["genesisdecisionform"]
             self.submit(
@@ -3532,7 +3530,7 @@ class TestCoreFrontend(FrontendTest):
                 check_notification=False,
             )
             self.assertNotification(
-                "Nur Core-Admins können Account-Upgrades bestätigen."
+                "Nur Core-Admins können Accountupgrades bestätigen."
             )
             self.submit(
                 f,
@@ -3544,7 +3542,7 @@ class TestCoreFrontend(FrontendTest):
 
             self.assertTitle("Accountanfragen")
             self.traverse("Emilia Eventis")
-            self.assertTitle("Account Upgrade Anfrage von Emilia Eventis")
+            self.assertTitle("Upgradeanfrage von Emilia Eventis")
             self.assertNotIn("genesisdecisionform", self.response.forms)
 
         _submit_emilia()
@@ -3557,13 +3555,13 @@ class TestCoreFrontend(FrontendTest):
             self.assertNonPresence("CdE", div="has-realm")
 
             self.traverse("Accountanfragen", "Details")
-            self.assertTitle("Account Upgrade Anfrage von Emilia Eventis")
+            self.assertTitle("Upgradeanfrage von Emilia Eventis")
             self.assertPresence("PfingstAkademie 2014")
             f = self.response.forms["genesisdecisionform"]
             self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
             self.traverse("Accountanfragen", "Details")
-            self.assertTitle("Account Upgrade Anfrage von Simon Struktur")
+            self.assertTitle("Upgradeanfrage von Simon Struktur")
             f = self.response.forms["genesisdecisionform"]
             self.traverse("Anhang herunterladen")
             self.assertTrue(self.response.body.startswith(b"%PDF"))

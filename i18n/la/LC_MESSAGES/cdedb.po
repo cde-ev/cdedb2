@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-09 16:56+0200\n"
+"POT-Creation-Date: 2026-09-09 17:29+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -10539,15 +10539,23 @@ msgid "Recently Concluded Account Requests"
 msgstr "vestigium novum crea"
 
 #, fuzzy, python-format
+msgid "Edit Upgrade Request (%(name)s)"
+msgstr "vestigium novum crea"
+
+#, fuzzy, python-format
 msgid "Edit Account Request (%(name)s)"
 msgstr "vestigium novum crea"
 
 #, fuzzy
-msgid "Account Request"
+msgid "Edit Account Request"
 msgstr "vestigium novum crea"
 
 #, fuzzy
-msgid "Edit Account Request"
+msgid "Edit Upgrade Request"
+msgstr "vestigium novum crea"
+
+#, fuzzy
+msgid "Account Request"
 msgstr "vestigium novum crea"
 
 #, fuzzy
@@ -11291,10 +11299,6 @@ msgstr "vestigium novum crea"
 #, fuzzy
 msgid "Request membership"
 msgstr "consocietanda"
-
-#, python-format
-msgid "To request an upgrade to a member account, contact %(mailto)s."
-msgstr ""
 
 #, fuzzy
 msgid "Change Status"

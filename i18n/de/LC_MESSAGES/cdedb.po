@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-09 16:56+0200\n"
+"POT-Creation-Date: 2026-09-09 17:29+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3184,7 +3184,7 @@ msgid "Blocked genesis request from TOR exit node."
 msgstr "Accountanfrage via TOR exit node blockiert."
 
 msgid "Invalid account for upgrade request."
-msgstr "Ungültiger Account für eine Account Upgrade Anfrage."
+msgstr "Ungültiger Account für eine Upgradeanfrage."
 
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
@@ -5971,7 +5971,7 @@ msgid "You already have CdE realm."
 msgstr "Du bist bereits zur Mitgliedschaft im CdE berechtigt."
 
 msgid "You already have a pending account upgrade request."
-msgstr "Du hast bereits eine laufende Account Upgrade Anfrage."
+msgstr "Du hast bereits eine laufende Upgradeanfrage."
 
 msgid "You didn't participate at this event."
 msgstr "Du hast an dieser Veranstaltung nicht teilgenommen."
@@ -6007,7 +6007,7 @@ msgid "You need to specify a past event for CdE genesis requests."
 msgstr "CdE Account Anfragen müssen eine vergangene Veranstaltung enthalten."
 
 msgid "Only core admins may approve upgrade requests."
-msgstr "Nur Core-Admins können Account-Upgrades bestätigen."
+msgstr "Nur Core-Admins können Accountupgrades bestätigen."
 
 msgid "Case rejected."
 msgstr "Anfrage abgewiesen."
@@ -6020,7 +6020,7 @@ msgid "Case approved."
 msgstr "Antrag genehmigt."
 
 msgid "Account upgraded."
-msgstr "Account Upgrade durchgeführt."
+msgstr "Accountupgrade durchgeführt."
 
 msgid "User updated."
 msgstr "Account aktualisiert."
@@ -10236,8 +10236,8 @@ msgstr "Mailinglisten-Accountanfragen"
 msgid ""
 "Account upgrade requested by existing user. Please check for eligibility."
 msgstr ""
-"Account Upgrade eines bereits bestehenden Accounts beantragt. Bitte auf "
-"Legitimität überprüfen."
+"Upgrade eines bereits bestehenden Accounts beantragt. Bitte auf Legitimität "
+"überprüfen."
 
 #, python-format
 msgid "There are currently no %(realm)s pending for approval."
@@ -10247,14 +10247,21 @@ msgid "Recently Concluded Account Requests"
 msgstr "Kürzlich geschlossene Accountanfragen"
 
 #, python-format
+msgid "Edit Upgrade Request (%(name)s)"
+msgstr "Upgradeanfrage bearbeiten (%(name)s)"
+
+#, python-format
 msgid "Edit Account Request (%(name)s)"
 msgstr "Accountanfrage bearbeiten (%(name)s)"
 
-msgid "Account Request"
-msgstr "Accountanfrage"
-
 msgid "Edit Account Request"
 msgstr "Accountanfrage bearbeiten"
+
+msgid "Edit Upgrade Request"
+msgstr "Upgradeanfrage bearbeiten"
+
+msgid "Account Request"
+msgstr "Accountanfrage"
 
 msgid "Rationale"
 msgstr "Begründung"
@@ -10312,7 +10319,7 @@ msgstr "Anfrage abschicken"
 
 #, python-format
 msgid "Upgrade Request of %(name)s"
-msgstr "Account Upgrade Anfrage von %(name)s"
+msgstr "Upgradeanfrage von %(name)s"
 
 #, python-format
 msgid "Account Request of %(name)s"
@@ -10989,12 +10996,6 @@ msgstr "Account aktiv"
 
 msgid "Request membership"
 msgstr "Mitgliedschaft beantragen"
-
-#, python-format
-msgid "To request an upgrade to a member account, contact %(mailto)s."
-msgstr ""
-"Um ein Upgrade auf einen Mitgliederaccount zu beantragen, kontaktiere "
-"%(mailto)s."
 
 msgid "Change Status"
 msgstr "Status ändern"

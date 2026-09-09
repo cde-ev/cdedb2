@@ -4,12 +4,12 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% if ambience['genesis_case']['is_upgrade'] %}
-        {% trans name=ambience['genesis_case'].persona|persona_name %}
+    {% if ambience["genesis_case"].is_upgrade %}
+        {% trans name=ambience["genesis_case"].persona|persona_name %}
             Upgrade Request of {{ name }}
         {% endtrans %}
     {% else %}
-        {% trans name=ambience['genesis_case'].persona|persona_name %}
+        {% trans name=ambience["genesis_case"].persona|persona_name %}
             Account Request of {{ name }}
         {% endtrans %}
     {% endif %}
@@ -24,7 +24,7 @@
 {% macro print_doppelganger_genesis(doppelganger) %}
     {{ util.print_doppelganger(doppelganger, link=True) }}
     {% if doppelganger["id"] in doppelgangers_with_missing_realms %}
-        </br>
+        <br />
         {% trans promote=util.href(cdedblink('core/promote_user_form', {"persona_id": doppelganger["id"],
                                    "target_realm": ambience["genesis_case"].realm}), gettext("promote")),
                  realm=util.realm_icon(ambience['genesis_case'].realm.realm_marker, desc=True)%}
@@ -246,8 +246,8 @@
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].deny,
                     label=gettext("Reject"), aclass="btn btn-danger", icon="ban") }}
-                {{ util.href(cdedblink('core/genesis_modify_form'), label=gettext("Edit Account Request"),
-                             aclass="btn btn-warning", icon="pen") }}
+                {{ util.href(cdedblink('core/genesis_modify_form'), aclass="btn btn-warning", icon="pen",
+                        label=gettext("Edit Upgrade Request") if ambience["genesis_case"].is_upgrade else gettext("Edit Account Request")) }}
                 &emsp;
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
                              aclass="btn btn btn-default", icon="times-circle") }}

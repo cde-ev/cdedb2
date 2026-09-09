@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-09 16:56+0200\n"
+"POT-Creation-Date: 2026-09-09 17:29+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -9691,14 +9691,21 @@ msgid "Recently Concluded Account Requests"
 msgstr ""
 
 #, python-format
+msgid "Edit Upgrade Request (%(name)s)"
+msgstr ""
+
+#, python-format
 msgid "Edit Account Request (%(name)s)"
+msgstr ""
+
+msgid "Edit Account Request"
+msgstr ""
+
+msgid "Edit Upgrade Request"
 msgstr ""
 
 msgid "Account Request"
 msgstr ""
-
-msgid "Edit Account Request"
-msgstr "Accountanfrage bearbeiten"
 
 msgid "Rationale"
 msgstr ""
@@ -10380,10 +10387,6 @@ msgid "Account active"
 msgstr ""
 
 msgid "Request membership"
-msgstr ""
-
-#, python-format
-msgid "To request an upgrade to a member account, contact %(mailto)s."
 msgstr ""
 
 msgid "Change Status"
