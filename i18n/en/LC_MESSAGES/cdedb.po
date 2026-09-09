@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-09 17:29+0200\n"
+"POT-Creation-Date: 2026-09-09 17:34+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -9751,6 +9751,35 @@ msgstr ""
 msgid "Confirm Request"
 msgstr ""
 
+msgid "Request CdE Membership"
+msgstr ""
+
+msgid ""
+"With the following form you can voice your desire to become a CdE member."
+msgstr ""
+
+msgid "If you participated at a DSA, DJA etc.:"
+msgstr ""
+
+msgid ""
+"Upload your participation certificate below. After we reviewed your request, "
+"you will be granted a trial membership."
+msgstr ""
+
+msgid "If you participated at a CdE event:"
+msgstr ""
+
+msgid ""
+"Select your event in the dropdown below. Take care that the selected event "
+"makes you elegible to become a CdE member, i.e. is a longer CdE event. After "
+"we reviewed you request, you need to transfer the membership fee to become a "
+"member."
+msgstr ""
+
+msgid ""
+"Select one of your past events which entitles you to become a CdE member."
+msgstr ""
+
 #, python-format
 msgid "Upgrade Request of %(name)s"
 msgstr ""
@@ -9812,35 +9841,6 @@ msgid "Approve (grant trial membership)"
 msgstr ""
 
 msgid "Reject"
-msgstr ""
-
-msgid "Request CdE Membership"
-msgstr ""
-
-msgid ""
-"With the following form you can voice your desire to become a CdE member."
-msgstr ""
-
-msgid "If you participated at a DSA, DJA etc.:"
-msgstr ""
-
-msgid ""
-"Upload your participation certificate below. After we reviewed your request, "
-"you will be granted a trial membership."
-msgstr ""
-
-msgid "If you participated at a CdE event:"
-msgstr ""
-
-msgid ""
-"Select your event in the dropdown below. Take care that the selected event "
-"makes you elegible to become a CdE member, i.e. is a longer CdE event. After "
-"we reviewed you request, you need to transfer the membership fee to become a "
-"member."
-msgstr ""
-
-msgid ""
-"Select one of your past events which entitles you to become a CdE member."
 msgstr ""
 
 msgid "CdE-Datenbank"

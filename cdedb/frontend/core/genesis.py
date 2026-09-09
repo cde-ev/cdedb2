@@ -229,7 +229,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         pevents = {int(p.pevent_id): p.pevent for p in participated.values()}
         return self.render(
             rs,
-            "genesis/genesis_upgrade",
+            "genesis/genesis_request_upgrade",
             {
                 "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
             },
