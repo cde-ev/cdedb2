@@ -124,7 +124,8 @@ var inputTypes = {
             function Counter($array) {
                 var count = {};
                 $array.each(function() {
-                    count[$(this).val()] = (count[$(this).val()] || 0) + 1;
+                    if ($(this).closest(".drow-delete").length == 0)
+                        count[$(this).val()] = (count[$(this).val()] || 0) + 1;
                 });
                 return count;
             }
@@ -154,7 +155,7 @@ var inputTypes = {
                     let error = duplicate_field_error.replace("%(field_name)s", field_name);
                     form_group.find(":contains(" + $(error).text() + ")").remove();
 
-                    if (val === "" || x[val] <= 1) {
+                    if (val === "" || (x[val] ?? 0) <= 1) {
                         if (form_group.data("original-has-error") === false || form_group.find(".help-block").length == 0)
                             form_group.removeClass("has-error");
                     }

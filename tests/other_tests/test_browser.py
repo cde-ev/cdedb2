@@ -650,6 +650,13 @@ class TestBrowser(BrowserTest):
             .locator(".nav-tab-error")
         ).to_be_visible()
 
+        page.locator(".drow-row:has( .has-error) .drow-delete-button").first.click()
+        expect(page.locator("#tab_registration .has-error")).to_have_count(0)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(0)
+        page.locator(".drow-delete .drow-delete-button").click()
+        expect(page.locator("#tab_registration .has-error")).to_have_count(0)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(2)
+
         page.get_by_role("button").get_by_text("Speichern").filter(visible=True).click()
         expect(page.locator("#notifications .alert")).to_be_visible()
         expect(page.locator("#notifications .alert")).to_contain_class("alert-danger")
