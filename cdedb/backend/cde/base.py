@@ -15,7 +15,6 @@ import copy
 import dataclasses
 import datetime
 import decimal
-from collections import OrderedDict
 
 import psycopg2.extensions
 
@@ -303,8 +302,8 @@ class CdEBaseBackend(AbstractBackend):
         data = self.query_one(rs, query, ())
         assert data is not None
 
-        simple_stats = OrderedDict(
-            (k, data[k])
+        simple_stats = {
+            k: data[k]
             for k in (
                 n_("num_members"),
                 n_("num_of_searchable"),
@@ -314,14 +313,14 @@ class CdEBaseBackend(AbstractBackend):
                 n_("num_ex_members"),
                 n_("num_all"),
             )
-        )
+        }
 
         def query_stats(
             select: str,
             condition: str,
             order: str,
             limit: int = 0,
-        ) -> OrderedDict[str, int]:
+        ) -> dict[str, int]:
             query = f"""
                 SELECT COUNT(*) AS num, {select} AS datum
                 FROM core.personas
@@ -331,7 +330,7 @@ class CdEBaseBackend(AbstractBackend):
                 ORDER BY {order}
             """
             data = self.query_all(rs, query, ())
-            return OrderedDict((e['datum'], e['num']) for e in data)
+            return {e['datum']: e['num'] for e in data}
 
         # Members by locations.
         other_stats: CdEDBObject = {
@@ -386,13 +385,13 @@ class CdEBaseBackend(AbstractBackend):
                 -- num DESC,
                 datum ASC
         """
-        year_stats[n_("members_by_first_event")] = OrderedDict(
-            (e['datum'], e['num'])
+        year_stats[n_("members_by_first_event")] = {
+            e['datum']: e['num']
             for e in self.query_all(rs, query.format("WHERE is_member = TRUE"), ())
-        )
-        year_stats[n_("users_by_first_event")] = OrderedDict(
-            (e['datum'], e['num']) for e in self.query_all(rs, query.format(""), ())
-        )
+        }
+        year_stats[n_("users_by_first_event")] = {
+            e['datum']: e['num'] for e in self.query_all(rs, query.format(""), ())
+        }
 
         # Unique event attendees per year:
         query = """

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-29 01:51+0200\n"
+"POT-Creation-Date: 2026-09-09 16:56+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -1410,6 +1410,24 @@ msgstr "Unterkünfte"
 msgid "ViolationKind.other"
 msgstr "Sonstiges"
 
+msgid "Roles.meta_admin"
+msgstr "Meta-Admin"
+
+msgid "Roles.core_admin"
+msgstr "Core-Admin"
+
+msgid "Roles.cde_admin"
+msgstr "CdE-Admin"
+
+msgid "Roles.event_admin"
+msgstr "Veranstaltungs-Admin"
+
+msgid "Roles.ml_admin"
+msgstr "Mailinglisten-Admin"
+
+msgid "Roles.assembly_admin"
+msgstr "Versammlungs-Admin"
+
 msgid "Roles.finance_admin"
 msgstr "Finanz-Admin"
 
@@ -1421,24 +1439,6 @@ msgstr "Fallarchiv-Admin"
 
 msgid "Roles.cdelokal_admin"
 msgstr "CdElokal-Admin"
-
-msgid "Roles.event_admin"
-msgstr "Veranstaltungs-Admin"
-
-msgid "Roles.assembly_admin"
-msgstr "Versammlungs-Admin"
-
-msgid "Roles.core_admin"
-msgstr "Core-Admin"
-
-msgid "Roles.ml_admin"
-msgstr "Mailinglisten-Admin"
-
-msgid "Roles.meta_admin"
-msgstr "Meta-Admin"
-
-msgid "Roles.cde_admin"
-msgstr "CdE-Admin"
 
 msgid "Realms.cde"
 msgstr "CdE"
@@ -3179,6 +3179,9 @@ msgstr "Datenbank für Wartungsarbeiten gesperrt."
 
 msgid "Unknown message id."
 msgstr "Unbekannte Nachrichten-ID."
+
+msgid "Blocked genesis request from TOR exit node."
+msgstr "Accountanfrage via TOR exit node blockiert."
 
 msgid "Invalid account for upgrade request."
 msgstr "Ungültiger Account für eine Account Upgrade Anfrage."
@@ -6006,6 +6009,9 @@ msgstr "CdE Account Anfragen müssen eine vergangene Veranstaltung enthalten."
 msgid "Only core admins may approve upgrade requests."
 msgstr "Nur Core-Admins können Account-Upgrades bestätigen."
 
+msgid "Case rejected."
+msgstr "Anfrage abgewiesen."
+
 msgid "Past event attendance could not be established."
 msgstr ""
 "Teilnahme an vergangener Veranstaltung konnte nicht eingetragen werden."
@@ -6018,9 +6024,6 @@ msgstr "Account Upgrade durchgeführt."
 
 msgid "User updated."
 msgstr "Account aktualisiert."
-
-msgid "Case rejected."
-msgstr "Anfrage abgewiesen."
 
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
@@ -9884,6 +9887,9 @@ msgstr ""
 "Erstellt um %(ctime)s von %(first_submitted_by)s; zuletzt geändert um "
 "%(mtime)s von %(submitted_by)s."
 
+msgid "Companions_[[plural]]"
+msgstr "Fallbegleitungen"
+
 #, python-format
 msgid "%(count)s Cases found"
 msgstr "%(count)s Fälle gefunden"
@@ -9911,6 +9917,21 @@ msgstr "Beteiligung"
 
 msgid "is withdrawn"
 msgstr "hat sich zurückgezogen"
+
+msgid "Active Companions"
+msgstr "Aktive Fallbegleitungen"
+
+msgid "Ongoing cases:"
+msgstr "Laufende Fälle:"
+
+msgid "Concluded cases:"
+msgstr "Abgeschlossene Fälle"
+
+msgid "Inactive Companions"
+msgstr "Inaktive Fallbegleitungen"
+
+msgid "Previous cases:"
+msgstr "Frühere Fälle:"
 
 msgid "Enforcers"
 msgstr "Maßnahmenmanager:innen"

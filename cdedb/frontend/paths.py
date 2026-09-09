@@ -201,6 +201,7 @@ rules = [
                 get_("/helpers", endpoint="list_complaint_helpers"),
                 post("/helpers/enforcer/add", endpoint="add_enforcer"),
                 post("/helpers/enforcer/remove", endpoint="remove_enforcer"),
+                get_("/companions", endpoint="list_companions"),
                 get_("/case/create", endpoint="create_case_form"),
                 post("/case/create", endpoint="create_case"),
                 sub(

@@ -26,6 +26,7 @@ from cdedb.common import (
     DeletionBlockers,
     GenesisDecision,
     RequestState,
+    is_tor_exit_node,
     merge_dicts,
     now,
     unwrap,
@@ -72,6 +73,17 @@ class CoreGenesisBackend(CoreBaseBackend):
                 f" {data['given_names']} {data['family_name']} <{data['username']}>"
                 f" from IP {rs.request.remote_addr if rs.request else None}"
             )
+            if (
+                rs.request
+                and rs.request.remote_addr
+                and is_tor_exit_node(rs.request.remote_addr)
+            ):
+                self.logger.warning(
+                    f"Blocked genesis request from TOR exit node:"
+                    f" {data['given_names']} {data['family_name']} <{data['username']}>"
+                    f" from IP {rs.request.remote_addr}"
+                )
+                raise RuntimeError(n_("Blocked genesis request from TOR exit node."))
             self.core_log(
                 rs,
                 const.CoreLogCodes.genesis_request,

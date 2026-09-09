@@ -2045,11 +2045,11 @@ class Worker(threading.Thread):
         connpool = connection_pool_factory(
             conf["CDB_DATABASE_NAME"],
             DATABASE_ROLES,
-            secrets,
+            secrets["CDB_DATABASE_ROLES"],
             conf["DB_HOST"],
             conf["DB_PORT"],
         )
-        rrs._conn = connpool[rs.user.new_roles.get_db_role()]
+        rrs._conn = connpool(rs.user.new_roles.get_db_role())
         logger = logging.getLogger("cdedb.frontend.worker")
 
         def get_doc(task: WorkerTarget) -> str:

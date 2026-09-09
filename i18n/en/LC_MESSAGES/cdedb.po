@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-29 01:51+0200\n"
+"POT-Creation-Date: 2026-09-09 16:56+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1410,6 +1410,24 @@ msgstr "Lodgements"
 msgid "ViolationKind.other"
 msgstr "Other"
 
+msgid "Roles.meta_admin"
+msgstr "Meta Admin"
+
+msgid "Roles.core_admin"
+msgstr "Core Admin"
+
+msgid "Roles.cde_admin"
+msgstr "CdE Admin"
+
+msgid "Roles.event_admin"
+msgstr "Event Admin"
+
+msgid "Roles.ml_admin"
+msgstr "Mailinglist Admin"
+
+msgid "Roles.assembly_admin"
+msgstr "Assembly Admin"
+
 msgid "Roles.finance_admin"
 msgstr "Finance Admin"
 
@@ -1421,24 +1439,6 @@ msgstr "Case Archive Admin"
 
 msgid "Roles.cdelokal_admin"
 msgstr "CdElokal Admin"
-
-msgid "Roles.event_admin"
-msgstr "Event Admin"
-
-msgid "Roles.assembly_admin"
-msgstr "Assembly Admin"
-
-msgid "Roles.core_admin"
-msgstr "Core Admin"
-
-msgid "Roles.ml_admin"
-msgstr "Mailinglist Admin"
-
-msgid "Roles.meta_admin"
-msgstr "Meta Admin"
-
-msgid "Roles.cde_admin"
-msgstr "CdE Admin"
 
 msgid "Realms.cde"
 msgstr "CdE"
@@ -3144,6 +3144,9 @@ msgid "Lockdown active."
 msgstr ""
 
 msgid "Unknown message id."
+msgstr ""
+
+msgid "Blocked genesis request from TOR exit node."
 msgstr ""
 
 msgid "Invalid account for upgrade request."
@@ -5865,6 +5868,9 @@ msgstr ""
 msgid "Only core admins may approve upgrade requests."
 msgstr ""
 
+msgid "Case rejected."
+msgstr ""
+
 msgid "Past event attendance could not be established."
 msgstr ""
 
@@ -5875,9 +5881,6 @@ msgid "Account upgraded."
 msgstr ""
 
 msgid "User updated."
-msgstr ""
-
-msgid "Case rejected."
 msgstr ""
 
 msgid "This page can only be accessed by orgas."
@@ -9357,6 +9360,9 @@ msgid ""
 "%(submitted_by)s."
 msgstr ""
 
+msgid "Companions_[[plural]]"
+msgstr "Companions"
+
 #, python-format
 msgid "%(count)s Cases found"
 msgstr ""
@@ -9383,6 +9389,21 @@ msgid "Involvement"
 msgstr ""
 
 msgid "is withdrawn"
+msgstr ""
+
+msgid "Active Companions"
+msgstr ""
+
+msgid "Ongoing cases:"
+msgstr ""
+
+msgid "Concluded cases:"
+msgstr ""
+
+msgid "Inactive Companions"
+msgstr ""
+
+msgid "Previous cases:"
 msgstr ""
 
 msgid "Enforcers"

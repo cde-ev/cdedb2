@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-29 01:51+0200\n"
+"POT-Creation-Date: 2026-09-09 16:56+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -1669,6 +1669,28 @@ msgid "ViolationKind.other"
 msgstr ""
 
 #, fuzzy
+msgid "Roles.meta_admin"
+msgstr "administrator administratorum"
+
+msgid "Roles.core_admin"
+msgstr ""
+
+#, fuzzy
+msgid "Roles.cde_admin"
+msgstr "administrator CdEi"
+
+#, fuzzy
+msgid "Roles.event_admin"
+msgstr "administratores eventuum"
+
+msgid "Roles.ml_admin"
+msgstr ""
+
+#, fuzzy
+msgid "Roles.assembly_admin"
+msgstr "coetus"
+
+#, fuzzy
 msgid "Roles.finance_admin"
 msgstr "administrator pecuniae"
 
@@ -1683,28 +1705,6 @@ msgstr "administrator tabellarum epistularum electronicarum"
 #, fuzzy
 msgid "Roles.cdelokal_admin"
 msgstr "administrator CdElocalis"
-
-#, fuzzy
-msgid "Roles.event_admin"
-msgstr "administratores eventuum"
-
-#, fuzzy
-msgid "Roles.assembly_admin"
-msgstr "coetus"
-
-msgid "Roles.core_admin"
-msgstr ""
-
-msgid "Roles.ml_admin"
-msgstr ""
-
-#, fuzzy
-msgid "Roles.meta_admin"
-msgstr "administrator administratorum"
-
-#, fuzzy
-msgid "Roles.cde_admin"
-msgstr "administrator CdEi"
 
 #, fuzzy
 msgid "Realms.cde"
@@ -3472,6 +3472,9 @@ msgstr "vestigium novum crea"
 #, fuzzy
 msgid "Unknown message id."
 msgstr "inscriptio electronica nova"
+
+msgid "Blocked genesis request from TOR exit node."
+msgstr ""
 
 #, fuzzy
 msgid "Invalid account for upgrade request."
@@ -6437,6 +6440,9 @@ msgstr ""
 msgid "Only core admins may approve upgrade requests."
 msgstr "signum arcanum muta"
 
+msgid "Case rejected."
+msgstr ""
+
 msgid "Past event attendance could not be established."
 msgstr ""
 
@@ -6448,9 +6454,6 @@ msgid "Account upgraded."
 msgstr "vestigium novum crea"
 
 msgid "User updated."
-msgstr ""
-
-msgid "Case rejected."
 msgstr ""
 
 msgid "This page can only be accessed by orgas."
@@ -10165,6 +10168,10 @@ msgid ""
 "%(submitted_by)s."
 msgstr ""
 
+#, fuzzy
+msgid "Companions_[[plural]]"
+msgstr "donorum"
+
 #, fuzzy, python-format
 msgid "%(count)s Cases found"
 msgstr "Annuntiationes"
@@ -10192,6 +10199,23 @@ msgid "Involvement"
 msgstr ""
 
 msgid "is withdrawn"
+msgstr ""
+
+#, fuzzy
+msgid "Active Companions"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+msgid "Ongoing cases:"
+msgstr ""
+
+msgid "Concluded cases:"
+msgstr ""
+
+#, fuzzy
+msgid "Inactive Companions"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+msgid "Previous cases:"
 msgstr ""
 
 msgid "Enforcers"

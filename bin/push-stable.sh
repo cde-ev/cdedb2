@@ -13,7 +13,7 @@ then
     }
 else
     function push_stable () {
-        OLD_TAG="$(git describe --tags origin/stable)"
+        OLD_TAG="$(git describe --tags origin/stable --abbrev=0)"
         TAG=release/$(date +'%Y-%m-%d')
         RELEASE_FILE="related/release/${OLD_TAG#"release/"}_${TAG#"release/"}_$(git rev-parse HEAD | head -c8).md"
         git tag -f "$TAG"
