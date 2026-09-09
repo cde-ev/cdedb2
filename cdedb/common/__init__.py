@@ -1033,11 +1033,11 @@ class GenesisDecision(CdEIntEnum):
 
     approve = 1  #: Approve the request and create a new account.
     deny = 2  #: Deny the request. Do not create or update an account.
-    #: Deny the request but update an existing account, dearchiving it if necessary.
+    #: Approve the request, but update an existing account, dearchiving it if necessary.
     update = 3
     #: Approve the request and grant a trial membership.
     approve_grant_trial_membership = 4
-    #: Deny the request and grant a trial membership.
+    #: Approve the request, but update an existing account and grant a trial membership.
     update_grant_trial_membership = 5
 
     def is_approved(self) -> bool:

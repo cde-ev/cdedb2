@@ -199,7 +199,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         return self.redirect(rs, "core/index")
 
     @access(Roles.event)
-    def genesis_upgrade_form(self, rs: RequestState) -> Response:
+    def genesis_request_upgrade_form(self, rs: RequestState) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
         assert rs.user.persona_id is not None
@@ -225,7 +225,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access(Roles.event, modi={"POST"})
     @REQUESTdata("attachment_hash", "pevent_id", "attachment_filename")
     @REQUESTfile("attachment")
-    def genesis_upgrade(
+    def genesis_request_upgrade(
         self,
         rs: RequestState,
         attachment: werkzeug.datastructures.FileStorage | None,
@@ -263,7 +263,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             "pevent_id": pevent_id,
         }
 
-        # We need to mock some data so our usual logik works.
+        # We need to mock some data so our usual logic works.
         persona = self.coreproxy.get_persona(rs, rs.user.persona_id)
         data["username"] = persona.username
         data["given_names"] = persona.given_names
@@ -273,13 +273,13 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if pevent_id and pevent_id not in pevents:
             msg = ValueError(n_("You didn't participate at this event."))
             rs.append_validation_error(("pevent_id", msg))
-            return self.genesis_upgrade_form(rs)
+            return self.genesis_request_upgrade_form(rs)
 
         data = check(rs, models.GenesisUpgrade, data, creation=True)
         if rs.has_validation_errors():
-            return self.genesis_upgrade_form(rs)
+            return self.genesis_request_upgrade_form(rs)
 
-        ret = self.coreproxy.genesis_upgrade(rs, data)
+        ret = self.coreproxy.genesis_request_upgrade(rs, data)
         rs.notify_return_code(ret, success=n_("Your request has been submitted."))
         return self.redirect(rs, "core/index")
 

@@ -81,7 +81,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return ret
 
     @access(Roles.event)
-    def genesis_upgrade(
+    def genesis_request_upgrade(
         self,
         rs: RequestState,
         data: CdEDBObject,
@@ -432,9 +432,10 @@ class CoreGenesisBackend(CoreBaseBackend):
 
             log_code = const.CoreLogCodes.genesis_change
             if status and status != current.status:
-                # Only internal marker used with Silencer to generate no log message
                 if status == const.GenesisStati.approved:
-                    pass
+                    # This is only ever used intermittenly with a Silencer.
+                    if not rs.is_quiet:
+                        raise RuntimeError("Intermediate status should not be logged.")
                 elif status == const.GenesisStati.successful:
                     log_code = const.CoreLogCodes.genesis_approved
                 elif status == const.GenesisStati.rejected:
@@ -474,7 +475,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 raise ValueError(n_("Decision must be 'update' or 'deny."))
 
             # Set the case as finalized without generating a log message.
-            # This is necessary to sooth username checks for f.e. dearchival.
+            # This is necessary to soothe username checks for f.e. dearchival.
             with Silencer(rs):
                 self.genesis_modify_case_meta(
                     rs,
@@ -516,7 +517,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 persona["is_cde_realm"] = True
                 for realm in case.realm.implied_realms:
                     persona[realm.realm_marker] = True
-                change_note = "CdE Bereich hinzugefügt nach Account Upgrade Anfrage."
+                change_note = "CdE Bereich hinzugefügt nach Upgradeanfrage."
                 code = self.core.change_persona_realms(rs, persona, change_note)
                 if not code:  # pragma: no cover
                     raise RuntimeError(n_("Granting CdE realm failed."))

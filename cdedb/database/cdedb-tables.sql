@@ -264,10 +264,16 @@ CREATE TABLE core.genesis_cases (
         -- enum tracking the progress
         -- see cdedb.database.constants.GenesisStati
         status                  integer NOT NULL DEFAULT 0,
+        -- An upgrade request cannot be unconfirmed.
+        CONSTRAINT genesis_cases_upgrade_status
+            CHECK ( NOT is_upgrade OR status != 1 ),
         -- who moderated the request
         reviewer                integer REFERENCES core.personas(id) DEFAULT NULL,
         -- the created or account merged into, if any
         persona_id              integer REFERENCES core.personas(id) DEFAULT NULL,
+        -- An upgrade request needs a persona id.
+        CONSTRAINT genesis_cases_upgrade_persona
+            CHECK ( NOT is_upgrade OR persona_id IS NOT NULL ),
         -- past event and course to be added to the new user
         pevent_id               integer DEFAULT NULL, -- REFERENCES past_event.events(id)
         pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
