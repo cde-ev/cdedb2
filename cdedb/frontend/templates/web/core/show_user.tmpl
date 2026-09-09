@@ -301,15 +301,6 @@
                                     aclass="btn btn-xs btn-success") }}
                         {% endif %}
                     </dd>
-                    {% if data['id'] == user.persona_id and data.is_false('is_cde_realm') and data.is_false('is_event_realm') %}
-                        <dt></dt>
-                        <dd class="text-info">
-                            {{ util.make_icon('info-circle') }}
-                            {% trans mailto=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
-                                To request an upgrade to a member account, contact {{ mailto }}.
-                            {% endtrans %}
-                        </dd>
-                    {% endif %}
 
                     {% if admin_bits is not none %}
                         <dt title="{% trans %}Admin Privileges{% endtrans %}">
