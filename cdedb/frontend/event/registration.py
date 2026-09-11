@@ -2425,6 +2425,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             action == 'modify_checkin'
             and any(len(reg['checkin_periods']) >= 2 for reg in regs.values())
             and checkin_time
+            and checkin_time
             < max(
                 reg['checkin_periods'][-2].checkout_time
                 for reg in regs.values()
@@ -2484,6 +2485,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if (
             action == 'modify_checkout'
             and any(reg['checkin_periods'] for reg in regs.values())
+            and checkout_time
             and checkout_time
             < max(
                 reg['checkin_periods'][-1].checkin_time
