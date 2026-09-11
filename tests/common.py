@@ -1860,35 +1860,31 @@ class FrontendTest(BackendTest):
         alert_type_class = f".alert-{ntype}" if ntype is not None else ""
         selector = f"div#{div} div.alert{alert_type_class} span.notificationMessage"
         notifications = self._get_nodes(selector, check_exists=False)
+        extra_msg = ""
+
+        other_selector = f"div#{div} div.alert"
+        if other_notifications := self._get_nodes(other_selector, check_exists=False):
+            extra_msg += "\nI found these notifications instead:\n"
+            extra_msg += "\n".join(
+                f"\t{' '.join(sorted(node.classes))}:"
+                f" {self._normalize_whitespace(node.text_content())}"
+                for node in other_notifications
+            )
+        else:
+            extra_msg += "\nThere were no notifications."
+        if errors := self.get_content("debug-data-errors", check_exists=False):
+            extra_msg += "\nI found these errors in the debug data:\n\t" + errors
+
         if not notifications:
-            other_selector = f"div#{div} div.alert"
-            msg = msg or f"Couldn't find any such notification: {selector!r}."
-            if other_notifications := self._get_nodes(
-                other_selector, check_exists=False
-            ):
-                msg += "\nI found these notifications instead:\n"
-                msg += "\n".join(
-                    f"\t{' '.join(sorted(node.classes))}:"
-                    f" {self._normalize_whitespace(node.text_content())}"
-                    for node in other_notifications
-                )
-                if errors := self.get_content("debug-data-errors", check_exists=False):
-                    msg += "\nI found these errors in the debug data: " + errors
-            else:
-                msg += " (There were no notifications)."
-                if errors := self.get_content("debug-data-errors", check_exists=False):
-                    msg += "\nI found these errors in the debug data:\n\t" + errors
-            self.fail(msg)
+            default_msg = f"Couldn't find any such notification: {selector!r}."
+            self.fail((msg or default_msg) + extra_msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
             all_texts = " | ".join(
                 self._normalize_whitespace(n.text_content()) for n in notifications
             )
-            if errors := self.get_content("debug-data-errors", check_exists=False):
-                if msg is None:
-                    msg = ""
-                msg += "\nI found these errors in the debug data:\n\t" + errors
-            self.assertIn(ntext, all_texts, msg=msg)
+            default_msg = f"Couldn't find notification text {ntext!r} in {selector!r}."
+            self.assertIn(ntext, all_texts, msg=(msg or default_msg) + extra_msg)
 
     def assertLogin(self, name: str) -> None:
         """Assert that a user is logged in by checking their display name."""
