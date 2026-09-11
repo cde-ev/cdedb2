@@ -7,6 +7,7 @@ import enum
 import logging
 import re
 import threading
+import xml.etree.ElementTree as etree
 import zoneinfo
 from collections import Counter
 from collections.abc import (
@@ -31,6 +32,7 @@ import icu
 import jinja2
 import jinja2.filters
 import markdown
+import markdown.extensions.tables
 import markdown.extensions.toc
 import markupsafe
 import phonenumbers
@@ -543,6 +545,29 @@ def md_id_wrapper(val: str, sep: str) -> str:
     return id_prefix + markdown.extensions.toc.slugify(val, sep)
 
 
+# Taken from https://stackoverflow.com/a/79989982
+
+
+class BootstrapTableProcessor(markdown.extensions.tables.TableProcessor):
+    """Extend the default markdown table processor to add bootstrap classes."""
+
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
+        super().run(parent, blocks)
+        for table in parent.findall("table"):
+            # Add bootstrap classes to markdown tables.
+            table.set("class", "table table-slim")
+
+
+class BootstrapTableExtension(markdown.extensions.tables.TableExtension):
+    """Extension that registers the above custom table processor."""
+
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        if '|' not in md.ESCAPED_CHARS:
+            md.ESCAPED_CHARS.append('|')
+        processor = BootstrapTableProcessor(md.parser, self.getConfigs())
+        md.parser.blockprocessors.register(processor, 'table', 75)
+
+
 def get_markdown_parser() -> markdown.Markdown:
     """Constructs a markdown parser for general use.
 
@@ -567,7 +592,13 @@ def get_markdown_parser() -> markdown.Markdown:
             },
         }
         md = markdown.Markdown(
-            extensions=["extra", "sane_lists", "smarty", "toc"],
+            extensions=[
+                "extra",
+                "sane_lists",
+                "smarty",
+                "toc",
+                BootstrapTableExtension(),
+            ],
             extension_configs=extension_configs,
         )
 
