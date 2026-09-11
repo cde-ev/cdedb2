@@ -217,7 +217,7 @@
 {% endmacro %}
 
 {% macro print_questionnaire_entry(row, is_locked, static=False) %}
-    <div id="questionnaire_row_{{ row.pos }}" class="questionnaire-row">
+    <div id="questionnaire_row_{{ row.pos }}" class="{{ row.get_row_html_classes()|join(" ") }}">
     {% if row.name == "QuestionnaireFieldRow" %}
         {% if not static %}
             {{ form_field_input(

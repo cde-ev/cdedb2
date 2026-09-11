@@ -87,6 +87,13 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     def get_drow_html_classes(cls) -> list[str]:
         return ["questionnaire-row-config"]
 
+    _row_html_class: ClassVar[str | None] = None
+
+    def get_row_html_classes(self) -> list[str]:
+        return ["questionnaire-row"] + (
+            [self._row_html_class] if self._row_html_class else []
+        )
+
     _icon: ClassVar[str]
 
     @classmethod
@@ -165,6 +172,7 @@ class QuestionnaireTextRowMeta(QuestionnaireRow):
 class QuestionnaireTextRow(QuestionnaireTextRowMeta):
     _role = const.QuestionnaireRowRole.text
     _icon = "bars"
+    _row_html_class = "questionnaire-row-text"
 
     text: str
     title: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
@@ -177,6 +185,7 @@ class QuestionnaireTextRow(QuestionnaireTextRowMeta):
 class QuestionnaireHeadingRow(QuestionnaireTextRowMeta):
     _role = const.QuestionnaireRowRole.heading
     _icon = "align-left"
+    _row_html_class = "questionnaire-row-heading"
 
     text: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
     title: str
@@ -189,6 +198,7 @@ class QuestionnaireHeadingRow(QuestionnaireTextRowMeta):
 class QuestionnairePanelRow(QuestionnaireTextRowMeta):
     _role = const.QuestionnaireRowRole.panel
     _icon = "rectangle-list"
+    _row_html_class = "questionnaire-row-panel"
 
     text: str
     title: str
@@ -202,6 +212,7 @@ class QuestionnaireFieldRow(QuestionnaireRow):
     _frequency = QuestionnaireFrequency.optional
     _icon = "pen-to-square"
     static = True
+    _row_html_class = "questionnaire-row-field"
 
     field_id: vtypes.ID
     field: EventField = dataclasses.field(
@@ -267,7 +278,10 @@ class QuestionnaireMagicRow(QuestionnaireRow):
 
     @classmethod
     def get_drow_html_classes(cls) -> list[str]:
-        return super().get_drow_html_classes() + ["questionnaire-row-magic"]
+        return super().get_drow_html_classes() + ["questionnaire-row-config-magic"]
+
+    def get_row_html_classes(self) -> list[str]:
+        return super().get_row_html_classes() + ["questionnaire-row-magic"]
 
 
 @dataclasses.dataclass
