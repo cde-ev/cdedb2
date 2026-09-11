@@ -969,7 +969,7 @@ class TestCdEFrontend(FrontendTest):
             '3;Charly;Clown;charly@example.cde;1984-05-13;True;'
             '"Ich bin ein ""Künstler""; im weiteren Sinne."',
             '4;Daniel;Dino;daniel@example.cde;1963-02-19;False;',
-            '6;Ferdinand;Findus;ferdinand@example.cde;1988-01-01;True;',
+            '6;Ferdinand ;Findus;ferdinand@example.cde;1988-01-01;True;',
             '',
         )).encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
