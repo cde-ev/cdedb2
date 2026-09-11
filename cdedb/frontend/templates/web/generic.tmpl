@@ -679,7 +679,7 @@
             {{ caller() }}
         </div>
         {% if formid %}
-            {{ util.input_hidden(name="nav_tab_active", form=formid) }}
+            {{ util.input_hidden(name="nav_tab_active", form=formid, aclass="no-protect") }}
         {% endif %}
     </div>
     {% if not jshint %}

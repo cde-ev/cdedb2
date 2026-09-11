@@ -247,10 +247,15 @@ class QuestionnaireMagicRow(QuestionnaireRow):
     _icon = "wand-magic-sparkles"
 
     _heading_level: ClassVar[int] = 3
-    _toc_entries: ClassVar[list[str]] = []
+    _toc_entries: ClassVar[list[str | tuple[str, int]]] = []
 
     def get_toc_entries(self) -> list[_QuestionnaireHeading]:
-        return [_QuestionnaireHeading(title=entry) for entry in self._toc_entries]
+        return [
+            _QuestionnaireHeading(title=entry)
+            if isinstance(entry, str)
+            else _QuestionnaireHeading(title=entry[0], level=entry[1])
+            for entry in self._toc_entries
+        ]
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
