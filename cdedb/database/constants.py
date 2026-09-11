@@ -305,6 +305,14 @@ class QuestionnairePanelKind(CdEIntEnum):
             self.danger: "panel-danger",
         }[self]
 
+    def get_alert_class(self) -> str:
+        return {
+            self.default: "alert-default",
+            self.info: "alert-info",
+            self.warning: "alert-warning",
+            self.danger: "alert-danger",
+        }[self]
+
 
 @enum.unique
 class EventPartGroupType(CdEIntEnum):
