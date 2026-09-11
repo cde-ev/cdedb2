@@ -3152,9 +3152,7 @@ def _by_field_datatype(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.QuestionnaireTextRow,
-    models_event.questionnaire.QuestionnaireHeadingRow,
-    models_event.questionnaire.QuestionnairePanelRow,
+    *models_event.questionnaire.QuestionnaireTextRowMeta.__subclasses__(),
 )
 def _questionnaire_text_row(
     val: CdEDBObject, argname: str = "", **kwargs: Any
@@ -3220,15 +3218,7 @@ def _questionnaire_field_row(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.CourseChoices,
-    models_event.questionnaire.PartSelection,
-    models_event.questionnaire.FeePreview,
-    models_event.questionnaire.ListConsent,
-    models_event.questionnaire.MixedLodging,
-    models_event.questionnaire.FotoNotice,
-    models_event.questionnaire.RegistrationNotes,
-    models_event.questionnaire.TableOfContents,
-    models_event.questionnaire.MyData,
+    *models_event.questionnaire.QuestionnaireMagicRow.__subclasses__(),
 )
 def _questionnaire_magic_row(
     val: CdEDBObject,
