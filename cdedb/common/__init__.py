@@ -30,6 +30,7 @@ from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     Self,
     Union,
     cast,
@@ -99,7 +100,7 @@ Error = tuple[str | None, Exception]
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
 # Third argument are format parameters to be spplied to the message (post i18n).
-NotificationType = str
+NotificationType = Literal["info", "warning", "error", "success"]
 Notification = tuple[NotificationType, str, CdEDBObject]
 
 CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]

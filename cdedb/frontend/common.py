@@ -303,7 +303,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         if not message:
             return None, None, None
         parts = message.split("--")
-        ntype = parts[0]
+        ntype = cast(NotificationType, parts[0])
         length = int(parts[1])
         remainder = "--".join(parts[2:])
         nmessage = remainder[:length]
