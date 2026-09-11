@@ -5416,7 +5416,7 @@ msgid "Started sending archival notifications."
 msgstr "Versand der Archivierungsbenachrichtigungen begonnen."
 
 msgid "Started updating exmember balance."
-msgstr "Aktualisierung der Exmitglieder Guthaben gestartet."
+msgstr "Aktualisierung der Guthaben der Exmitglieder gestartet."
 
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
