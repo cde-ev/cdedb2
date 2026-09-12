@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-09 17:34+0200\n"
+"POT-Creation-Date: 2026-09-12 22:56+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3165,13 +3165,10 @@ msgstr ""
 msgid "Case not to review."
 msgstr ""
 
-msgid "Decision must be 'update' or 'deny."
+msgid "Granting CdE realm failed."
 msgstr ""
 
 msgid "Email address already taken."
-msgstr ""
-
-msgid "Granting CdE realm failed."
 msgstr ""
 
 msgid "Dearchival failed."
@@ -5874,10 +5871,10 @@ msgstr ""
 msgid "Past event attendance could not be established."
 msgstr ""
 
-msgid "Case approved."
+msgid "Account upgraded."
 msgstr ""
 
-msgid "Account upgraded."
+msgid "Case approved."
 msgstr ""
 
 msgid "User updated."
@@ -9766,7 +9763,7 @@ msgid ""
 "you will be granted a trial membership."
 msgstr ""
 
-msgid "If you participated at a CdE event:"
+msgid "Alternatively, if you participated at a CdE event:"
 msgstr ""
 
 msgid ""

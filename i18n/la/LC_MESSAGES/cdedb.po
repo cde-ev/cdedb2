@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-09 17:34+0200\n"
+"POT-Creation-Date: 2026-09-12 22:56+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3493,16 +3493,13 @@ msgstr ""
 msgid "Case not to review."
 msgstr ""
 
-msgid "Decision must be 'update' or 'deny."
-msgstr ""
+#, fuzzy
+msgid "Granting CdE realm failed."
+msgstr "inscriptionem electronicam muta"
 
 #, fuzzy
 msgid "Email address already taken."
 msgstr "inscriptio electronica pristina"
-
-#, fuzzy
-msgid "Granting CdE realm failed."
-msgstr "inscriptionem electronicam muta"
 
 #, fuzzy
 msgid "Dearchival failed."
@@ -6446,12 +6443,12 @@ msgstr ""
 msgid "Past event attendance could not be established."
 msgstr ""
 
-msgid "Case approved."
-msgstr ""
-
 #, fuzzy
 msgid "Account upgraded."
 msgstr "vestigium novum crea"
+
+msgid "Case approved."
+msgstr ""
 
 msgid "User updated."
 msgstr ""
@@ -10622,7 +10619,7 @@ msgid ""
 msgstr ""
 
 #, fuzzy
-msgid "If you participated at a CdE event:"
+msgid "Alternatively, if you participated at a CdE event:"
 msgstr "haec videri non possit."
 
 msgid ""

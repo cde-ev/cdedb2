@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-09 17:34+0200\n"
+"POT-Creation-Date: 2026-09-12 22:56+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3200,14 +3200,11 @@ msgstr "Accountanfrage ist bereits abgeschlossen."
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
-msgid "Decision must be 'update' or 'deny."
-msgstr "Die Entscheidung muss 'update' oder 'deny' sein."
+msgid "Granting CdE realm failed."
+msgstr "CdE-Bereich Hinzufügung ist fehlgeschlagen."
 
 msgid "Email address already taken."
 msgstr "Emailadresse bereits vergeben."
-
-msgid "Granting CdE realm failed."
-msgstr "CdE-Bereich Hinzufügung ist fehlgeschlagen."
 
 msgid "Dearchival failed."
 msgstr "Fehler bei der Wiederherstellung."
@@ -6016,11 +6013,11 @@ msgid "Past event attendance could not be established."
 msgstr ""
 "Teilnahme an vergangener Veranstaltung konnte nicht eingetragen werden."
 
-msgid "Case approved."
-msgstr "Antrag genehmigt."
-
 msgid "Account upgraded."
 msgstr "Accountupgrade durchgeführt."
+
+msgid "Case approved."
+msgstr "Antrag genehmigt."
 
 msgid "User updated."
 msgstr "Account aktualisiert."
@@ -10335,8 +10332,8 @@ msgstr ""
 "Lade unten deine Teilnahmeurkunde hoch. Nachdem wir deine Anfrage überprüft "
 "haben, erhältst du eine Probemitgliedschaft im CdE."
 
-msgid "If you participated at a CdE event:"
-msgstr "Wenn du an einer CdE Veranstaltung teilgenommen hast:"
+msgid "Alternatively, if you participated at a CdE event:"
+msgstr "Andernfalls, wenn du an einer CdE Veranstaltung teilgenommen hast:"
 
 msgid ""
 "Select your event in the dropdown below. Take care that the selected event "
