@@ -636,39 +636,31 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.redirect(rs, "core/genesis_show_case")
 
-        # We use a simplified UI with less buttons.
-        if persona_id or case.is_upgrade:
-            if decision == GenesisDecision.approve:
-                decision = GenesisDecision.update
-            elif decision == GenesisDecision.approve_grant_trial_membership:
-                decision = GenesisDecision.update_grant_trial_membership
-
+        creation = False
         # Do some sanity checks.
-        if decision.is_create() and self.coreproxy.verify_existence(
-            rs, case.persona.username, include_genesis=False
-        ):
-            rs.notify("error", n_("Email address already taken."))
-            return self.redirect(rs, "core/genesis_show_case")
-        if decision.is_update():
-            assert persona_id is not None
-            if (
-                not self.coreproxy.verify_persona(rs, persona_id, case.realm.role)
-                and not case.is_upgrade
-            ):
+        if decision.is_approved() and not case.is_upgrade:
+            if persona_id is None:
+                creation = True
+                if self.coreproxy.verify_existence(
+                    rs, case.persona.username, include_genesis=False
+                ):
+                    rs.notify("error", n_("Email address already taken."))
+                    return self.redirect(rs, "core/genesis_show_case")
+            elif not self.coreproxy.verify_persona(rs, persona_id, case.realm.role):
                 msg = n_(
                     "Invalid persona for update. Add additional realm first: %(realm)s."
                 )
                 rs.notify("error", msg, {'realm': rs.gettext(str(case.realm))})
                 return self.redirect(rs, "core/genesis_show_case")
-        if case.realm == Realms.cde and decision.is_create() and case.pevent_id is None:
-            rs.notify(
-                "error",
-                n_("You need to specify a past event for CdE genesis requests."),
-            )
-            return self.redirect(rs, "core/genesis_show_case")
+            if case.realm == Realms.cde and case.pevent_id is None:
+                rs.notify(
+                    "error",
+                    n_("You need to specify a past event for CdE genesis requests."),
+                )
+                return self.redirect(rs, "core/genesis_show_case")
         if (
-            case.is_upgrade
-            and decision.is_approved()
+            decision.is_approved()
+            and case.is_upgrade
             and "core_admin" not in rs.user.roles
         ):
             rs.notify("error", n_("Only core admins may approve upgrade requests."))
@@ -706,28 +698,32 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 )
 
         # Send notification to the user, depending on decision.
-        if decision.is_create():
+        if decision.is_approved():
             persona = self.coreproxy.get_persona(rs, persona_id)
             status = self.coreproxy.get_persona_status(rs, persona_id)
-            trial_member = False
             if case.realm == Realms.cde:
                 trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member
-            self.send_welcome_mail(rs, persona, status, is_trial_member=trial_member)
-            rs.notify("success", n_("Case approved."))
-        elif case.is_upgrade and decision.is_approved():
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            status = self.coreproxy.get_persona_status(rs, persona_id)
-            trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member
-            self.send_welcome_mail(rs, persona, status, is_trial_member=trial_member)
-            rs.notify("success", n_("Account upgraded."))
-        else:
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            reset_link = self._password_reset_link(rs, persona_id)
-            self.do_mail(
-                rs,
-                "genesis/genesis_updated",
-                {'To': (persona.username,), 'Subject': "CdEDB-Account reaktiviert"},
-                {'persona': persona, "reset_link": reset_link},
-            )
-            rs.notify("success", n_("User updated."))
+            else:
+                trial_member = False
+
+            if case.is_upgrade or creation:
+                self.send_welcome_mail(
+                    rs, persona, status, is_trial_member=trial_member
+                )
+                rs.notify(
+                    "success",
+                    n_("Account upgraded.")
+                    if case.is_upgrade
+                    else n_("Case approved."),
+                )
+
+            else:
+                reset_link = self._password_reset_link(rs, persona_id)
+                self.do_mail(
+                    rs,
+                    "genesis/genesis_updated",
+                    {'To': (persona.username,), 'Subject': "CdEDB-Account reaktiviert"},
+                    {'persona': persona, "reset_link": reset_link},
+                )
+                rs.notify("success", n_("User updated."))
         return self.redirect(rs, "core/genesis_list_cases")

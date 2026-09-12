@@ -234,15 +234,25 @@
             <div class="button-par">
                 {% set no_approve = (ambience["genesis_case"].is_upgrade and "core_admin" not in user.roles) %}
                 {% set title = gettext("Only core admins may approve upgrade requests.") if no_approve else "" %}
-                {{ util.input_submit(
-                    name="decision", value = enums['GenesisDecision'].approve,
-                    label=gettext("Approve"), aclass="btn btn-success", title=title, readonly=no_approve) }}
-                {% if ambience["genesis_case"].realm == enums["Realms"].cde %}
+                {% if ambience["genesis_case"].is_upgrade %}
                     {{ util.input_submit(
-                        name="decision", value = enums['GenesisDecision'].approve_grant_trial_membership,
-                        label=gettext("Approve (grant trial membership)"), aclass="btn btn-success",
-                        title=title, readonly=no_approve) }}
+                        name="decision", value=enums['GenesisDecision'].approve, label=gettext("Approve"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
+                    {{ util.input_submit(
+                        name="decision", value=enums['GenesisDecision'].approve_grant_trial_membership,
+                        label=gettext("Approve (grant trial membership)"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
+                {% elif ambience["genesis_case"].realm == enums["Realms"].cde %}
+                    {{ util.input_submit(
+                        name="decision", value=enums['GenesisDecision'].approve_grant_trial_membership,
+                        label=gettext("Approve (grant trial membership)"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
+                {% else %}
+                    {{ util.input_submit(
+                        name="decision", value=enums['GenesisDecision'].approve, label=gettext("Approve"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
                 {% endif %}
+
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].deny,
                     label=gettext("Reject"), aclass="btn btn-danger", icon="ban") }}

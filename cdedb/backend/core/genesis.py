@@ -483,8 +483,6 @@ class CoreGenesisBackend(CoreBaseBackend):
             case = self.genesis_get_case(rs, case_id)
             if case.status != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
-            if case.is_upgrade and decision.is_approved() and not decision.is_update():
-                raise ValueError(n_("Decision must be 'update' or 'deny."))
 
             # Set the case as finalized without generating a log message.
             # This is necessary to soothe username checks for f.e. dearchival.
@@ -495,71 +493,71 @@ class CoreGenesisBackend(CoreBaseBackend):
                     status=const.GenesisStati.approved,
                 )
 
-            if decision.is_create():
-                if self.verify_existence(rs, case.persona.username):
-                    raise ValueError(n_("Email address already taken."))
-                status = const.GenesisStati.successful
+            if decision.is_approved():
+                if case.is_upgrade:
+                    assert case.persona_id is not None
+                    status = const.GenesisStati.existing_updated
+                    persona_id = case.persona_id
 
-                data = case.get_persona_creation().as_dict()
-                data.pop("id")
-                # TODO remove those after adjusting the validation of personas for dataclasses
-                merge_dicts(data, PERSONA_DEFAULTS)
-                for admin_role in Roles.all_admin_roles():
-                    data.pop(admin_role.marker, None)
-                del data["is_archived"]
-                del data["is_purged"]
-                if "balance" in data:
-                    del data["balance"]
-                data["notes"] = case.notes
-                data = affirm(vtypes.Persona, data, creation=True)
-                persona_id = self.create_persona(
-                    rs, data, submitted_by=rs.user.persona_id
-                )
-
-            elif case.is_upgrade and decision.is_update():
-                assert case.persona_id is not None
-                status = const.GenesisStati.existing_updated
-                persona_id = case.persona_id
-
-                persona = self.get_event_user(rs, case.persona_id).as_dict()
-                merge_dicts(persona, models.CdEPersona.get_field_defaults())
-                for key in tuple(persona.keys()):
-                    if key not in CDE_TRANSITION_FIELDS and key != 'id':
-                        del persona[key]
-                persona["is_cde_realm"] = True
-                for realm in case.realm.implied_realms:
-                    persona[realm.realm_marker] = True
-                change_note = "CdE Bereich hinzugefügt nach Upgradeanfrage."
-                code = self.core.change_persona_realms(rs, persona, change_note)
-                if not code:  # pragma: no cover
-                    raise RuntimeError(n_("Granting CdE realm failed."))
-
-            elif decision.is_update():
-                assert persona_id is not None
-                status = const.GenesisStati.existing_updated
-                case.persona_id = persona_id
-
-                persona = self.get_persona(rs, persona_id)
-                persona_status = self.get_persona_status(rs, persona_id)
-                if not self._is_relative_admin(rs, persona_status):
-                    raise PrivilegeError(n_("Not privileged."))
-                username = case.persona.username
-                if persona.is_archived:
-                    code = self.dearchive_persona(rs, persona_id, username)
+                    persona = self.get_event_user(rs, case.persona_id).as_dict()
+                    merge_dicts(persona, models.CdEPersona.get_field_defaults())
+                    for key in tuple(persona.keys()):
+                        if key not in CDE_TRANSITION_FIELDS and key != 'id':
+                            del persona[key]
+                    persona["is_cde_realm"] = True
+                    for realm in case.realm.implied_realms:
+                        persona[realm.realm_marker] = True
+                    change_note = "CdE Bereich hinzugefügt nach Upgradeanfrage."
+                    code = self.core.change_persona_realms(rs, persona, change_note)
                     if not code:  # pragma: no cover
-                        raise RuntimeError(n_("Dearchival failed."))
-                elif username != persona.username:
-                    code, _ = self.change_username(rs, persona_id, username, None)
-                    if not code:  # pragma: no cover
-                        raise RuntimeError(n_("Username change failed."))
-                # Set force_review, so that all changes can be reviewed and adjusted
-                # manually and we don't just overwrite existing data blindly.
-                self.change_persona(
-                    rs,
-                    case.get_persona_upgrade(),
-                    force_review=True,
-                    change_note="Daten aus Accountanfrage übernommen.",
-                )
+                        raise RuntimeError(n_("Granting CdE realm failed."))
+
+                elif not persona_id:
+                    if self.verify_existence(rs, case.persona.username):
+                        raise ValueError(n_("Email address already taken."))
+                    status = const.GenesisStati.successful
+
+                    data = case.get_persona_creation().as_dict()
+                    data.pop("id")
+                    # TODO remove those after adjusting the validation of personas for dataclasses
+                    merge_dicts(data, PERSONA_DEFAULTS)
+                    for admin_role in Roles.all_admin_roles():
+                        data.pop(admin_role.marker, None)
+                    del data["is_archived"]
+                    del data["is_purged"]
+                    if "balance" in data:
+                        del data["balance"]
+                    data["notes"] = case.notes
+                    data = affirm(vtypes.Persona, data, creation=True)
+                    persona_id = self.create_persona(
+                        rs, data, submitted_by=rs.user.persona_id
+                    )
+
+                else:
+                    status = const.GenesisStati.existing_updated
+                    case.persona_id = persona_id
+
+                    persona = self.get_persona(rs, persona_id)
+                    persona_status = self.get_persona_status(rs, persona_id)
+                    if not self._is_relative_admin(rs, persona_status):
+                        raise PrivilegeError(n_("Not privileged."))
+                    username = case.persona.username
+                    if persona.is_archived:
+                        code = self.dearchive_persona(rs, persona_id, username)
+                        if not code:  # pragma: no cover
+                            raise RuntimeError(n_("Dearchival failed."))
+                    elif username != persona.username:
+                        code, _ = self.change_username(rs, persona_id, username, None)
+                        if not code:  # pragma: no cover
+                            raise RuntimeError(n_("Username change failed."))
+                    # Set force_review, so that all changes can be reviewed and adjusted
+                    # manually and we don't just overwrite existing data blindly.
+                    self.change_persona(
+                        rs,
+                        case.get_persona_upgrade(),
+                        force_review=True,
+                        change_note="Daten aus Accountanfrage übernommen.",
+                    )
 
             else:
                 status = const.GenesisStati.rejected

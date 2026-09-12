@@ -1033,35 +1033,19 @@ class LineResolutions(CdEIntEnum):
 class GenesisDecision(CdEIntEnum):
     """Possible decisions during review of a genesis request."""
 
-    approve = 1  #: Approve the request and create a new account.
-    deny = 2  #: Deny the request. Do not create or update an account.
-    #: Approve the request, but update an existing account, dearchiving it if necessary.
-    update = 3
-    #: Approve the request and grant a trial membership.
-    approve_grant_trial_membership = 4
-    #: Approve the request, but update an existing account and grant a trial membership.
-    update_grant_trial_membership = 5
+    deny = enum.auto()  #: Deny the request. Do not create or update an account.
+    approve = (
+        enum.auto()
+    )  #: Approve the request and create a new account or upgrade an existing one.
+    approve_grant_trial_membership = (
+        enum.auto()
+    )  #: As approve but also grant trial membership.
 
     def is_approved(self) -> bool:
         return self != GenesisDecision.deny
 
-    def is_create(self) -> bool:
-        return self in {
-            GenesisDecision.approve,
-            GenesisDecision.approve_grant_trial_membership,
-        }
-
-    def is_update(self) -> bool:
-        return self in {
-            GenesisDecision.update,
-            GenesisDecision.update_grant_trial_membership,
-        }
-
     def grants_trial_membership(self) -> bool:
-        return self in {
-            GenesisDecision.approve_grant_trial_membership,
-            GenesisDecision.update_grant_trial_membership,
-        }
+        return self == GenesisDecision.approve_grant_trial_membership
 
 
 #: magic number which signals our makeshift algebraic data type

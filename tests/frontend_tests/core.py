@@ -2930,7 +2930,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
         self.submit(f)
-        self._decide_genesis_case(GenesisDecision.approve)
+        self._decide_genesis_case(GenesisDecision.approve_grant_trial_membership)
         assert_account_presence(ml=False, event=True, cde=False)
 
         # decide event request
@@ -3200,7 +3200,6 @@ class TestCoreFrontend(FrontendTest):
             f,
             button="decision",
             value=str(GenesisDecision.approve),
-            check_notification=False,
         )
         new_persona_id = 1001
         log_expectation.extend([
@@ -3259,7 +3258,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(
             f,
             button="decision",
-            value=str(GenesisDecision.approve),
+            value=str(GenesisDecision.approve_grant_trial_membership),
             check_notification=False,
         )
         self.assertPresence(
@@ -3325,13 +3324,15 @@ class TestCoreFrontend(FrontendTest):
             f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
             f" {self.CDE_GENESIS_DATA['family_name']}"
         )
-        self._decide_genesis_case(GenesisDecision.approve, check=False)
+        self._decide_genesis_case(
+            GenesisDecision.approve_grant_trial_membership, check=False
+        )
         self.assertNotification("müssen eine vergangene Veranstaltung enthalten")
         self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
         self.submit(f)
-        self._decide_genesis_case(GenesisDecision.approve)
+        self._decide_genesis_case(GenesisDecision.approve_grant_trial_membership)
         new_persona_id = 1001
 
         # archive the new user
@@ -3363,7 +3364,9 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
         self.submit(f)
-        self._decide_genesis_case(GenesisDecision.approve, persona_id=1001)
+        self._decide_genesis_case(
+            GenesisDecision.approve_grant_trial_membership, persona_id=1001
+        )
 
         # Check that the data of the second genesis request persisted
         self.traverse(
@@ -3496,7 +3499,10 @@ class TestCoreFrontend(FrontendTest):
             self.assertValidationError("attachment", msg)
             f = self.response.forms["genesis-upgrade"]
             # simon participated at no past event
-            self.assertEqual(f["pevent_id"].options, [('', False, '')])
+            with self.assertRaisesRegex(
+                AssertionError, "No field by the name 'pevent_id' found"
+            ):
+                f["pevent_id"] = 1
             with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
                 data = datafile.read()
             f["attachment"] = webtest.Upload(
