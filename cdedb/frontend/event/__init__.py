@@ -17,6 +17,7 @@ from cdedb.frontend.event.event import EventEventMixin
 from cdedb.frontend.event.fields import EventFieldMixin
 from cdedb.frontend.event.lodgement import EventLodgementMixin
 from cdedb.frontend.event.partial_import import EventImportMixin
+from cdedb.frontend.event.past_event import PastEventMixin
 from cdedb.frontend.event.query import EventQueryMixin
 from cdedb.frontend.event.questionnaire import EventQuestionnaireMixin
 from cdedb.frontend.event.registration import EventRegistrationMixin
@@ -25,6 +26,7 @@ __all__ = ['EventFrontend']
 
 
 class EventFrontend(
+    PastEventMixin,
     EventRegistrationMixin,
     EventQuestionnaireMixin,
     EventQueryMixin,

@@ -151,28 +151,41 @@ class TestEventFrontend(FrontendTest):
     )
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer:innen"}
-        admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
+        everyone = {
+            "Übersicht",
+            "Alle Veranstaltungen",
+            "Veranstaltungshelfer:innen",
+            "Verg. Veranstaltungen",
+        }
+        past_events = {"Kurssuche"}
+        past_event_admin = {"Verg.-Veranstaltungen-Log"}
+        admin = {"Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
-            out = admin | {"Accounts verwalten"}
+            out = admin | {"Accounts verwalten"} | past_events | past_event_admin
         # core admins
         elif self.user_in('vera'):
-            ins = everyone | {"Accounts verwalten"}
-            out = admin
+            ins = everyone | {"Accounts verwalten"} | past_events | past_event_admin
+            out = admin - {"Log"}  # This falsely matches the past event log.
         # event admins
         elif self.user_in('annika'):
-            ins = everyone | admin | {"Accounts verwalten"}
+            ins = (
+                everyone
+                | admin
+                | {"Accounts verwalten"}
+                | past_events
+                | past_event_admin
+            )
             out = set()
         # event helpers
         elif self.user_in('petra'):
-            ins = everyone | {"Alle Veranstaltungen", "Ungereimtheiten"}
-            out = {"Log"}
+            ins = everyone | {"Alle Veranstaltungen", "Ungereimtheiten"} | past_events
+            out = {"Log"} | past_event_admin
         # auditors
         elif self.user_in('katarina'):
-            ins = everyone | {"Log"}
+            ins = everyone | past_event_admin | {"Log"}
             out = admin - {"Log"}
         else:
             self.fail("Please adjust users for this tests.")
@@ -289,7 +302,7 @@ class TestEventFrontend(FrontendTest):
 
         # Test Event Administration Admin View
         self.assertNoLink('/event/event/log')
-        self.assertNoLink('/event/event/list', content="Alle Veranstaltungen")
+        self.traverse("Alle Veranstaltungen")
         self.traverse({'href': '/event/event/1/show'})
         self.assertNoLink('/event/event/1/roles/manage')
         self.assertNotIn('deleteeventform', self.response.forms)
@@ -353,6 +366,35 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockeventform', self.response.forms)
+
+        # Test Past Event Admin View
+        self.traverse("Veranstaltungen", {'href': '/event/past/event/list'})
+        self.assertNoLink('/event/past/event/create')
+        self.traverse({'href': '/event/past/event/1/show'})
+        self.assertNoLink('/event/past/event/1/change')
+        self.assertNoLink('/event/past/event/1/course/create')
+        self.assertNotIn('addparticipantform', self.response.forms)
+        self.assertNotIn('removeparticipantform3', self.response.forms)
+        self.assertNotIn('deletepasteventform', self.response.forms)
+        self.assertNonPresence('Emilia')
+        self.assertPresence('weitere …')
+        self.traverse({'href': '/event/past/event/1/course/2/show'})
+
+        self._click_admin_view_button(
+            re.compile(r"Verg.-Veranst.-Administration"), current_state=False
+        )
+        self.traverse(
+            {'href': '/event/past/event/1/show'},
+            {'href': '/event/past/event/1/change'},
+            {'href': '/event/past/event/list'},
+            {'href': '/event/past/event/create'},
+            {'href': '/event/past/event/list'},
+            {'href': '/event/past/event/1/show'},
+        )
+        self.assertPresence('Emilia')
+        self.assertIn('addparticipantform', self.response.forms)
+        self.assertIn('removeparticipantform3', self.response.forms)
+        self.assertIn('deletepasteventform', self.response.forms)
 
     @as_users("annika")
     def test_list_events(self) -> None:
@@ -6632,7 +6674,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # since annika is no member, she can not access the past events
         self.logout()
         self.login(USER_DICT['berta'])
-        self.traverse("Mitglieder", "Verg. Veranstaltungen")
+        self.traverse("Veranstaltungen", "Verg. Veranstaltungen")
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("Testakademie")
 
@@ -6810,7 +6852,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.switch_user("anton"):
             # Warmup has no courses, but participants and orgas
             self.traverse(
-                "Mitglieder",
+                "Veranstaltungen",
                 "Verg. Veranstaltungen",
                 r"Große Testakademie 2222 \(Warmup\)",
             )
@@ -6827,7 +6869,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
             # Erste Hälfte has some courses (had two course tracks)
             self.traverse(
-                "Mitglieder",
+                "Veranstaltungen",
                 "Verg. Veranstaltungen",
                 r"Große Testakademie 2222 \(Erste Hälfte\)",
             )
@@ -6855,7 +6897,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
             # Zweite Hälfte has some courses (had one course tracks)
             self.traverse(
-                "Mitglieder",
+                "Veranstaltungen",
                 "Verg. Veranstaltungen",
                 r"Große Testakademie 2222 \(Zweite Hälfte\)",
             )
@@ -6939,7 +6981,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
 
         # check that there is no past event
-        self.traverse("Mitglieder", "Verg.-Veranstaltungen")
+        self.traverse("Veranstaltungen", "Verg.-Veranstaltungen")
         self.assertNonPresence("CdE-Party 2050")
 
     @event_keeper

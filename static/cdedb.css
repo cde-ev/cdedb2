@@ -204,6 +204,10 @@ ul.slim {
 }
 .help-block {
     margin-bottom: 6px;
+    color: inherit;
+    &.no-color {
+        color: #737373;
+    }
 }
 hr.strong {
     border-top: 1px solid #ddd;
@@ -806,6 +810,9 @@ tr.drow-delete>td, tr.drow-delete1>td {
     }
     &.questionnaire-row-magic .panel-body {
         display: none;
+    }
+    & .panel-footer {
+        padding: 3px 10px 3px 15px;
     }
 }
 .panel.drow-new, .panel.drow-new {

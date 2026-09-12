@@ -16,7 +16,7 @@ on the CdE server. Apache then delegates this to the WSGI application
 :py:class:`cdedb.frontend.Application` found in
 ``cdedb/frontend/application.py``. The URL is matched against the available
 patterns in ``cdedb/frontend/paths.py`` and the result is the endpoint
-``cde/show_past_event``. This contains a realm (``cde``) and an action
+``event/show_past_event``. This contains a realm (``event``) and an action
 (``show_past_event``). Now a :py:class:`cdedb.common.RequestState` object is
 constructed; it contains the session information for the current
 request. Most notably it contains a :py:class:`cdedb.common.User` object
@@ -30,13 +30,14 @@ by id in the URL path. In this case it has an entry ``pevent`` containing
 the data of the concluded event with id 42.
 
 We have frontends for each realm, in this case the
-:py:class:`cdedb.frontend.cde.CdEFrontend` from
-``cdedb/frontend/cde.py``. The method corresponding to the action is called,
-that is :py:meth:`cdedb.frontend.cde.CdEFrontend.show_past_event`. This
+:py:class:`cdedb.frontend.cde.EventFrontend` from
+``cdedb/frontend/event/__init__.py``. The frontend is split into different
+parts. The method corresponding to the action is 
+:py:meth:`cdedb.frontend.event.past_event.PastEventMixin.show_past_event`. This
 function is annotated with the :py:func:`cdedb.frontend.common.access`
 decorator which in this case triggers a check whether the accessing user has
-privileges to view ``cde`` content (this corresponds to the boolean
-``is_cde_realm`` in the database entry of the user in the table
+privileges to view ``event`` content (this corresponds to the boolean
+``is_event_realm`` in the database entry of the user in the table
 ``core.personas``, more on this later). Only things annotated with this
 decorator are accessible, anything else is private. Now the frontend
 function acquires the data to be displayed from the backends. We exemplary
@@ -71,10 +72,10 @@ server. The database layout is stored in
 to one realm.
 
 Returning to the frontend we skip over most of the logic in
-:py:meth:`cdedb.frontend.cde.CdEFrontend.show_past_event` and come to the
+:py:meth:`cdedb.frontend.event.PastEventMixin.show_past_event` and come to the
 final call to :py:meth:`cdedb.frontend.common.AbstractFrontend.render` which
 takes all the data from the backend and creates a nice HTML page. For this
 it uses the template
-``cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl``. The templates
+``cdedb/frontend/templates/web/event/past_event/show_past_event.tmpl``. The templates
 utilize the :py:mod:`jinja2` syntax. The finished page is then returned to
 the Apache server which delivers it to the user.

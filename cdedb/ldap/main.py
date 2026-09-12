@@ -24,8 +24,8 @@ async def main() -> None:
     conf = Config()
     secrets = SecretsConfig()
 
-    if conf.get("CDEDB_TEST"):
-        setup_root_logger(test=True, replace=True)
+    identifier = "cdedb-test" if conf.get("CDEDB_TEST") else "cdedb-ldap"
+    setup_root_logger(identifier=identifier, replace=True)
 
     logger.debug("Waiting for database connection ...")
     conn_params = dict(

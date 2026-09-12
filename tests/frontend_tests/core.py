@@ -661,7 +661,7 @@ class TestCoreFrontend(FrontendTest):
         )
         check_kind(
             "past_event_user",
-            cde_admins | auditors,
+            cde_admins | event_admins | auditors,
             ins=("hades",),
             outs=("kalif", "janis"),
         )
@@ -3835,8 +3835,8 @@ class TestCoreFrontend(FrontendTest):
     def test_auditor(self) -> None:
         realm_logs = {
             "Index": ("Account-Log", "Änderungs-Log"),
-            "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log"),
-            "Veranstaltungen": ("Log",),
+            "Mitglieder": ("CdE-Log", "Finanz-Log"),
+            "Veranstaltungen": ("Log", "Verg.-Veranstaltungen-Log"),
             "Mailinglisten": ("Log",),
             "Versammlungen": ("Log",),
         }

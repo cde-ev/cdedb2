@@ -103,7 +103,8 @@
                     (button.is(":visible") ? button : $row.find(up)).trigger("focus");
                 })
                 // .show();
-            $row.show();
+            if (newrow)
+                $row.show();
         }
 
         /**
@@ -154,7 +155,7 @@
         };
 
         var moveRow = function($row, up) {
-            let $other = up ? $row.prev() : $row.next();
+            let $other = up ? $row.prevAll(":visible").first() : $row.nextAll(":visible").first();
             $row.detach;
             up ? $other.before($row) : $other.after($row);
             refresh();

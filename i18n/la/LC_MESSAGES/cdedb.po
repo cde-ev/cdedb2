@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-12 22:56+0200\n"
+"POT-Creation-Date: 2026-09-12 22:59+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5817,28 +5817,6 @@ msgstr ""
 msgid "This transaction has not been analyzed yet."
 msgstr ""
 
-msgid "Institution parameter got lost."
-msgstr ""
-
-#, fuzzy
-msgid "There are no past events with this institution."
-msgstr "nullum ad eventum nunc annuntiari potest."
-
-#, python-format
-msgid "Line %(lineno)s is faulty."
-msgstr ""
-
-#, fuzzy
-msgid "Event created."
-msgstr "eventus"
-
-#, fuzzy
-msgid "Course created."
-msgstr "quaesitio curriculorum"
-
-msgid "Some of these users are not event users."
-msgstr ""
-
 msgid "Billing already done."
 msgstr ""
 
@@ -6481,6 +6459,10 @@ msgstr ""
 msgid "Course list not published yet."
 msgstr ""
 
+#, fuzzy
+msgid "Course created."
+msgstr "quaesitio curriculorum"
+
 msgid "Course cannot be deleted, because it still has attendees."
 msgstr ""
 
@@ -6610,6 +6592,10 @@ msgstr "(recte ad %(date)s annuntiari potest, posterius annuntiari potest)"
 #, fuzzy
 msgid "Unknown fee."
 msgstr "inscriptio electronica nova"
+
+#, fuzzy
+msgid "Event created."
+msgstr "eventus"
 
 msgid "Cannot lock offline instance."
 msgstr ""
@@ -6790,6 +6776,20 @@ msgstr ""
 #, fuzzy, python-format
 msgid "Amount for %(personalized_fee_title)s"
 msgstr "(posterius ad %(date)s annuntiari potest)"
+
+msgid "Institution parameter got lost."
+msgstr ""
+
+#, fuzzy
+msgid "There are no past events with this institution."
+msgstr "nullum ad eventum nunc annuntiari potest."
+
+#, python-format
+msgid "Line %(lineno)s is faulty."
+msgstr ""
+
+msgid "Some of these users are not event users."
+msgstr ""
 
 msgid "A filter with this title already exists."
 msgstr ""
@@ -8374,23 +8374,9 @@ msgstr ""
 msgid "Finance Log"
 msgstr "administrator pecuniae"
 
-msgid "Past Events"
-msgstr "eventus praeteriti"
-
-msgid "Course Search"
-msgstr "quaesitio curriculorum"
-
-#, fuzzy
-msgid "Past Events Log"
-msgstr "eventus praeteriti"
-
 #, fuzzy
 msgid "Link Collection"
 msgstr "epistula electronica ad verificandum mitte"
-
-#, fuzzy
-msgid "Past Event Administration"
-msgstr "eventus praeteriti"
 
 #, fuzzy
 msgid "Finance Administration"
@@ -8831,10 +8817,12 @@ msgid ""
 msgstr ""
 
 msgid ""
-"To do this, generate a SEPA-PAIN-file and import it into the online banking "
-"software. Directly afterwards (at the same day!) activate the Direct Debits "
-"in the DB by clicking “Perform Direct Debit”. This sends a notification to "
-"the members informing them about the transaction."
+"To do this, first activate the Direct Debits in the DB by clicking “Perform "
+"Direct Debit”. This sends a notification to the members informing them about "
+"the transaction. Some of them may contact the management with a revocation "
+"or account change for their Direct Debit permits. Afterwards, but at least a "
+"few days before the announced booking date, generate a SEPA-PAIN-file and "
+"import it into the online banking software."
 msgstr ""
 
 #, python-format
@@ -8842,9 +8830,6 @@ msgid "Transactions which are initialised today will be booked at %(date)s."
 msgstr ""
 
 msgid "Profile"
-msgstr ""
-
-msgid "Create SEPA-PAIN-file"
 msgstr ""
 
 msgid "Perform Direct Debit"
@@ -8909,6 +8894,9 @@ msgid "(Selected: %(num)s, Total: %(total)s)"
 msgstr ""
 
 msgid "SEPA-PAIN"
+msgstr ""
+
+msgid "Create SEPA-PAIN-file"
 msgstr ""
 
 msgid "Success"
@@ -9221,169 +9209,6 @@ msgid "Excel Download"
 msgstr ""
 
 msgid "Download DB-Import"
-msgstr ""
-
-#, python-format
-msgid "Edit %(pcourse)s (%(pevent)s)"
-msgstr ""
-
-#, python-format
-msgid "Edit course %(course)s"
-msgstr ""
-
-#, fuzzy
-msgid "Number"
-msgstr "consocii"
-
-#, fuzzy, python-format
-msgid "Edit %(pevent)s"
-msgstr "eventus"
-
-#, fuzzy
-msgid "Institution"
-msgstr "Club der Ehemaligen"
-
-msgid "Photo gallery"
-msgstr ""
-
-msgid ""
-"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
-"authentification information encoded"
-msgstr ""
-
-#, python-format
-msgid "Create Course (%(pevent)s)"
-msgstr ""
-
-#, fuzzy
-msgid "Create Course"
-msgstr "tabellae epistularum electronicarum moderatae"
-
-#, fuzzy
-msgid "Add Course"
-msgstr "quaesitio curriculorum"
-
-msgid ""
-"Warning: The new Course will be immediately visible to all CdE members "
-"viewing this past event."
-msgstr ""
-
-#, fuzzy
-msgid "Create Past Event"
-msgstr "eventus praeteriti"
-
-#, python-format
-msgid ""
-"Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”."
-msgstr ""
-
-msgid ""
-"Warning: The new Event will be immediately visible to all CdE-Members "
-"viewing the list of past Events."
-msgstr ""
-
-#, fuzzy
-msgid "Past Events_[[long form]]"
-msgstr "eventus praeteriti"
-
-#, python-format
-msgid "%(count)s Course"
-msgid_plural "%(count)s Courses"
-msgstr[0] ""
-msgstr[1] ""
-
-#, python-format
-msgid "%(count)s Participant"
-msgid_plural "%(count)s Participants"
-msgstr[0] ""
-msgstr[1] ""
-
-#, fuzzy
-msgid "CdE Course Search"
-msgstr "quaesitio curriculorum"
-
-msgid ""
-"This search allows to search for courses from past events. Here, events from "
-"all institutions are included."
-msgstr ""
-
-#, python-format
-msgid "%(count)s Course found"
-msgid_plural "%(count)s Courses found"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "No courses found."
-msgstr ""
-
-msgid "Nr"
-msgstr ""
-
-#, fuzzy
-msgid "Member Search"
-msgstr "quaesitio consociorum CdEi"
-
-#, python-format
-msgid "To search by course instructor, use the %(membersearch)s instead."
-msgstr ""
-
-msgid "Add Participant to this Course"
-msgstr ""
-
-msgid "ID of the new Participant"
-msgstr ""
-
-msgid "The Participant will be removed from this Course."
-msgstr ""
-
-msgid "Remove"
-msgstr ""
-
-msgid "and_one_more"
-msgid_plural "and_count_more"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "This Course had no Participants."
-msgstr ""
-
-#, fuzzy
-msgid "Delete Course"
-msgstr "vestigium novum crea"
-
-msgid "The Course will be permanently deleted."
-msgstr ""
-
-msgid "Deletes the Course, including Description and Participant information"
-msgstr ""
-
-msgid "(and maybe others)"
-msgstr ""
-
-msgid ""
-"As you are no participant of this past event, you can only see this link "
-"because you are admin."
-msgstr ""
-
-msgid "Add Participant <u>without</u> Course"
-msgstr ""
-
-msgid "The Participant will be removed from the Event."
-msgstr ""
-
-msgid "This Event had no Participants."
-msgstr ""
-
-#, fuzzy
-msgid "Delete Event"
-msgstr "vestigium novum crea"
-
-msgid "The event will be permanently deleted."
-msgstr ""
-
-msgid ""
-"Deletes the event, including description, courses and participant "
-"information."
 msgstr ""
 
 msgid ""
@@ -10267,6 +10092,9 @@ msgid "Remove Entry (%(title)s)"
 msgstr "statistica consociorum"
 
 msgid "Remove Entry"
+msgstr ""
+
+msgid "Remove"
 msgstr ""
 
 msgid ""
@@ -11348,6 +11176,9 @@ msgstr "notitiae rationis"
 msgid "Address hidden for member search"
 msgstr "quaesitio consociorum CdEi"
 
+msgid "Past Events"
+msgstr "eventus praeteriti"
+
 msgid "Copy-Paste Template"
 msgstr ""
 
@@ -11778,9 +11609,20 @@ msgstr "eventus"
 msgid "Event Helpers"
 msgstr "eventus"
 
+msgid "Course Search"
+msgstr "quaesitio curriculorum"
+
+#, fuzzy
+msgid "Past Events Log"
+msgstr "eventus praeteriti"
+
 #, fuzzy
 msgid "Event Administration"
 msgstr "administrator eventuum"
+
+#, fuzzy
+msgid "Past Event Administration"
+msgstr "eventus praeteriti"
 
 #, fuzzy
 msgid "There are currently no inconsistencies matching the filter."
@@ -11856,6 +11698,14 @@ msgstr ""
 #, fuzzy, python-format
 msgid "Add Course (%(title)s)"
 msgstr "quaesitio curriculorum"
+
+#, fuzzy
+msgid "Add Course"
+msgstr "quaesitio curriculorum"
+
+#, python-format
+msgid "Edit course %(course)s"
+msgstr ""
 
 #, fuzzy
 msgid "Coursenumber"
@@ -12424,6 +12274,10 @@ msgstr "tabellae epistularum electronicarum moderatae"
 #, fuzzy
 msgid "Event Meta Data"
 msgstr "eventus"
+
+#, fuzzy
+msgid "Institution"
+msgstr "Club der Ehemaligen"
 
 msgid "Website Link"
 msgstr ""
@@ -13037,26 +12891,6 @@ msgstr "Eventus praesentes"
 msgid "Recently Concluded Events"
 msgstr "vestigium novum crea"
 
-#, python-format
-msgid ""
-"Previous CdE events, including their courses and participants, can be found "
-"at %(link)s – together with Junior- and SchülerAkademien. Furthermore, there "
-"is a %(list)s of all events which have not been cleansed yet."
-msgstr ""
-"priores eventus CdEi cum curriculis et participibus sub %(link)s invenitur – "
-"etiam Junior- atque SchülerAkademiae. Tam %(list)s est omnium eventuum, qui "
-"purgati non iam sunt."
-
-msgid "list"
-msgstr "tabella"
-
-#, python-format
-msgid ""
-"Previous CdE events are accessible to members only – together with Junior- "
-"and SchülerAkademien. However, there is a %(list)s of all events which have "
-"not been cleansed yet."
-msgstr ""
-
 #, fuzzy, python-format
 msgid ""
 "Event helpers have comprehensive readonly access to event information which "
@@ -13297,8 +13131,11 @@ msgid "The event will be permanently archived."
 msgstr ""
 
 msgid ""
-"Archives the event. This creates a new “Past Event” in the CdE-Realm and "
+"Archives the event. This creates a new “Past Event” for user profiles and "
 "transfers course and participant information there."
+msgstr ""
+
+msgid "The event will be permanently deleted."
 msgstr ""
 
 msgid ""
@@ -13401,6 +13238,9 @@ msgstr ""
 #, fuzzy
 msgid "No registrations found."
 msgstr "Annuntiationes"
+
+msgid "No courses found."
+msgstr ""
 
 msgid "No lodgements found."
 msgstr ""
@@ -14132,6 +13972,148 @@ msgstr ""
 msgid ""
 "Deletes the Lodgement with all assosiated information and leaves the "
 "inhabitants without lodgement."
+msgstr ""
+
+#, python-format
+msgid "Edit %(pcourse)s (%(pevent)s)"
+msgstr ""
+
+#, fuzzy
+msgid "Number"
+msgstr "consocii"
+
+#, fuzzy, python-format
+msgid "Edit %(pevent)s"
+msgstr "eventus"
+
+msgid "Photo gallery"
+msgstr ""
+
+msgid ""
+"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
+"authentification information encoded"
+msgstr ""
+
+#, python-format
+msgid "Create Course (%(pevent)s)"
+msgstr ""
+
+#, fuzzy
+msgid "Create Course"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+msgid ""
+"Warning: The new Course will be immediately visible to all CdE members "
+"viewing this past event."
+msgstr ""
+
+#, fuzzy
+msgid "Create Past Event"
+msgstr "eventus praeteriti"
+
+#, python-format
+msgid ""
+"Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”."
+msgstr ""
+
+msgid ""
+"Warning: The new Event will be immediately visible to all CdE-Members "
+"viewing the list of past Events."
+msgstr ""
+
+#, fuzzy
+msgid "Past Events_[[long form]]"
+msgstr "eventus praeteriti"
+
+#, python-format
+msgid "%(count)s Course"
+msgid_plural "%(count)s Courses"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(count)s Participant"
+msgid_plural "%(count)s Participants"
+msgstr[0] ""
+msgstr[1] ""
+
+#, fuzzy
+msgid "CdE Course Search"
+msgstr "quaesitio curriculorum"
+
+msgid ""
+"This search allows to search for courses from past events. Here, events from "
+"all institutions are included."
+msgstr ""
+
+#, python-format
+msgid "%(count)s Course found"
+msgid_plural "%(count)s Courses found"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Nr"
+msgstr ""
+
+#, fuzzy
+msgid "Member Search"
+msgstr "quaesitio consociorum CdEi"
+
+#, python-format
+msgid "To search by course instructor, use the %(membersearch)s instead."
+msgstr ""
+
+msgid "Add Participant to this Course"
+msgstr ""
+
+msgid "ID of the new Participant"
+msgstr ""
+
+msgid "The Participant will be removed from this Course."
+msgstr ""
+
+msgid "and_one_more"
+msgid_plural "and_count_more"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "This Course had no Participants."
+msgstr ""
+
+#, fuzzy
+msgid "Delete Course"
+msgstr "vestigium novum crea"
+
+msgid "The Course will be permanently deleted."
+msgstr ""
+
+msgid "Deletes the Course, including Description and Participant information"
+msgstr ""
+
+msgid "(and maybe others)"
+msgstr ""
+
+msgid ""
+"As you are no participant of this past event, you can only see this link "
+"because you are admin."
+msgstr ""
+
+msgid "Add Participant <u>without</u> Course"
+msgstr ""
+
+msgid "The Participant will be removed from the Event."
+msgstr ""
+
+msgid "This Event had no Participants."
+msgstr ""
+
+#, fuzzy
+msgid "Delete Event"
+msgstr "vestigium novum crea"
+
+msgid ""
+"Deletes the event, including description, courses and participant "
+"information."
 msgstr ""
 
 #, fuzzy, python-format

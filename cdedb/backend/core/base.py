@@ -91,7 +91,7 @@ class CoreBaseBackend(AbstractBackend):
     ``@internal`` quite often."""
 
     realm = "core"
-    admin_role = Roles.core_admin
+    admin_roles = (Roles.core_admin,)
 
     def __init__(self) -> None:
         super().__init__()

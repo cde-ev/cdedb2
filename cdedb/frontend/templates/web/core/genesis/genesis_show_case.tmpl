@@ -167,7 +167,7 @@
             <dt title="{% trans %}Past Event{% endtrans %}">{% trans %}Past Event{% endtrans %}</dt>
             <dd>
                 {% if pevent -%}
-                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent['id']}), pevent['title'],
+                    {{ util.href(cdedblink("event/show_past_event", {"pevent_id": pevent['id']}), pevent['title'],
                         readonly='cde_admin' not in user.roles and 'member' not in user.roles) }}
                 {% else %}
                     –
@@ -176,7 +176,7 @@
             <dt title="{% trans %}Course{% endtrans %}">{% trans %}Course{% endtrans %}</dt>
             <dd>
                 {% if pcourse -%}
-                    {{ util.href(cdedblink("cde/show_past_course",
+                    {{ util.href(cdedblink("event/show_past_course",
                                            {"pevent_id": pevent['id'], "pcourse_id": pcourse['id']}),
                                  pcourse['title'],
                                  readonly='cde_admin' not in user.roles and 'member' not in user.roles) }}

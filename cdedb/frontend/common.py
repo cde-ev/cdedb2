@@ -20,6 +20,7 @@ import email.mime.base
 import email.mime.image
 import email.mime.multipart
 import email.mime.text
+import email.parser
 import email.utils
 import functools
 import gettext
@@ -207,7 +208,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
 
     realm: ClassVar[str | Realms]
-    admin_role: ClassVar[Roles | None] = None
+    admin_roles: ClassVar[tuple[Roles | RoleSet, ...] | None] = None
 
     @classmethod
     def realm_str(cls) -> str:
@@ -522,13 +523,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
         """
-        if cls.admin_role:
-            admin_role = cls.admin_role
+        if cls.admin_roles:
+            admin_roles = cls.admin_roles
         elif isinstance(cls.realm, Realms):
-            admin_role = cls.realm.admin_role
+            admin_roles = (cls.realm.admin_role,)
         else:
             raise RuntimeError
-        return admin_role in rs.user.new_roles
+        return rs.user.new_roles.has_any(*admin_roles)
 
     def fill_template(
         self, rs: RequestState, modus: str, templatename: str, params: CdEDBObject
@@ -1106,7 +1107,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if effective != nonempty:
                 diff = nonempty - effective
                 self.logger.warning(
-                    f"Dropped the following recipients from email: {diff}"
+                    f"Dropped the following recipients from email: {", ".join(xsorted(diff))}."
+                    f" Subject: {headers["Subject"]!r}"
                 )
             if effective:
                 msg[header] = ", ".join(effective)
@@ -1902,6 +1904,23 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         else:
             return self.create_user_form(rs)
 
+    @staticmethod
+    def _fix_search_validation_error_references(
+        rs: RequestState, skip: Collection[str] = ()
+    ) -> None:
+        """A little hack to fix displaying of errors for course and member search:
+
+        The form uses 'qval_<field>' as input name, the validation only returns the
+        field's name.
+        """
+        appraised = rs.validation_appraised
+        current = tuple(rs.retrieve_validation_errors())
+        rs.replace_validation_errors([
+            (f'qval_{k}', v) if k not in skip else (k, v) for k, v in current
+        ])
+        if appraised:
+            rs.ignore_validation_errors()
+
 
 class CdEMailmanClient(mailmanclient.Client):
     """Custom wrapper around mailmanclient.Client.
@@ -1959,9 +1978,9 @@ class CdEMailmanClient(mailmanclient.Client):
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
                 if dblist.id % 2 == 0:
-                    return cast(
+                    return cast(  # type: ignore[redundant-cast] # mypy does not have annotations for mailman.
                         list[mailmanclient.restobjects.held_message.HeldMessage],
-                        HELD_MESSAGE_SAMPLE,
+                        xsorted(HELD_MESSAGE_SAMPLE, key=lambda m: m.spam_score),
                     )
                 else:
                     return []
@@ -1969,7 +1988,19 @@ class CdEMailmanClient(mailmanclient.Client):
         else:
             mmlist = self.get_list_safe(dblist.address)
             try:
-                return mmlist.held if mmlist else None
+                if not mmlist:
+                    return None
+
+                held = mmlist.held
+                for message in held:
+                    headers = email.parser.HeaderParser().parsestr(message.msg)
+                    message.spam_score = headers.get("X-Spam-Score", "—")
+                    if isinstance(message.hold_date, str):
+                        message.hold_date = datetime.datetime.fromisoformat(
+                            message.hold_date
+                        )
+
+                return held
             except urllib.error.HTTPError:
                 self.logger.exception("Mailman connection failed!")
         return None

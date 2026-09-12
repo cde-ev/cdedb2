@@ -122,7 +122,7 @@ def is_privileged_event_user(
     ):
         return False
 
-    admin_privileges = ~(EP.conclude | EP.balance)
+    admin_privileges = ~(EP.balance)
     event_helper_privileges = (
         EP.basic_read
         | EP.courses_read
@@ -157,12 +157,7 @@ def is_privileged_event_user(
     )
 
     return (
-        # Special case for conclude which requires two admin privileges.
         (
-            user.new_roles.has(Roles.event_admin | Roles.cde_admin)
-            and required_privilege == EP.conclude
-        )
-        or (
             user.new_roles.has(Roles.event_admin)
             and required_privilege in admin_privileges
         )

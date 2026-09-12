@@ -1755,7 +1755,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access(Roles.event_admin, modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.conclude)
     @REQUESTdata("ack_archive", "create_past_event")
     def archive_event(
@@ -1835,7 +1835,7 @@ class EventEventMixin(EventBaseFrontend):
         elif len(new_ids) == 1:
             rs.notify("info", n_("Created past event."))
             return self.redirect(
-                rs, "cde/show_past_event", {'pevent_id': unwrap(new_ids)}
+                rs, "event/show_past_event", {'pevent_id': unwrap(new_ids)}
             )
         else:
             rs.notify("info", n_("Created multiple past events."))

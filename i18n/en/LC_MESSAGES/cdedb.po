@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-12 22:56+0200\n"
+"POT-Creation-Date: 2026-09-12 22:59+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -5289,25 +5289,6 @@ msgstr ""
 msgid "This transaction has not been analyzed yet."
 msgstr ""
 
-msgid "Institution parameter got lost."
-msgstr ""
-
-msgid "There are no past events with this institution."
-msgstr ""
-
-#, python-format
-msgid "Line %(lineno)s is faulty."
-msgstr ""
-
-msgid "Event created."
-msgstr ""
-
-msgid "Course created."
-msgstr ""
-
-msgid "Some of these users are not event users."
-msgstr ""
-
 msgid "Billing already done."
 msgstr ""
 
@@ -5906,6 +5887,9 @@ msgstr ""
 msgid "Course list not published yet."
 msgstr ""
 
+msgid "Course created."
+msgstr ""
+
 msgid "Course cannot be deleted, because it still has attendees."
 msgstr ""
 
@@ -6025,6 +6009,9 @@ msgid "Registrations exist, no track creation possible."
 msgstr ""
 
 msgid "Unknown fee."
+msgstr ""
+
+msgid "Event created."
 msgstr ""
 
 msgid "Cannot lock offline instance."
@@ -6188,6 +6175,19 @@ msgstr ""
 
 #, python-format
 msgid "Amount for %(personalized_fee_title)s"
+msgstr ""
+
+msgid "Institution parameter got lost."
+msgstr ""
+
+msgid "There are no past events with this institution."
+msgstr ""
+
+#, python-format
+msgid "Line %(lineno)s is faulty."
+msgstr ""
+
+msgid "Some of these users are not event users."
 msgstr ""
 
 msgid "A filter with this title already exists."
@@ -7682,19 +7682,7 @@ msgstr ""
 msgid "Finance Log"
 msgstr ""
 
-msgid "Past Events"
-msgstr ""
-
-msgid "Course Search"
-msgstr ""
-
-msgid "Past Events Log"
-msgstr ""
-
 msgid "Link Collection"
-msgstr ""
-
-msgid "Past Event Administration"
 msgstr ""
 
 msgid "Finance Administration"
@@ -8109,10 +8097,12 @@ msgid ""
 msgstr ""
 
 msgid ""
-"To do this, generate a SEPA-PAIN-file and import it into the online banking "
-"software. Directly afterwards (at the same day!) activate the Direct Debits "
-"in the DB by clicking “Perform Direct Debit”. This sends a notification to "
-"the members informing them about the transaction."
+"To do this, first activate the Direct Debits in the DB by clicking “Perform "
+"Direct Debit”. This sends a notification to the members informing them about "
+"the transaction. Some of them may contact the management with a revocation "
+"or account change for their Direct Debit permits. Afterwards, but at least a "
+"few days before the announced booking date, generate a SEPA-PAIN-file and "
+"import it into the online banking software."
 msgstr ""
 
 #, python-format
@@ -8120,9 +8110,6 @@ msgid "Transactions which are initialised today will be booked at %(date)s."
 msgstr ""
 
 msgid "Profile"
-msgstr ""
-
-msgid "Create SEPA-PAIN-file"
 msgstr ""
 
 msgid "Perform Direct Debit"
@@ -8184,6 +8171,9 @@ msgid "(Selected: %(num)s, Total: %(total)s)"
 msgstr ""
 
 msgid "SEPA-PAIN"
+msgstr ""
+
+msgid "Create SEPA-PAIN-file"
 msgstr ""
 
 msgid "Success"
@@ -8478,159 +8468,6 @@ msgid "Excel Download"
 msgstr ""
 
 msgid "Download DB-Import"
-msgstr ""
-
-#, python-format
-msgid "Edit %(pcourse)s (%(pevent)s)"
-msgstr ""
-
-#, python-format
-msgid "Edit course %(course)s"
-msgstr ""
-
-msgid "Number"
-msgstr ""
-
-#, python-format
-msgid "Edit %(pevent)s"
-msgstr ""
-
-msgid "Institution"
-msgstr ""
-
-msgid "Photo gallery"
-msgstr ""
-
-msgid ""
-"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
-"authentification information encoded"
-msgstr ""
-
-#, python-format
-msgid "Create Course (%(pevent)s)"
-msgstr ""
-
-msgid "Create Course"
-msgstr ""
-
-msgid "Add Course"
-msgstr ""
-
-msgid ""
-"Warning: The new Course will be immediately visible to all CdE members "
-"viewing this past event."
-msgstr ""
-
-msgid "Create Past Event"
-msgstr ""
-
-#, python-format
-msgid ""
-"Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”."
-msgstr ""
-
-msgid ""
-"Warning: The new Event will be immediately visible to all CdE-Members "
-"viewing the list of past Events."
-msgstr ""
-
-msgid "Past Events_[[long form]]"
-msgstr "Past Events"
-
-#, python-format
-msgid "%(count)s Course"
-msgid_plural "%(count)s Courses"
-msgstr[0] ""
-msgstr[1] ""
-
-#, python-format
-msgid "%(count)s Participant"
-msgid_plural "%(count)s Participants"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "CdE Course Search"
-msgstr ""
-
-msgid ""
-"This search allows to search for courses from past events. Here, events from "
-"all institutions are included."
-msgstr ""
-
-#, python-format
-msgid "%(count)s Course found"
-msgid_plural "%(count)s Courses found"
-msgstr[0] ""
-msgstr[1] ""
-
-msgid "No courses found."
-msgstr ""
-
-msgid "Nr"
-msgstr ""
-
-msgid "Member Search"
-msgstr ""
-
-#, python-format
-msgid "To search by course instructor, use the %(membersearch)s instead."
-msgstr ""
-
-msgid "Add Participant to this Course"
-msgstr ""
-
-msgid "ID of the new Participant"
-msgstr ""
-
-msgid "The Participant will be removed from this Course."
-msgstr ""
-
-msgid "Remove"
-msgstr ""
-
-msgid "and_one_more"
-msgid_plural "and_count_more"
-msgstr[0] "and %(count)s more"
-msgstr[1] "and %(count)s more"
-
-msgid "This Course had no Participants."
-msgstr ""
-
-msgid "Delete Course"
-msgstr ""
-
-msgid "The Course will be permanently deleted."
-msgstr ""
-
-msgid "Deletes the Course, including Description and Participant information"
-msgstr ""
-
-msgid "(and maybe others)"
-msgstr ""
-
-msgid ""
-"As you are no participant of this past event, you can only see this link "
-"because you are admin."
-msgstr ""
-
-msgid "Add Participant <u>without</u> Course"
-msgstr ""
-
-msgid "The Participant will be removed from the Event."
-msgstr ""
-
-msgid "This Event had no Participants."
-msgstr ""
-
-msgid "Delete Event"
-msgstr ""
-
-msgid "The event will be permanently deleted."
-msgstr ""
-
-msgid ""
-"Deletes the event, including description, courses and participant "
-"information."
 msgstr ""
 
 msgid ""
@@ -9454,6 +9291,9 @@ msgstr ""
 msgid "Remove Entry"
 msgstr ""
 
+msgid "Remove"
+msgstr ""
+
 msgid ""
 "Only remove entries if they are erroneous. If they are no longer valid or "
 "have been rescinded, revoke them instead."
@@ -9696,7 +9536,7 @@ msgid "Edit Account Request (%(name)s)"
 msgstr ""
 
 msgid "Edit Account Request"
-msgstr ""
+msgstr "Accountanfrage bearbeiten"
 
 msgid "Edit Upgrade Request"
 msgstr ""
@@ -10432,6 +10272,9 @@ msgstr ""
 msgid "Address hidden for member search"
 msgstr ""
 
+msgid "Past Events"
+msgstr ""
+
 msgid "Copy-Paste Template"
 msgstr ""
 
@@ -10822,7 +10665,16 @@ msgstr ""
 msgid "Event Helpers"
 msgstr ""
 
+msgid "Course Search"
+msgstr ""
+
+msgid "Past Events Log"
+msgstr ""
+
 msgid "Event Administration"
+msgstr ""
+
+msgid "Past Event Administration"
 msgstr ""
 
 msgid "There are currently no inconsistencies matching the filter."
@@ -10894,6 +10746,13 @@ msgstr ""
 
 #, python-format
 msgid "Add Course (%(title)s)"
+msgstr ""
+
+msgid "Add Course"
+msgstr ""
+
+#, python-format
+msgid "Edit course %(course)s"
 msgstr ""
 
 msgid "Coursenumber"
@@ -11424,6 +11283,9 @@ msgid "Manage Roles"
 msgstr ""
 
 msgid "Event Meta Data"
+msgstr ""
+
+msgid "Institution"
 msgstr ""
 
 msgid "Website Link"
@@ -11998,23 +11860,6 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Previous CdE events, including their courses and participants, can be found "
-"at %(link)s – together with Junior- and SchülerAkademien. Furthermore, there "
-"is a %(list)s of all events which have not been cleansed yet."
-msgstr ""
-
-msgid "list"
-msgstr ""
-
-#, python-format
-msgid ""
-"Previous CdE events are accessible to members only – together with Junior- "
-"and SchülerAkademien. However, there is a %(list)s of all events which have "
-"not been cleansed yet."
-msgstr ""
-
-#, python-format
-msgid ""
 "Event helpers have comprehensive readonly access to event information which "
 "is not privacy-sensitive. Specifically, they have only aggregated access to "
 "registration data. Furthermore, they may see any information available to "
@@ -12227,8 +12072,11 @@ msgid "The event will be permanently archived."
 msgstr ""
 
 msgid ""
-"Archives the event. This creates a new “Past Event” in the CdE-Realm and "
+"Archives the event. This creates a new “Past Event” for user profiles and "
 "transfers course and participant information there."
+msgstr ""
+
+msgid "The event will be permanently deleted."
 msgstr ""
 
 msgid ""
@@ -12323,6 +12171,9 @@ msgid ""
 msgstr ""
 
 msgid "No registrations found."
+msgstr ""
+
+msgid "No courses found."
 msgstr ""
 
 msgid "No lodgements found."
@@ -13023,6 +12874,140 @@ msgstr ""
 msgid ""
 "Deletes the Lodgement with all assosiated information and leaves the "
 "inhabitants without lodgement."
+msgstr ""
+
+#, python-format
+msgid "Edit %(pcourse)s (%(pevent)s)"
+msgstr ""
+
+msgid "Number"
+msgstr ""
+
+#, python-format
+msgid "Edit %(pevent)s"
+msgstr ""
+
+msgid "Photo gallery"
+msgstr ""
+
+msgid ""
+"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
+"authentification information encoded"
+msgstr ""
+
+#, python-format
+msgid "Create Course (%(pevent)s)"
+msgstr ""
+
+msgid "Create Course"
+msgstr ""
+
+msgid ""
+"Warning: The new Course will be immediately visible to all CdE members "
+"viewing this past event."
+msgstr ""
+
+msgid "Create Past Event"
+msgstr ""
+
+#, python-format
+msgid ""
+"Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”."
+msgstr ""
+
+msgid ""
+"Warning: The new Event will be immediately visible to all CdE-Members "
+"viewing the list of past Events."
+msgstr ""
+
+msgid "Past Events_[[long form]]"
+msgstr "Past Events"
+
+#, python-format
+msgid "%(count)s Course"
+msgid_plural "%(count)s Courses"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(count)s Participant"
+msgid_plural "%(count)s Participants"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "CdE Course Search"
+msgstr ""
+
+msgid ""
+"This search allows to search for courses from past events. Here, events from "
+"all institutions are included."
+msgstr ""
+
+#, python-format
+msgid "%(count)s Course found"
+msgid_plural "%(count)s Courses found"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Nr"
+msgstr ""
+
+msgid "Member Search"
+msgstr ""
+
+#, python-format
+msgid "To search by course instructor, use the %(membersearch)s instead."
+msgstr ""
+
+msgid "Add Participant to this Course"
+msgstr ""
+
+msgid "ID of the new Participant"
+msgstr ""
+
+msgid "The Participant will be removed from this Course."
+msgstr ""
+
+msgid "and_one_more"
+msgid_plural "and_count_more"
+msgstr[0] "and %(count)s more"
+msgstr[1] "and %(count)s more"
+
+msgid "This Course had no Participants."
+msgstr ""
+
+msgid "Delete Course"
+msgstr ""
+
+msgid "The Course will be permanently deleted."
+msgstr ""
+
+msgid "Deletes the Course, including Description and Participant information"
+msgstr ""
+
+msgid "(and maybe others)"
+msgstr ""
+
+msgid ""
+"As you are no participant of this past event, you can only see this link "
+"because you are admin."
+msgstr ""
+
+msgid "Add Participant <u>without</u> Course"
+msgstr ""
+
+msgid "The Participant will be removed from the Event."
+msgstr ""
+
+msgid "This Event had no Participants."
+msgstr ""
+
+msgid "Delete Event"
+msgstr ""
+
+msgid ""
+"Deletes the event, including description, courses and participant "
+"information."
 msgstr ""
 
 #, python-format

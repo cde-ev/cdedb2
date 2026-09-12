@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-12 22:56+0200\n"
+"POT-Creation-Date: 2026-09-12 22:59+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -5398,25 +5398,6 @@ msgstr "Spende an Veranstaltung könnte ein Teilnahmebeitrag sein."
 msgid "This transaction has not been analyzed yet."
 msgstr "Diese Transaktion wurde noch nicht geprüft."
 
-msgid "Institution parameter got lost."
-msgstr "Organisationsangabe ist verlorengegangen."
-
-msgid "There are no past events with this institution."
-msgstr "Es gibt keine Vergangenen Veranstaltungen mit dieser Organisation."
-
-#, python-format
-msgid "Line %(lineno)s is faulty."
-msgstr "Zeile %(lineno)s ist fehlerhaft."
-
-msgid "Event created."
-msgstr "Veranstaltung erstellt."
-
-msgid "Course created."
-msgstr "Kurs erstellt"
-
-msgid "Some of these users are not event users."
-msgstr "Einige dieser Accounts sind keine Veranstaltungsaccounts."
-
 msgid "Billing already done."
 msgstr "Zahlungserinnerung bereits erledigt."
 
@@ -5427,7 +5408,7 @@ msgid "Started sending archival notifications."
 msgstr "Versand der Archivierungsbenachrichtigungen begonnen."
 
 msgid "Started updating exmember balance."
-msgstr "Aktualisierung der Exmitglieder Guthaben gestartet."
+msgstr "Aktualisierung der Guthaben der Exmitglieder gestartet."
 
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
@@ -6051,6 +6032,9 @@ msgstr ""
 msgid "Course list not published yet."
 msgstr "Die Kursliste ist noch nicht öffentlich."
 
+msgid "Course created."
+msgstr "Kurs erstellt"
+
 msgid "Course cannot be deleted, because it still has attendees."
 msgstr "Kurs kann nicht gelöscht werden, da ihm noch Personen zugeteilt sind."
 
@@ -6177,6 +6161,9 @@ msgstr "Anmeldungen vorhanden, kein Erstellung von Kursschienen möglich."
 
 msgid "Unknown fee."
 msgstr "Unbekannter Teilnahmebeitrag."
+
+msgid "Event created."
+msgstr "Veranstaltung erstellt."
 
 msgid "Cannot lock offline instance."
 msgstr "Im Offlinemodus ist eine Sperrung der Veranstaltung nicht möglich."
@@ -6364,6 +6351,19 @@ msgstr "Isomatte"
 #, python-format
 msgid "Amount for %(personalized_fee_title)s"
 msgstr "Betrag für %(personalized_fee_title)s"
+
+msgid "Institution parameter got lost."
+msgstr "Organisationsangabe ist verlorengegangen."
+
+msgid "There are no past events with this institution."
+msgstr "Es gibt keine Vergangenen Veranstaltungen mit dieser Organisation."
+
+#, python-format
+msgid "Line %(lineno)s is faulty."
+msgstr "Zeile %(lineno)s ist fehlerhaft."
+
+msgid "Some of these users are not event users."
+msgstr "Einige dieser Accounts sind keine Veranstaltungsaccounts."
 
 msgid "A filter with this title already exists."
 msgstr "Es existiert bereits ein Filter mit diesem Titel."
@@ -8003,20 +8003,8 @@ msgstr "CdE-Log"
 msgid "Finance Log"
 msgstr "Finanz-Log"
 
-msgid "Past Events"
-msgstr "Verg. Veranstaltungen"
-
-msgid "Course Search"
-msgstr "Kurssuche"
-
-msgid "Past Events Log"
-msgstr "Verg.-Veranstaltungen-Log"
-
 msgid "Link Collection"
 msgstr "Linksammlung"
-
-msgid "Past Event Administration"
-msgstr "Verg.-Veranst.-Administration"
 
 msgid "Finance Administration"
 msgstr "Finanz-Administration"
@@ -8505,16 +8493,20 @@ msgstr ""
 "Zahlungsinformation – sind noch folgende Lastschriften auszuführen."
 
 msgid ""
-"To do this, generate a SEPA-PAIN-file and import it into the online banking "
-"software. Directly afterwards (at the same day!) activate the Direct Debits "
-"in the DB by clicking “Perform Direct Debit”. This sends a notification to "
-"the members informing them about the transaction."
+"To do this, first activate the Direct Debits in the DB by clicking “Perform "
+"Direct Debit”. This sends a notification to the members informing them about "
+"the transaction. Some of them may contact the management with a revocation "
+"or account change for their Direct Debit permits. Afterwards, but at least a "
+"few days before the announced booking date, generate a SEPA-PAIN-file and "
+"import it into the online banking software."
 msgstr ""
-"Dazu eine SEPA-PAIN-Datei generieren und in die Online-Banking-Software "
-"importieren. Direkt anschließend (am gleichen Tag!) die Lastschriften in der "
-"Datenbank per Klick auf „Bankeinzug ausführen“ initialisieren. Dies "
-"versendet eine Benachrichtigung an die Mitglieder über den bevorstehenden "
-"Lastschrifteinzug."
+"Dazu die Lastschriften hier in der Datenbank per Klick auf „Bankeinzug "
+"ausführen“ initialisieren. Dies versendet eine Benachrichtigung an die "
+"Mitglieder über den bevorstehenden Lastschrifteinzug. Einige kontaktieren "
+"ggf. daraufhin das Verwaltungsteam über geänderte Bankverbindungen oder "
+"Widerruf ihrer Einzugsermächtigung. Anschließend, aber mindestens einige "
+"Tage vor dem angekündigten Ausführungsdatum, die SEPA-PAIN-Datei generieren "
+"und in die Online-Banking-Software importieren."
 
 #, python-format
 msgid "Transactions which are initialised today will be booked at %(date)s."
@@ -8523,9 +8515,6 @@ msgstr ""
 
 msgid "Profile"
 msgstr "Profil"
-
-msgid "Create SEPA-PAIN-file"
-msgstr "SEPA-PAIN-Datei erstellen"
 
 msgid "Perform Direct Debit"
 msgstr "Bankeinzug ausführen"
@@ -8591,6 +8580,9 @@ msgstr "(Ausgewählt: %(num)s, Gesamt: %(total)s)"
 
 msgid "SEPA-PAIN"
 msgstr "SEPA-PAIN"
+
+msgid "Create SEPA-PAIN-file"
+msgstr "SEPA-PAIN-Datei erstellen"
 
 msgid "Success"
 msgstr "Erfolg"
@@ -8912,174 +8904,6 @@ msgstr "Excel Download"
 
 msgid "Download DB-Import"
 msgstr "Download DB-Import"
-
-#, python-format
-msgid "Edit %(pcourse)s (%(pevent)s)"
-msgstr "%(pcourse)s (%(pevent)s) bearbeiten"
-
-#, python-format
-msgid "Edit course %(course)s"
-msgstr "Kurs %(course)s bearbeiten"
-
-msgid "Number"
-msgstr "Nummer"
-
-#, python-format
-msgid "Edit %(pevent)s"
-msgstr "%(pevent)s bearbeiten"
-
-msgid "Institution"
-msgstr "Organisation"
-
-msgid "Photo gallery"
-msgstr "Mediensammlung"
-
-msgid ""
-"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
-"authentification information encoded"
-msgstr ""
-"Link zur Fotogalerie (z. B. <https://user:pwd@example.cde>) mit "
-"eingebetteter Authentifizierung"
-
-#, python-format
-msgid "Create Course (%(pevent)s)"
-msgstr "Kurs anlegen (%(pevent)s)"
-
-msgid "Create Course"
-msgstr "Kurs anlegen"
-
-msgid "Add Course"
-msgstr "Kurs hinzufügen"
-
-msgid ""
-"Warning: The new Course will be immediately visible to all CdE members "
-"viewing this past event."
-msgstr ""
-"Achtung: Der neue Kurs ist direkt für CdE-Mitglieder, die sich die "
-"vergangene Veranstaltung ansehen, sichtbar."
-
-msgid "Create Past Event"
-msgstr "Verg. Veranstaltung anlegen"
-
-#, python-format
-msgid ""
-"Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”."
-msgstr ""
-"Hier einen Kurs pro Zeile im Format „%(number)s“;„%(title)s“;„%(desc)s“ "
-"eingeben."
-
-msgid ""
-"Warning: The new Event will be immediately visible to all CdE-Members "
-"viewing the list of past Events."
-msgstr ""
-"Achtung: Die neue Veranstaltung ist direkt für alle CdE-Mitglieder in der "
-"Liste der verg. Veranstaltungen sichtbar."
-
-msgid "Past Events_[[long form]]"
-msgstr "Vergangene Veranstaltungen"
-
-#, python-format
-msgid "%(count)s Course"
-msgid_plural "%(count)s Courses"
-msgstr[0] "%(count)s Kurs"
-msgstr[1] "%(count)s Kurse"
-
-#, python-format
-msgid "%(count)s Participant"
-msgid_plural "%(count)s Participants"
-msgstr[0] "%(count)s Teilnehmende"
-msgstr[1] "%(count)s Teilnehmende"
-
-msgid "CdE Course Search"
-msgstr "CdE-Kurssuche"
-
-msgid ""
-"This search allows to search for courses from past events. Here, events from "
-"all institutions are included."
-msgstr ""
-"Die Suche erlaubt, nach Kursen von vergangenen Veranstaltungen zu suchen. "
-"Hierbei sind Veranstaltungen aller Organisationen eingeschlossen."
-
-#, python-format
-msgid "%(count)s Course found"
-msgid_plural "%(count)s Courses found"
-msgstr[0] "%(count)s Kurs gefunden"
-msgstr[1] "%(count)s Kurse gefunden"
-
-msgid "No courses found."
-msgstr "Keine Kurse gefunden."
-
-msgid "Nr"
-msgstr "Nr"
-
-msgid "Member Search"
-msgstr "Mitgliedersuche"
-
-#, python-format
-msgid "To search by course instructor, use the %(membersearch)s instead."
-msgstr "Um nach Kursleitenden zu suchen, nutze bitte die %(membersearch)s."
-
-msgid "Add Participant to this Course"
-msgstr "Teilnehmer:in zu diesem Kurs hinzufügen"
-
-msgid "ID of the new Participant"
-msgstr "ID der neuen Teilnehmer:in"
-
-msgid "The Participant will be removed from this Course."
-msgstr "Die Teilnehmer:in wird aus diesem Kurs entfernt."
-
-msgid "Remove"
-msgstr "Entfernen"
-
-msgid "and_one_more"
-msgid_plural "and_count_more"
-msgstr[0] "und %(count)s weiterer"
-msgstr[1] "und %(count)s weitere"
-
-msgid "This Course had no Participants."
-msgstr "Dieser Kurs hat keine Teilnehmenden."
-
-msgid "Delete Course"
-msgstr "Kurs löschen"
-
-msgid "The Course will be permanently deleted."
-msgstr "Dieser Kurs wird mit allen Daten irreversibel gelöscht."
-
-msgid "Deletes the Course, including Description and Participant information"
-msgstr ""
-"Löscht den Kurs inkl. Beschreibung und der Information über die "
-"Zugehörigkeit der Teilnehmenden."
-
-msgid "(and maybe others)"
-msgstr "(und vielleicht weitere)"
-
-msgid ""
-"As you are no participant of this past event, you can only see this link "
-"because you are admin."
-msgstr ""
-"Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und kannst "
-"diesen Link nur in Deiner Eigenschaft als Admin sehen."
-
-msgid "Add Participant <u>without</u> Course"
-msgstr "Teilnehmer:in <u>ohne</u> Kurs hinzufügen"
-
-msgid "The Participant will be removed from the Event."
-msgstr "Die Teilnehmer:in wird von der Veranstaltung entfernt."
-
-msgid "This Event had no Participants."
-msgstr "Diese Veranstaltung hat keine Teilnehmenden."
-
-msgid "Delete Event"
-msgstr "Veranstaltung löschen"
-
-msgid "The event will be permanently deleted."
-msgstr "Die Veranstaltung wird irreversibel gelöscht."
-
-msgid ""
-"Deletes the event, including description, courses and participant "
-"information."
-msgstr ""
-"Löscht die Veranstaltung inklusive Beschreibung, Kursen und Teilnehmenden."
 
 msgid ""
 "The actions on this site affect all Members, therefore they are basically "
@@ -9982,6 +9806,9 @@ msgstr "Eintrag entfernen (%(title)s)"
 
 msgid "Remove Entry"
 msgstr "Eintrag entfernen"
+
+msgid "Remove"
+msgstr "Entfernen"
 
 msgid ""
 "Only remove entries if they are erroneous. If they are no longer valid or "
@@ -11040,6 +10867,9 @@ msgstr "Adresse"
 msgid "Address hidden for member search"
 msgstr "Adresse für Mitgliedersuche versteckt"
 
+msgid "Past Events"
+msgstr "Verg. Veranstaltungen"
+
 msgid "Copy-Paste Template"
 msgstr "Copy/Paste-Vorlage"
 
@@ -11525,8 +11355,17 @@ msgstr "Alle Veranstaltungen"
 msgid "Event Helpers"
 msgstr "Veranstaltungshelfer:innen"
 
+msgid "Course Search"
+msgstr "Kurssuche"
+
+msgid "Past Events Log"
+msgstr "Verg.-Veranstaltungen-Log"
+
 msgid "Event Administration"
 msgstr "Veranstaltungs-Administration"
+
+msgid "Past Event Administration"
+msgstr "Verg.-Veranst.-Administration"
 
 msgid "There are currently no inconsistencies matching the filter."
 msgstr "Zur Zeit gibt es keine Ungereimtheiten, die auf den Filter passen."
@@ -11600,6 +11439,13 @@ msgstr "%(course)s bearbeiten (%(event)s)"
 #, python-format
 msgid "Add Course (%(title)s)"
 msgstr "Kurs hinzufügen (%(title)s)"
+
+msgid "Add Course"
+msgstr "Kurs hinzufügen"
+
+#, python-format
+msgid "Edit course %(course)s"
+msgstr "Kurs %(course)s bearbeiten"
 
 msgid "Coursenumber"
 msgstr "Kursnummer"
@@ -12161,6 +12007,9 @@ msgstr "Rollen verwalten"
 
 msgid "Event Meta Data"
 msgstr "Veranstaltungs-Metadaten"
+
+msgid "Institution"
+msgstr "Organisation"
 
 msgid "Website Link"
 msgstr "Link zur Website"
@@ -12836,31 +12685,6 @@ msgstr "Kürzlich beendete Veranstaltungen"
 
 #, python-format
 msgid ""
-"Previous CdE events, including their courses and participants, can be found "
-"at %(link)s – together with Junior- and SchülerAkademien. Furthermore, there "
-"is a %(list)s of all events which have not been cleansed yet."
-msgstr ""
-"Die früheren CdE-Veranstaltungen mit ihren Teilnehmenden und Kursen findest "
-"Du gemeinsam mit den Schüler- und JuniorAkademien unter %(link)s. Darüber "
-"hinaus gibt es eine %(list)s aller Veranstaltungen, die noch nicht von "
-"persönlichen Daten bereinigt und gelöscht wurden."
-
-msgid "list"
-msgstr "Liste"
-
-#, python-format
-msgid ""
-"Previous CdE events are accessible to members only – together with Junior- "
-"and SchülerAkademien. However, there is a %(list)s of all events which have "
-"not been cleansed yet."
-msgstr ""
-"Die früheren CdE-Veranstaltungen gemeinsam mit den Schüler- und "
-"JuniorAkademien sind nur Mitgliedern zugänglich. Allerdings gibt es eine "
-"%(list)s aller Veranstaltungen, die noch nicht von persönlichen Daten "
-"bereinigt und gelöscht wurden."
-
-#, python-format
-msgid ""
 "Event helpers have comprehensive readonly access to event information which "
 "is not privacy-sensitive. Specifically, they have only aggregated access to "
 "registration data. Furthermore, they may see any information available to "
@@ -13103,12 +12927,15 @@ msgid "The event will be permanently archived."
 msgstr "Die Veranstaltung wird irreversibel archiviert."
 
 msgid ""
-"Archives the event. This creates a new “Past Event” in the CdE-Realm and "
+"Archives the event. This creates a new “Past Event” for user profiles and "
 "transfers course and participant information there."
 msgstr ""
 "Archiviert die Veranstaltung. Dabei wird eine neue „Vergangene "
-"Veranstaltung“ im CdE-Bereich erstellt und die Kurse und Teilnehmende dieser "
-"Veranstaltung dorthin übertragen."
+"Veranstaltung“ für Profile der Teilnehmenden erstellt. Die Kurse und "
+"Teilnehmende dieser Veranstaltung werden dorthin übertragen."
+
+msgid "The event will be permanently deleted."
+msgstr "Die Veranstaltung wird irreversibel gelöscht."
 
 msgid ""
 "Deletes the event, including all course and participant information. This "
@@ -13217,6 +13044,9 @@ msgstr ""
 
 msgid "No registrations found."
 msgstr "Keine Anmeldungen vorhanden."
+
+msgid "No courses found."
+msgstr "Keine Kurse gefunden."
 
 msgid "No lodgements found."
 msgstr "Keine Unterkünfte gefunden."
@@ -14019,6 +13849,155 @@ msgid ""
 msgstr ""
 "Löscht die Unterkunft mit allen Informationen und lässt die aktuellen "
 "Bewohnenden ohne Unterkunft zurück."
+
+#, python-format
+msgid "Edit %(pcourse)s (%(pevent)s)"
+msgstr "%(pcourse)s (%(pevent)s) bearbeiten"
+
+msgid "Number"
+msgstr "Nummer"
+
+#, python-format
+msgid "Edit %(pevent)s"
+msgstr "%(pevent)s bearbeiten"
+
+msgid "Photo gallery"
+msgstr "Mediensammlung"
+
+msgid ""
+"Link to photo gallery (e.g. <https://user:pwd@example.cde>) with http "
+"authentification information encoded"
+msgstr ""
+"Link zur Fotogalerie (z. B. <https://user:pwd@example.cde>) mit "
+"eingebetteter Authentifizierung"
+
+#, python-format
+msgid "Create Course (%(pevent)s)"
+msgstr "Kurs anlegen (%(pevent)s)"
+
+msgid "Create Course"
+msgstr "Kurs anlegen"
+
+msgid ""
+"Warning: The new Course will be immediately visible to all CdE members "
+"viewing this past event."
+msgstr ""
+"Achtung: Der neue Kurs ist direkt für CdE-Mitglieder, die sich die "
+"vergangene Veranstaltung ansehen, sichtbar."
+
+msgid "Create Past Event"
+msgstr "Verg. Veranstaltung anlegen"
+
+#, python-format
+msgid ""
+"Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”."
+msgstr ""
+"Hier einen Kurs pro Zeile im Format „%(number)s“;„%(title)s“;„%(desc)s“ "
+"eingeben."
+
+msgid ""
+"Warning: The new Event will be immediately visible to all CdE-Members "
+"viewing the list of past Events."
+msgstr ""
+"Achtung: Die neue Veranstaltung ist direkt für alle CdE-Mitglieder in der "
+"Liste der verg. Veranstaltungen sichtbar."
+
+msgid "Past Events_[[long form]]"
+msgstr "Vergangene Veranstaltungen"
+
+#, python-format
+msgid "%(count)s Course"
+msgid_plural "%(count)s Courses"
+msgstr[0] "%(count)s Kurs"
+msgstr[1] "%(count)s Kurse"
+
+#, python-format
+msgid "%(count)s Participant"
+msgid_plural "%(count)s Participants"
+msgstr[0] "%(count)s Teilnehmende"
+msgstr[1] "%(count)s Teilnehmende"
+
+msgid "CdE Course Search"
+msgstr "CdE-Kurssuche"
+
+msgid ""
+"This search allows to search for courses from past events. Here, events from "
+"all institutions are included."
+msgstr ""
+"Die Suche erlaubt, nach Kursen von vergangenen Veranstaltungen zu suchen. "
+"Hierbei sind Veranstaltungen aller Organisationen eingeschlossen."
+
+#, python-format
+msgid "%(count)s Course found"
+msgid_plural "%(count)s Courses found"
+msgstr[0] "%(count)s Kurs gefunden"
+msgstr[1] "%(count)s Kurse gefunden"
+
+msgid "Nr"
+msgstr "Nr"
+
+msgid "Member Search"
+msgstr "Mitgliedersuche"
+
+#, python-format
+msgid "To search by course instructor, use the %(membersearch)s instead."
+msgstr "Um nach Kursleitenden zu suchen, nutze bitte die %(membersearch)s."
+
+msgid "Add Participant to this Course"
+msgstr "Teilnehmer:in zu diesem Kurs hinzufügen"
+
+msgid "ID of the new Participant"
+msgstr "ID der neuen Teilnehmer:in"
+
+msgid "The Participant will be removed from this Course."
+msgstr "Die Teilnehmer:in wird aus diesem Kurs entfernt."
+
+msgid "and_one_more"
+msgid_plural "and_count_more"
+msgstr[0] "und %(count)s weiterer"
+msgstr[1] "und %(count)s weitere"
+
+msgid "This Course had no Participants."
+msgstr "Dieser Kurs hat keine Teilnehmenden."
+
+msgid "Delete Course"
+msgstr "Kurs löschen"
+
+msgid "The Course will be permanently deleted."
+msgstr "Dieser Kurs wird mit allen Daten irreversibel gelöscht."
+
+msgid "Deletes the Course, including Description and Participant information"
+msgstr ""
+"Löscht den Kurs inkl. Beschreibung und der Information über die "
+"Zugehörigkeit der Teilnehmenden."
+
+msgid "(and maybe others)"
+msgstr "(und vielleicht weitere)"
+
+msgid ""
+"As you are no participant of this past event, you can only see this link "
+"because you are admin."
+msgstr ""
+"Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und kannst "
+"diesen Link nur in Deiner Eigenschaft als Admin sehen."
+
+msgid "Add Participant <u>without</u> Course"
+msgstr "Teilnehmer:in <u>ohne</u> Kurs hinzufügen"
+
+msgid "The Participant will be removed from the Event."
+msgstr "Die Teilnehmer:in wird von der Veranstaltung entfernt."
+
+msgid "This Event had no Participants."
+msgstr "Diese Veranstaltung hat keine Teilnehmenden."
+
+msgid "Delete Event"
+msgstr "Veranstaltung löschen"
+
+msgid ""
+"Deletes the event, including description, courses and participant "
+"information."
+msgstr ""
+"Löscht die Veranstaltung inklusive Beschreibung, Kursen und Teilnehmenden."
 
 #, python-format
 msgid "Change Custom Filter “%(filter_title)s” (%(event_title)s)"
