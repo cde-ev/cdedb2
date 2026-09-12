@@ -211,6 +211,15 @@
                     label=gettext("Automatically convert HTML emails to plaintext"),
                     info=gettext("Disable this in cases of lists with external correspondence (e.g. business emails)"
                                  " as there are actors causing problems with malformed emails.")) }}
+                {{ util.form_input_checkbox(
+                    name="wrap_unconditionally", defaultvalue='True',
+                    label=gettext("Replace the sender of all mails sent via this list"),
+                    info=gettext("The sender will be shown as 'XY' via 'some list'."
+                                 " This reduced trouble with senders with bad DMARC policies."
+                                 " If this is disabled, the wrapping is only applied to known bad senders, "
+                                 " otherwise it is applied to every mail."
+                                 " Disabling this may cause additional bounces for some subscribers"
+                                 " and is not recommended for large mailinglists.")) }}
                 {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                                         defaultvalue=maxsize_default,
                                         info=gettext("Larger messages will be held for moderation.")) }}

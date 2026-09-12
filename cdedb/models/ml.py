@@ -96,6 +96,7 @@ class Mailinglist(CdEDataclass):
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
     convert_html: bool
+    wrap_unconditionally: bool
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 

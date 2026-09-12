@@ -94,9 +94,7 @@ class MlMailmanMixin(MlBaseFrontend):
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
             'dmarc_mitigate_action': 'munge_from',
-            # Removing this setting allows controlling unconditional dmarc mitigation
-            #  to be configured via postorius.
-            # 'dmarc_mitigate_unconditionally': False,
+            'dmarc_mitigate_unconditionally': db_list.wrap_unconditionally,
             # 'dmarc_wrapped_message_text': (
             #    "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
             #    " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
