@@ -7,7 +7,6 @@ and courses' attendees.
 """
 
 import collections
-from collections import OrderedDict
 from collections.abc import Collection
 from typing import cast
 
@@ -507,7 +506,7 @@ class EventCourseMixin(EventBaseFrontend):
             {
                 'courses': courses,
                 'personas': personas,
-                'registrations': OrderedDict(
+                'registrations': dict(
                     xsorted(
                         registrations.items(),
                         key=lambda reg: EntitySorter.persona(

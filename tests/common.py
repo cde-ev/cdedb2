@@ -49,6 +49,7 @@ import lxml.html
 import PIL.Image
 import webtest
 import webtest.utils
+import werkzeug
 from psycopg2.extras import RealDictCursor
 
 import cdedb.common.validation.types as vtypes
@@ -182,6 +183,7 @@ _SAMPLE_DATA = _read_sample_data()
 
 def _make_backend_shim[B: AbstractBackend](
     backend: B,
+    ip: str | None = None,
     internal: bool = False,
     allow_private: bool = False,
 ) -> B:
@@ -196,13 +198,14 @@ def _make_backend_shim[B: AbstractBackend](
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
+    ip = ip or "127.0.0.0"
 
     sessionproxy = SessionBackend()
     secrets = SecretsConfig()
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"],
         DATABASE_ROLES,
-        secrets,
+        secrets["CDB_DATABASE_ROLES"],
         backend.conf["DB_HOST"],
         backend.conf["DB_PORT"],
     )
@@ -210,7 +213,7 @@ def _make_backend_shim[B: AbstractBackend](
 
     def setup_requeststate(
         key: str | None,
-        ip: str = "127.0.0.0",
+        ip: str,
     ) -> RequestState:
         """
         Turn a provided sessionkey or apitoken into a RequestState object.
@@ -240,7 +243,7 @@ def _make_backend_shim[B: AbstractBackend](
             sessionkey=sessionkey,
             apitoken=apitoken,
             user=user,
-            request=None,  # type: ignore[arg-type]
+            request=werkzeug.Request({"REMOTE_ADDR": ip}),
             notifications=[],
             mapadapter=None,  # type: ignore[arg-type]
             requestargs=None,
@@ -250,7 +253,7 @@ def _make_backend_shim[B: AbstractBackend](
             lang="de",
             translations=translations,
         )
-        rs._conn = connpool[rs.user.new_roles.get_db_role()]
+        rs._conn = connpool(rs.user.new_roles.get_db_role())
         rs.conn = rs._conn
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
@@ -294,7 +297,7 @@ def _make_backend_shim[B: AbstractBackend](
 
             @functools.wraps(attr)
             def wrapper(key: str | None, *args: Any, **kwargs: Any) -> Any:
-                rs = setup_requeststate(key)
+                rs = setup_requeststate(key, cast(str, ip))  # pyrefly: ignore[redundant-cast]  # mypy bug.
                 try:
                     return attr(rs, *args, **kwargs)
                 except FileNotFoundError as e:
@@ -307,8 +310,8 @@ def _make_backend_shim[B: AbstractBackend](
         def __setattr__(self, key: str, value: Any) -> None:
             return setattr(backend, key, value)
 
-        def get_rs(self, key: str) -> RequestState:
-            return setup_requeststate(key)
+        def get_rs(self, key: str, ip: str = cast(str, ip)) -> RequestState:  # pyrefly: ignore[redundant-cast]  # mypy bug.
+            return setup_requeststate(key, ip)
 
     return cast(B, Proxy())
 
@@ -668,12 +671,16 @@ class BackendTest(CdEDBTest):
         return backendcls()
 
     @classmethod
-    def initialize_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True, allow_private=False)
+    def initialize_backend[B: AbstractBackend](
+        cls, backendcls: type[B], ip: str | None = None
+    ) -> B:
+        return _make_backend_shim(backendcls(), ip, internal=True, allow_private=False)
 
     @classmethod
-    def initialze_private_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
-        return _make_backend_shim(backendcls(), internal=True, allow_private=True)
+    def initialze_private_backend[B: AbstractBackend](
+        cls, backendcls: type[B], ip: str | None = None
+    ) -> B:
+        return _make_backend_shim(backendcls(), ip, internal=True, allow_private=True)
 
 
 class BrowserTest(CdEDBTest):
@@ -1280,6 +1287,7 @@ class FrontendTest(BackendTest):
         verbose: bool = False,
         value: str | None = None,
         check_mandatory_filled: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Submit a form.
 
@@ -1322,7 +1330,7 @@ class FrontendTest(BackendTest):
             )  # pragma: no cover
         if not form.get(button, index=0, default=None):
             self.fail(f"No submit button {button!r} found.")
-        self.response = form.submit(button, value=value)
+        self.response = form.submit(button, value=value, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
@@ -2015,8 +2023,8 @@ class FrontendTest(BackendTest):
         content: str | None = None,
         verbose: bool = False,
     ) -> None:
-        """Assert that no tag that matches specific criteria is found. Possible
-        criteria include:
+        """Assert that no tag that matches specific criteria is found.
+        Possible criteria include:
 
         * The tags href_attr matches the href_pattern (regex)
         * The tags content matches the content (regex)
@@ -2024,6 +2032,45 @@ class FrontendTest(BackendTest):
         This is a ripoff of webtest.response._find_element, which is used by
         traverse internally.
         """
+        if ret := self._find_link(href_pattern, tag, href_attr, content, verbose):
+            href, el_content = ret
+            self.fail(
+                f"Tag '{tag}' with {href_attr} == {href!r}"
+                f" and content {el_content!r} has been found."
+            )
+
+    def assertHasLink(
+        self,
+        href_pattern: str | Pattern[str] | None = None,
+        tag: str = 'a',
+        href_attr: str = 'href',
+        content: str | None = None,
+        verbose: bool = False,
+    ) -> None:
+        """Assert that a tag that matches specific criteria is found.
+
+        Possible criteria include:
+
+        * The tags href_attr matches the href_pattern (regex)
+        * The tags content matches the content (regex)
+
+        This is a ripoff of webtest.response._find_element, which is used by
+        traverse internally.
+        """
+        if not self._find_link(href_pattern, tag, href_attr, content, verbose):
+            self.fail(
+                f"No Tag '{tag}' with {href_attr} == {href_pattern!r}"
+                f" and content {content!r} has been found."
+            )
+
+    def _find_link(
+        self,
+        href_pattern: str | Pattern[str] | None,
+        tag: str,
+        href_attr: str,
+        content: str | None,
+        verbose: bool,
+    ) -> tuple[str, str] | None:
         href_pat = webtest.utils.make_pattern(href_pattern)
         content_pat = webtest.utils.make_pattern(content)
 
@@ -2045,10 +2092,8 @@ class FrontendTest(BackendTest):
                 printlog("  Skipped: doesn't match description")
                 continue
             printlog("  Link found")  # pragma: no cover
-            self.fail(
-                f"Tag '{tag}' with {href_attr} == {element[href_attr]}"
-                f" and content '{el_content}' has been found."
-            )
+            return element[href_attr], el_content
+        return None
 
     def assertLogEqual(
         self, log_expectation: Sequence[CdEDBObject], realm: str, **kwargs: Any

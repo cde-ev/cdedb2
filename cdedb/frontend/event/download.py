@@ -9,7 +9,6 @@ import collections.abc
 import pathlib
 import shutil
 import tempfile
-from collections import OrderedDict
 from collections.abc import Collection
 
 import werkzeug.exceptions
@@ -80,9 +79,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order
-        )
+        registrations = {reg_id: registrations[reg_id] for reg_id in reg_order}
         registrations_by_part_by_age: dict[int, dict[AgeClasses, CdEDBObjectMap]] = {
             part_id: {age: {} for age in reversed(AgeClasses)}
             for part_id in rs.ambience['event'].parts
@@ -172,9 +169,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order
-        )
+        registrations = {reg_id: registrations[reg_id] for reg_id in reg_order}
         tex = self.fill_template(
             rs,
             "tex",
@@ -220,10 +215,9 @@ class EventDownloadMixin(EventBaseFrontend):
                 personas[registration['persona_id']].birthday, event.begin
             )
         key = lambda reg_id: personas[registrations[reg_id]['persona_id']].birthday
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id])
-            for reg_id in xsorted(registrations, key=key)
-        )
+        registrations = {
+            reg_id: registrations[reg_id] for reg_id in xsorted(registrations, key=key)
+        }
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
@@ -319,9 +313,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order
-        )
+        registrations = {reg_id: registrations[reg_id] for reg_id in reg_order}
         tex = self.fill_template(
             rs,
             "tex",
