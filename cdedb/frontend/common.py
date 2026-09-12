@@ -20,6 +20,7 @@ import email.mime.base
 import email.mime.image
 import email.mime.multipart
 import email.mime.text
+import email.parser
 import email.utils
 import functools
 import gettext
@@ -1958,9 +1959,9 @@ class CdEMailmanClient(mailmanclient.Client):
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
                 if dblist.id % 2 == 0:
-                    return cast(
+                    return cast(  # type: ignore[redundant-cast] # mypy does not have annotations for mailman.
                         list[mailmanclient.restobjects.held_message.HeldMessage],
-                        HELD_MESSAGE_SAMPLE,
+                        xsorted(HELD_MESSAGE_SAMPLE, key=lambda m: m.spam_score),
                     )
                 else:
                     return []
@@ -1968,7 +1969,19 @@ class CdEMailmanClient(mailmanclient.Client):
         else:
             mmlist = self.get_list_safe(dblist.address)
             try:
-                return mmlist.held if mmlist else None
+                if not mmlist:
+                    return None
+
+                held = mmlist.held
+                for message in held:
+                    headers = email.parser.HeaderParser().parsestr(message.msg)
+                    message.spam_score = headers.get("X-Spam-Score", "—")
+                    if isinstance(message.hold_date, str):
+                        message.hold_date = datetime.datetime.fromisoformat(
+                            message.hold_date
+                        )
+
+                return held
             except urllib.error.HTTPError:
                 self.logger.exception("Mailman connection failed!")
         return None

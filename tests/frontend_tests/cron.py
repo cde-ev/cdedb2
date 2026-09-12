@@ -1016,3 +1016,92 @@ class TestCron(CronTest):
         # Check
         #
         self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 4)
+
+    def test_mod_remind(self) -> None:
+        start_time = now().replace(hour=10, minute=0, second=0, microsecond=0)
+        delta = datetime.timedelta(hours=1)
+        with freezegun.freeze_time(start_time) as frozen_time:
+            self.execute("moderation_remind")
+            self.assertEqual([], [mail.template for mail in self.mails])
+
+            frozen_time.move_to(start_time.replace(hour=19))
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 12, [mail.template for mail in self.mails]
+            )
+            self.mails = []
+
+            self.execute("moderation_remind")
+            self.assertEqual([], [mail.template for mail in self.mails])
+
+            frozen_time.tick(delta * 24)
+
+            self.execute("moderation_remind")
+            self.assertEqual([], [mail.template for mail in self.mails])
+
+            frozen_time.tick(delta * 24)
+
+            self.execute("moderation_remind")
+            self.assertEqual([], [mail.template for mail in self.mails])
+
+            frozen_time.tick(delta * 24)
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 12, [mail.template for mail in self.mails]
+            )
+            self.mails = []
+
+            ml_id = 2
+            persona_id = 1
+            ml = self.ml.get_mailinglist(RS, ml_id)
+            self.assertNotEqual([], self.cron.ml.get_mailman().get_held_messages(ml))
+            self.assertNotIn(persona_id, ml.moderators)
+            self.ml.add_moderators(RS, ml_id, [persona_id])
+            self.assertIn(persona_id, self.ml.get_mailinglist(RS, ml_id).moderators)
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 0, [mail.template for mail in self.mails]
+            )
+
+            frozen_time.tick(delta * 24)
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 1, [mail.template for mail in self.mails]
+            )
+            self.mails = []
+
+            frozen_time.tick(delta * 24)
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 0, [mail.template for mail in self.mails]
+            )
+            self.mails = []
+
+            frozen_time.tick(delta * 24)
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 11, [mail.template for mail in self.mails]
+            )
+            self.mails = []
+
+            frozen_time.tick(delta * 24)
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 1, [mail.template for mail in self.mails]
+            )
+            self.mails = []
+
+            frozen_time.tick(delta * 24 * 3)
+
+            self.execute("moderation_remind")
+            self.assertEqual(
+                ["moderation_remind"] * 12, [mail.template for mail in self.mails]
+            )
+            self.mails = []
