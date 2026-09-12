@@ -79,7 +79,7 @@
                                           defaultvalue=DEFAULT_COUNTRY) }}
             {% endif %}
             {% if ambience['genesis_case'].realm == enums["Realms"].cde %}
-                {{ generic.past_course_select(small=True) }}
+                {{ generic.past_course_select(small=True, pevent_only=ambience["genesis_case"].is_upgrade) }}
             {% endif %}
             {{ util.form_input_submit(label=gettext("Save"), small=True, cancellink=cdedblink("core/genesis_show_case")) }}
         </div>
