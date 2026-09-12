@@ -635,7 +635,8 @@ class AdminViews(_AdminViews):
 
     complaint = Roles.complaint_admin, Roles.complaint_enforcer
 
-    past_event = Roles.cde_admin
+    past_event = Roles.cde_admin, Roles.event_admin
+
     ml_mgmt_cde = Roles.cde_admin
     ml_mod_cde = Roles.cde_admin
 
@@ -649,6 +650,7 @@ class AdminViews(_AdminViews):
         Roles.auditor,
         Roles.event_helper,
     )
+
     ml_mgmt_event = Roles.event_admin
     ml_mod_event = Roles.event_admin
 

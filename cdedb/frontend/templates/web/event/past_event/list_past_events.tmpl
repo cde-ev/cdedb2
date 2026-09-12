@@ -37,8 +37,9 @@
             {% for pevent in past_events %}
                 <li>
                     {{ util.href(cdedblink("event/show_past_event", {"pevent_id": pevent.id}), pevent.title, readonly=(
-                        (not user.new_roles.has_any(enums["Roles"].member, enums["Roles"].cde_admin)
-                        and (pevent.id not in participated_pevent_ids))
+                        (not user.new_roles.has(enums["Roles"].member)
+                         and not user.admin_views.has(AdminViews.past_event)
+                         and (pevent.id not in participated_pevent_ids))
                     )) }}
                     {% if user.admin_views.has(AdminViews.past_event) %}[{{ pevent.shortname }}]{% endif %}
                     {% if not values.get('institution') %}({{ pevent.institution.shortname }}){% endif %}

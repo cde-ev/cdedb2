@@ -207,7 +207,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
 
     realm: ClassVar[str | Realms]
-    admin_role: ClassVar[Roles | None] = None
+    admin_roles: ClassVar[tuple[Roles | RoleSet, ...] | None] = None
 
     @classmethod
     def realm_str(cls) -> str:
@@ -522,13 +522,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
         """
-        if cls.admin_role:
-            admin_role = cls.admin_role
+        if cls.admin_roles:
+            admin_roles = cls.admin_roles
         elif isinstance(cls.realm, Realms):
-            admin_role = cls.realm.admin_role
+            admin_roles = (cls.realm.admin_role,)
         else:
             raise RuntimeError
-        return admin_role in rs.user.new_roles
+        return rs.user.new_roles.has_any(*admin_roles)
 
     def fill_template(
         self, rs: RequestState, modus: str, templatename: str, params: CdEDBObject

@@ -1755,7 +1755,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access(Roles.event_admin, modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.conclude)
     @REQUESTdata("ack_archive", "create_past_event")
     def archive_event(

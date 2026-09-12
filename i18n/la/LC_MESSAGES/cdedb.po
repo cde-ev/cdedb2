@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-29 00:19+0200\n"
+"POT-Creation-Date: 2026-08-29 16:08+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -1664,26 +1664,7 @@ msgstr "commentarium mutationis"
 msgid "ViolationKind.other"
 msgstr ""
 
-#, fuzzy
-msgid "Roles.assembly_admin"
-msgstr "coetus"
-
 msgid "Roles.core_admin"
-msgstr ""
-
-#, fuzzy
-msgid "Roles.complaint_admin"
-msgstr "administrator tabellarum epistularum electronicarum"
-
-#, fuzzy
-msgid "Roles.cdelokal_admin"
-msgstr "administrator CdElocalis"
-
-#, fuzzy
-msgid "Roles.event_admin"
-msgstr "administratores eventuum"
-
-msgid "Roles.ml_admin"
 msgstr ""
 
 #, fuzzy
@@ -1691,16 +1672,35 @@ msgid "Roles.auditor"
 msgstr "Annuntiationes"
 
 #, fuzzy
-msgid "Roles.meta_admin"
-msgstr "administrator administratorum"
-
-#, fuzzy
 msgid "Roles.cde_admin"
 msgstr "administrator CdEi"
 
 #, fuzzy
+msgid "Roles.assembly_admin"
+msgstr "coetus"
+
+#, fuzzy
+msgid "Roles.complaint_admin"
+msgstr "administrator tabellarum epistularum electronicarum"
+
+#, fuzzy
+msgid "Roles.meta_admin"
+msgstr "administrator administratorum"
+
+#, fuzzy
+msgid "Roles.cdelokal_admin"
+msgstr "administrator CdElocalis"
+
+#, fuzzy
 msgid "Roles.finance_admin"
 msgstr "administrator pecuniae"
+
+#, fuzzy
+msgid "Roles.event_admin"
+msgstr "administratores eventuum"
+
+msgid "Roles.ml_admin"
+msgstr ""
 
 #, fuzzy
 msgid "Realms.cde"
@@ -13038,7 +13038,7 @@ msgid "The event will be permanently archived."
 msgstr ""
 
 msgid ""
-"Archives the event. This creates a new “Past Event” in the CdE-Realm and "
+"Archives the event. This creates a new “Past Event” for user profiles and "
 "transfers course and participant information there."
 msgstr ""
 
