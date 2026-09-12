@@ -3784,7 +3784,11 @@ class TestCoreFrontend(FrontendTest):
         f['pcourse_id'] = 1
         self.submit(f)
         f = self.response.forms['genesisdecisionform']
-        self.submit(f, button="decision", value=str(GenesisDecision.approve))
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve_grant_trial_membership),
+        )
         logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.persona_creation)
