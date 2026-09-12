@@ -3490,7 +3490,9 @@ class TestCoreFrontend(FrontendTest):
             f = self.response.forms["genesis-upgrade"]
             self.submit(f, check_notification=False)
             msg = "Eine Datei muss hochgeladen oder eine Vergangene Veranstaltung"
-            self.assertValidationError("pevent_id", msg)
+            # No error at the field, because it is not shown, since there are no
+            #  past events to choose from.
+            # self.assertValidationError("pevent_id", msg)
             self.assertValidationError("attachment", msg)
             f = self.response.forms["genesis-upgrade"]
             # simon participated at no past event
