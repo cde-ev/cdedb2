@@ -10,18 +10,14 @@ This should be the only module which makes subsistantial use of psycopg.
 
 import enum
 import logging
-from collections.abc import Collection, Mapping
+from collections.abc import Callable, Collection, Mapping
 from types import TracebackType
-from typing import Any, NoReturn
+from typing import Any
 
 import psycopg2
 import psycopg2.extensions
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 from psycopg2.extras import RealDictCursor
-
-# We cannot import cdedb.config here.
-# from cdedb.config import SecretsConfig
-SecretsConfig = Mapping[str, Any]
 
 
 class ConnectionContainer:
@@ -112,13 +108,13 @@ def _create_connection(
 def connection_pool_factory(
     dbname: str,
     roles: Collection[DBRole],
-    secrets: SecretsConfig,
+    db_passwords: Mapping[str, str],
     host: str,
     port: int,
     isolation_level: int | None = SERIALIZABLE,
-) -> Mapping[DBRole, "IrradiatedConnection"]:
-    """This returns a dict-like object which has database roles as keys and
-    database connections as values (which are created on the fly).
+) -> Callable[[DBRole], "IrradiatedConnection"]:
+    """This returns callable which takes a database role and returns a
+    connection using that role.
 
     Database connections are a costly good (in memory terms), so it is
     wise to create them only when necessary. Since this is costly in
@@ -126,47 +122,24 @@ def connection_pool_factory(
     (e.g. pgbouncer). Additionally this approach offers thread-safety
     since connetions created at runtime are not shared between threads.
 
-    The first implementation of this interface was a caching connection
-    factory, which used crazy amounts of resources.
-
-    :param roles: roles for which database connections shall be available
-    :param secrets: container for db passwords
+    :param roles: roles for which database connections shall be available.
+    :param db_passwords: container for db passwords.
     :param isolation_level: Isolation level of database connection, a
-        constant coming from :py:mod:`psycopg2.extensions`. This should be used
-        very sparingly!
-    :returns: dict-like object with semantics {str :
-                :py:class:`IrradiatedConnection`}
+        constant coming from :py:mod:`psycopg2.extensions`.
+        This should be used very sparingly!
     """
-    # local variable to prevent closure over secrets
-    db_passwords = secrets["CDB_DATABASE_ROLES"]
+    roles = frozenset(roles)
+    passwords: Mapping[str, str] = dict(db_passwords)
 
-    class InstantConnectionPool(Mapping[DBRole, "IrradiatedConnection"]):
-        """Dict-like for providing database connections."""
-
-        def __init__(self, roles: Collection[DBRole]):
-            self.roles = roles
-
-        def __getitem__(self, role: DBRole) -> "IrradiatedConnection":
-            if role not in self.roles:
-                raise ValueError("role %(role)s not available", {'role': role})
-            return _create_connection(
-                dbname, role, db_passwords[role.value], host, port, isolation_level
-            )
-
-        def __delitem__(self, key: Any) -> NoReturn:
-            raise NotImplementedError("Not available for instant pool")
-
-        def __len__(self) -> NoReturn:
-            raise NotImplementedError("Not available for instant pool")
-
-        def __setitem__(self, key: Any, val: Any) -> NoReturn:
-            raise NotImplementedError("Not available for instant pool")
-
-        def __iter__(self) -> NoReturn:
-            raise NotImplementedError("Not available for instant pool")
+    def connect(role: DBRole) -> "IrradiatedConnection":
+        if role not in roles:
+            raise ValueError(f"Role {role!r} not available.")
+        return _create_connection(
+            dbname, role, passwords[role.value], host, port, isolation_level
+        )
 
     _LOGGER.debug(f"Initialised instant connection pool for roles {roles}")
-    return InstantConnectionPool(roles)
+    return connect
 
 
 # noinspection PyProtectedMember

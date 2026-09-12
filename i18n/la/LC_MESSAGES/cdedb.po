@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-05 22:30+0200\n"
+"POT-Creation-Date: 2026-09-12 20:25+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3468,6 +3468,9 @@ msgstr "vestigium novum crea"
 #, fuzzy
 msgid "Unknown message id."
 msgstr "inscriptio electronica nova"
+
+msgid "Blocked genesis request from TOR exit node."
+msgstr ""
 
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
@@ -10141,6 +10144,10 @@ msgid ""
 "%(submitted_by)s."
 msgstr ""
 
+#, fuzzy
+msgid "Companions_[[plural]]"
+msgstr "donorum"
+
 #, fuzzy, python-format
 msgid "%(count)s Cases found"
 msgstr "Annuntiationes"
@@ -10168,6 +10175,23 @@ msgid "Involvement"
 msgstr ""
 
 msgid "is withdrawn"
+msgstr ""
+
+#, fuzzy
+msgid "Active Companions"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+msgid "Ongoing cases:"
+msgstr ""
+
+msgid "Concluded cases:"
+msgstr ""
+
+#, fuzzy
+msgid "Inactive Companions"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+msgid "Previous cases:"
 msgstr ""
 
 msgid "Enforcers"
@@ -16003,16 +16027,6 @@ msgid "External fee does not check 'is_member'."
 msgstr "haec videri non possit."
 
 msgid "Non-external fee depends on 'is_member'."
-msgstr ""
-
-msgid ""
-"This event does not have any course tracks, therefore this questionnaire row "
-"won't actually be displayed. It still needs to exist."
-msgstr ""
-
-msgid ""
-"This event only has a single event part, therefore this questionnaire row "
-"won't actually be displayed. It still needs to exist."
 msgstr ""
 
 #, python-format

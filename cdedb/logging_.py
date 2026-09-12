@@ -12,7 +12,7 @@ from cdedb.config import Config
 _CONFIG = Config()
 
 
-def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
+def setup_root_logger(*, identifier: str = "cdedb", replace: bool = False) -> None:
     # loggers are hierachical - configuring handlers and setting a loglevel for logger
     # "cdedb" is sufficient to configure all child loggers, like "cdedb.backend".
     logger = logging.getLogger()
@@ -29,7 +29,6 @@ def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
         logging.raiseExceptions = False
 
     # setup handler
-    identifier = "cdedb" if not test else "cdedb-test"
     handler: logging.Handler = JournaldLogHandler(identifier=identifier)
     if is_container := pathlib.Path("/CONTAINER").is_file():
         # do not log anything in the CI

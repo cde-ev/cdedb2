@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-05 22:30+0200\n"
+"POT-Creation-Date: 2026-09-12 20:25+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3141,6 +3141,9 @@ msgid "Lockdown active."
 msgstr ""
 
 msgid "Unknown message id."
+msgstr ""
+
+msgid "Blocked genesis request from TOR exit node."
 msgstr ""
 
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
@@ -9339,6 +9342,9 @@ msgid ""
 "%(submitted_by)s."
 msgstr ""
 
+msgid "Companions_[[plural]]"
+msgstr "Companions"
+
 #, python-format
 msgid "%(count)s Cases found"
 msgstr ""
@@ -9365,6 +9371,21 @@ msgid "Involvement"
 msgstr ""
 
 msgid "is withdrawn"
+msgstr ""
+
+msgid "Active Companions"
+msgstr ""
+
+msgid "Ongoing cases:"
+msgstr ""
+
+msgid "Concluded cases:"
+msgstr ""
+
+msgid "Inactive Companions"
+msgstr ""
+
+msgid "Previous cases:"
 msgstr ""
 
 msgid "Enforcers"
@@ -14808,16 +14829,6 @@ msgid "External fee does not check 'is_member'."
 msgstr ""
 
 msgid "Non-external fee depends on 'is_member'."
-msgstr ""
-
-msgid ""
-"This event does not have any course tracks, therefore this questionnaire row "
-"won't actually be displayed. It still needs to exist."
-msgstr ""
-
-msgid ""
-"This event only has a single event part, therefore this questionnaire row "
-"won't actually be displayed. It still needs to exist."
 msgstr ""
 
 #, python-format

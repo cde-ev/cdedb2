@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-05 22:30+0200\n"
+"POT-Creation-Date: 2026-09-12 20:25+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3177,6 +3177,9 @@ msgstr "Datenbank für Wartungsarbeiten gesperrt."
 msgid "Unknown message id."
 msgstr "Unbekannte Nachrichten-ID."
 
+msgid "Blocked genesis request from TOR exit node."
+msgstr "Accountanfrage via TOR exit node blockiert."
+
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 "Accountanfrage kann vor Ablauf der Verifizierung nicht gelöscht werden."
@@ -5413,7 +5416,7 @@ msgid "Started sending archival notifications."
 msgstr "Versand der Archivierungsbenachrichtigungen begonnen."
 
 msgid "Started updating exmember balance."
-msgstr "Aktualisierung der Exmitglieder Guthaben gestartet."
+msgstr "Aktualisierung der Guthaben der Exmitglieder gestartet."
 
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
@@ -9869,6 +9872,9 @@ msgstr ""
 "Erstellt um %(ctime)s von %(first_submitted_by)s; zuletzt geändert um "
 "%(mtime)s von %(submitted_by)s."
 
+msgid "Companions_[[plural]]"
+msgstr "Fallbegleitungen"
+
 #, python-format
 msgid "%(count)s Cases found"
 msgstr "%(count)s Fälle gefunden"
@@ -9896,6 +9902,21 @@ msgstr "Beteiligung"
 
 msgid "is withdrawn"
 msgstr "hat sich zurückgezogen"
+
+msgid "Active Companions"
+msgstr "Aktive Fallbegleitungen"
+
+msgid "Ongoing cases:"
+msgstr "Laufende Fälle:"
+
+msgid "Concluded cases:"
+msgstr "Abgeschlossene Fälle"
+
+msgid "Inactive Companions"
+msgstr "Inaktive Fallbegleitungen"
+
+msgid "Previous cases:"
+msgstr "Frühere Fälle:"
 
 msgid "Enforcers"
 msgstr "Maßnahmenmanager:innen"
@@ -15989,20 +16010,6 @@ msgstr "Externenbeitrag prüft nicht 'is_member'."
 
 msgid "Non-external fee depends on 'is_member'."
 msgstr "Nicht-Externenbeitrag hängt von 'is_member' ab."
-
-msgid ""
-"This event does not have any course tracks, therefore this questionnaire row "
-"won't actually be displayed. It still needs to exist."
-msgstr ""
-"Diese Veranstaltung hat keine Kursschienen, daher wird diese Fragebogenzeile "
-"nicht angezeigt. Sie muss dennoch vorhanden sein."
-
-msgid ""
-"This event only has a single event part, therefore this questionnaire row "
-"won't actually be displayed. It still needs to exist."
-msgstr ""
-"Diese Veranstaltung hat nur einen Veranstaltungsteil, daher wird diese "
-"Fragebogenzeile nicht angezeigt. Sie muss dennoch vorhanden sein."
 
 #, python-format
 msgid "Booked %(num)s membership fees. There were %(new_members)s new members."

@@ -11,6 +11,7 @@ from collections.abc import Collection, Iterator
 from datetime import datetime
 from typing import cast
 
+from cdedb import setup_root_logger
 from cdedb.common import RequestState, User, now
 from cdedb.common.n_ import n_
 from cdedb.common.roles import Roles
@@ -39,12 +40,14 @@ class CronFrontend(BaseApp):
     def __init__(self) -> None:
         super().__init__()
 
+        setup_root_logger(identifier="cdedb-cron", replace=True)
+
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"],
             DATABASE_ROLES,
-            secrets,
+            secrets["CDB_DATABASE_ROLES"],
             self.conf["DB_HOST"],
             self.conf["DB_PORT"],
         )
@@ -79,7 +82,7 @@ class CronFrontend(BaseApp):
             lang=lang,
             translations=self.translations,
         )
-        rs._conn = self.connpool[DBRole.admin]
+        rs._conn = self.connpool(DBRole.admin)
         return rs
 
     def execute(self, jobs: Collection[str] | None = None) -> bool:
