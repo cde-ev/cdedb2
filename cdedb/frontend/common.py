@@ -208,7 +208,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
 
     realm: ClassVar[str | Realms]
-    admin_role: ClassVar[Roles | None] = None
+    admin_roles: ClassVar[tuple[Roles | RoleSet, ...] | None] = None
 
     @classmethod
     def realm_str(cls) -> str:
@@ -523,13 +523,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
         """
-        if cls.admin_role:
-            admin_role = cls.admin_role
+        if cls.admin_roles:
+            admin_roles = cls.admin_roles
         elif isinstance(cls.realm, Realms):
-            admin_role = cls.realm.admin_role
+            admin_roles = (cls.realm.admin_role,)
         else:
             raise RuntimeError
-        return admin_role in rs.user.new_roles
+        return rs.user.new_roles.has_any(*admin_roles)
 
     def fill_template(
         self, rs: RequestState, modus: str, templatename: str, params: CdEDBObject
@@ -1901,6 +1901,23 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.redirect_show_user(rs, new_id)
         else:
             return self.create_user_form(rs)
+
+    @staticmethod
+    def _fix_search_validation_error_references(
+        rs: RequestState, skip: Collection[str] = ()
+    ) -> None:
+        """A little hack to fix displaying of errors for course and member search:
+
+        The form uses 'qval_<field>' as input name, the validation only returns the
+        field's name.
+        """
+        appraised = rs.validation_appraised
+        current = tuple(rs.retrieve_validation_errors())
+        rs.replace_validation_errors([
+            (f'qval_{k}', v) if k not in skip else (k, v) for k, v in current
+        ])
+        if appraised:
+            rs.ignore_validation_errors()
 
 
 class CdEMailmanClient(mailmanclient.Client):

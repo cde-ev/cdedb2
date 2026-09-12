@@ -379,9 +379,9 @@ This will result in:
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item",
                              icon="caret-right", active=(sidenav_active == 'event_index')) }}
+            {{ util.href(cdedblink("event/list_events"), gettext("All Events"),
+                         aclass="list-group-item", icon="list", active=(sidenav_active == 'event_list')) }}
             {% if user.admin_views.has(AdminViews.event_list) %}
-                {{ util.href(cdedblink("event/list_events"), gettext("All Events"),
-                             aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
                 {{ util.href(cdedblink("event/constraint_violations_summary"), gettext("Inconsistencies"),
                              aclass="list-group-item", icon="exclamation-circle", active=(sidenav_active == 'violations_summary')) }}
             {% endif %}
@@ -393,6 +393,20 @@ This will result in:
         {% if user.admin_views.has(AdminViews.event_list) %}
             {{ event_quicksearch() }}
         {% endif %}
+        <div class="list-group tear-down">
+            {% if "event" in user.roles or user.admin_views.has(AdminViews.past_event) %}
+                {{ util.href(cdedblink("event/list_past_events"), gettext("Past Events"), icon="calendar-alt",
+                        aclass="list-group-item", active=(sidenav_active=='event_past_events')) }}
+            {% endif %}
+            {% if "member" in user.roles or user.admin_views.has(AdminViews.past_event) %}
+                {{ util.href(cdedblink("event/past_course_search"), gettext("Course Search"), icon="search",
+                             aclass="list-group-item", active=(sidenav_active=='event_past_course_search')) }}
+            {% endif %}
+            {% if user.admin_views.has_any(AdminViews.past_event, AdminViews.auditor) %}
+                {{ util.href(cdedblink("event/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
+                        aclass="list-group-item", active=(sidenav_active=='event_past_events_log')) }}
+            {% endif %}
+        </div>
         {% if user.admin_views.has_any(AdminViews.event_mgmt, AdminViews.event_user, AdminViews.auditor) %}
             <div class="list-group tear-down">
                 {% if user.admin_views.has(AdminViews.event_user) %}
@@ -428,6 +442,7 @@ This will result in:
         {{ util.admin_views_toggle((
                 (gettext("User Administration"), AdminViews.all_user_views(), AdminViews.event_user),
                 (gettext("Event Administration"), AdminViews.event_mgmt.or_(AdminViews.event_list), None),
+                (gettext("Past Event Administration"), AdminViews.past_event, None),
                 (gettext("Auditor"), AdminViews.auditor, None),
             )) }}
     {% endif %}

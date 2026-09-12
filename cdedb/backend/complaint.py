@@ -55,7 +55,7 @@ def _format_date_change_note(
 
 class ComplaintBackend(AbstractBackend):
     realm = "complaint"
-    admin_role = Roles.complaint_admin
+    admin_roles = (Roles.complaint_admin,)
 
     def __init__(self) -> None:
         super().__init__()
