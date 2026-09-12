@@ -168,7 +168,7 @@ class TestFrontendCommon(FrontendTest):
         self.assertEqual(r"a\$b", tex_escape_filter(r"a$b"))
         self.assertEqual(r"a''b", tex_escape_filter(r'a"b'))
 
-    def test_enum_member_translations(self) -> None:
+    def test_untranslated_enum_members(self) -> None:
         for lang, translation in self.app.app.translations.items():
             # Not all Latin enum members are translated yet
             if lang == "la":
