@@ -14,6 +14,7 @@ from typing import cast
 
 import cdedb.enums
 from cdedb.common.n_ import n_
+from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES
 from cdedb.models.event.constraint_violations import ConstraintViolation
 from cdedb.uncommon.intenum import CdEEnumMeta
@@ -29,7 +30,7 @@ def main() -> None:
                 subclasses.extend(enum_cls.__subclasses__())
             if enum_cls not in cdedb.enums.NON_TRANSLATED_ENUMS:
                 if hasattr(enum_cls, "_translated_members"):
-                    for enum_member in enum_cls._translated_members():
+                    for enum_member in xsorted(enum_cls._translated_members()):
                         enum_strings.append(str(enum_member))
                 else:
                     for enum_member in enum_cls:

@@ -99,7 +99,7 @@ class CoreBaseBackend(AbstractBackend):
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"],
             DATABASE_ROLES,
-            secrets,
+            secrets["CDB_DATABASE_ROLES"],
             self.conf["DB_HOST"],
             self.conf["DB_PORT"],
         )
@@ -2991,9 +2991,9 @@ class CoreBaseBackend(AbstractBackend):
         if status.is_cde_realm:
             # This is needed because of an implementation detail of the login in the
             #  frontend. Namely wanting to check consent decision status for cde users.
-            rs.conn = self.connpool[DBRole.member]
+            rs.conn = self.connpool(DBRole.member)
         else:
-            rs.conn = self.connpool[DBRole.persona]
+            rs.conn = self.connpool(DBRole.persona)
         # Necessary to keep the mechanics happy.
         rs._conn = rs.conn
 
@@ -3339,7 +3339,7 @@ class CoreBaseBackend(AbstractBackend):
                 if rs.conn.is_contaminated:
                     raise RuntimeError(n_("Atomized – impossible to escalate."))
                 orig_conn = rs.conn
-                rs.conn = self.connpool[DBRole.persona]
+                rs.conn = self.connpool(DBRole.persona)
             # do not use set_persona since it doesn't operate on password
             # hashes by design
             query = """
@@ -3405,7 +3405,7 @@ class CoreBaseBackend(AbstractBackend):
                 if rs.conn.is_contaminated:
                     raise RuntimeError(n_("Atomized – impossible to escalate."))
                 orig_conn = rs.conn
-                rs.conn = self.connpool[DBRole.persona]
+                rs.conn = self.connpool(DBRole.persona)
             persona = self.sql_select_one(
                 rs, "core.personas", columns_of_interest, persona_id
             )

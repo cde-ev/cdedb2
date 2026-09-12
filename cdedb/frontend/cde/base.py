@@ -12,7 +12,6 @@ import csv
 import decimal
 import itertools
 import operator
-from collections import OrderedDict
 from collections.abc import Collection, Sequence
 from typing import Any, cast
 
@@ -360,21 +359,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         courses = self.pasteventproxy.list_past_courses(rs)
-        choices: dict[str, OrderedDict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))
-            ),
-            'pcourse_id': OrderedDict(
-                xsorted(courses.items(), key=operator.itemgetter(1))
-            ),
-            'gender': OrderedDict(
+        choices: dict[str, dict[Any, str]] = {
+            'pevent_id': dict(xsorted(events.items(), key=operator.itemgetter(1))),
+            'pcourse_id': dict(xsorted(courses.items(), key=operator.itemgetter(1))),
+            'gender': dict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext,
                 )
             ),
-            'country': OrderedDict(get_localized_country_codes(rs)),
-            'country2': OrderedDict(get_localized_country_codes(rs)),
+            'country': dict(get_localized_country_codes(rs)),
+            'country2': dict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs,

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-29 16:08+0200\n"
+"POT-Creation-Date: 2026-09-12 20:20+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1407,35 +1407,35 @@ msgstr "Lodgements"
 msgid "ViolationKind.other"
 msgstr "Other"
 
-msgid "Roles.core_admin"
-msgstr "Core Admin"
-
-msgid "Roles.auditor"
-msgstr "Auditor"
-
-msgid "Roles.cde_admin"
-msgstr "CdE Admin"
-
-msgid "Roles.assembly_admin"
-msgstr "Assembly Admin"
-
-msgid "Roles.complaint_admin"
-msgstr "Case Archive Admin"
-
 msgid "Roles.meta_admin"
 msgstr "Meta Admin"
 
-msgid "Roles.cdelokal_admin"
-msgstr "CdElokal Admin"
+msgid "Roles.core_admin"
+msgstr "Core Admin"
 
-msgid "Roles.finance_admin"
-msgstr "Finance Admin"
+msgid "Roles.cde_admin"
+msgstr "CdE Admin"
 
 msgid "Roles.event_admin"
 msgstr "Event Admin"
 
 msgid "Roles.ml_admin"
 msgstr "Mailinglist Admin"
+
+msgid "Roles.assembly_admin"
+msgstr "Assembly Admin"
+
+msgid "Roles.finance_admin"
+msgstr "Finance Admin"
+
+msgid "Roles.auditor"
+msgstr "Auditor"
+
+msgid "Roles.complaint_admin"
+msgstr "Case Archive Admin"
+
+msgid "Roles.cdelokal_admin"
+msgstr "CdElokal Admin"
 
 msgid "Realms.cde"
 msgstr "CdE"
@@ -3141,6 +3141,9 @@ msgid "Lockdown active."
 msgstr ""
 
 msgid "Unknown message id."
+msgstr ""
+
+msgid "Blocked genesis request from TOR exit node."
 msgstr ""
 
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
@@ -9174,6 +9177,9 @@ msgid ""
 "%(submitted_by)s."
 msgstr ""
 
+msgid "Companions_[[plural]]"
+msgstr "Companions"
+
 #, python-format
 msgid "%(count)s Cases found"
 msgstr ""
@@ -9200,6 +9206,21 @@ msgid "Involvement"
 msgstr ""
 
 msgid "is withdrawn"
+msgstr ""
+
+msgid "Active Companions"
+msgstr ""
+
+msgid "Ongoing cases:"
+msgstr ""
+
+msgid "Concluded cases:"
+msgstr ""
+
+msgid "Inactive Companions"
+msgstr ""
+
+msgid "Previous cases:"
 msgstr ""
 
 msgid "Enforcers"

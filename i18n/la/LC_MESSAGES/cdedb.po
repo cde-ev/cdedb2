@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-29 16:08+0200\n"
+"POT-Creation-Date: 2026-09-12 20:20+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -1664,36 +1664,16 @@ msgstr "commentarium mutationis"
 msgid "ViolationKind.other"
 msgstr ""
 
-msgid "Roles.core_admin"
-msgstr ""
-
-#, fuzzy
-msgid "Roles.auditor"
-msgstr "Annuntiationes"
-
-#, fuzzy
-msgid "Roles.cde_admin"
-msgstr "administrator CdEi"
-
-#, fuzzy
-msgid "Roles.assembly_admin"
-msgstr "coetus"
-
-#, fuzzy
-msgid "Roles.complaint_admin"
-msgstr "administrator tabellarum epistularum electronicarum"
-
 #, fuzzy
 msgid "Roles.meta_admin"
 msgstr "administrator administratorum"
 
-#, fuzzy
-msgid "Roles.cdelokal_admin"
-msgstr "administrator CdElocalis"
+msgid "Roles.core_admin"
+msgstr ""
 
 #, fuzzy
-msgid "Roles.finance_admin"
-msgstr "administrator pecuniae"
+msgid "Roles.cde_admin"
+msgstr "administrator CdEi"
 
 #, fuzzy
 msgid "Roles.event_admin"
@@ -1701,6 +1681,26 @@ msgstr "administratores eventuum"
 
 msgid "Roles.ml_admin"
 msgstr ""
+
+#, fuzzy
+msgid "Roles.assembly_admin"
+msgstr "coetus"
+
+#, fuzzy
+msgid "Roles.finance_admin"
+msgstr "administrator pecuniae"
+
+#, fuzzy
+msgid "Roles.auditor"
+msgstr "Annuntiationes"
+
+#, fuzzy
+msgid "Roles.complaint_admin"
+msgstr "administrator tabellarum epistularum electronicarum"
+
+#, fuzzy
+msgid "Roles.cdelokal_admin"
+msgstr "administrator CdElocalis"
 
 #, fuzzy
 msgid "Realms.cde"
@@ -3468,6 +3468,9 @@ msgstr "vestigium novum crea"
 #, fuzzy
 msgid "Unknown message id."
 msgstr "inscriptio electronica nova"
+
+msgid "Blocked genesis request from TOR exit node."
+msgstr ""
 
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
@@ -9964,6 +9967,10 @@ msgid ""
 "%(submitted_by)s."
 msgstr ""
 
+#, fuzzy
+msgid "Companions_[[plural]]"
+msgstr "donorum"
+
 #, fuzzy, python-format
 msgid "%(count)s Cases found"
 msgstr "Annuntiationes"
@@ -9991,6 +9998,23 @@ msgid "Involvement"
 msgstr ""
 
 msgid "is withdrawn"
+msgstr ""
+
+#, fuzzy
+msgid "Active Companions"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+msgid "Ongoing cases:"
+msgstr ""
+
+msgid "Concluded cases:"
+msgstr ""
+
+#, fuzzy
+msgid "Inactive Companions"
+msgstr "tabellae epistularum electronicarum moderatae"
+
+msgid "Previous cases:"
 msgstr ""
 
 msgid "Enforcers"
