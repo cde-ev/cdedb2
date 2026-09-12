@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-12 20:20+0200\n"
+"POT-Creation-Date: 2026-09-12 20:46+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -8082,10 +8082,12 @@ msgid ""
 msgstr ""
 
 msgid ""
-"To do this, generate a SEPA-PAIN-file and import it into the online banking "
-"software. Directly afterwards (at the same day!) activate the Direct Debits "
-"in the DB by clicking “Perform Direct Debit”. This sends a notification to "
-"the members informing them about the transaction."
+"To do this, first activate the Direct Debits in the DB by clicking “Perform "
+"Direct Debit”. This sends a notification to the members informing them about "
+"the transaction. Some of them may contact the management with a revocation "
+"or account change for their Direct Debit permits. Afterwards, but at least a "
+"few days before the announced booking date, generate a SEPA-PAIN-file and "
+"import it into the online banking software."
 msgstr ""
 
 #, python-format
@@ -8093,9 +8095,6 @@ msgid "Transactions which are initialised today will be booked at %(date)s."
 msgstr ""
 
 msgid "Profile"
-msgstr ""
-
-msgid "Create SEPA-PAIN-file"
 msgstr ""
 
 msgid "Perform Direct Debit"
@@ -8157,6 +8156,9 @@ msgid "(Selected: %(num)s, Total: %(total)s)"
 msgstr ""
 
 msgid "SEPA-PAIN"
+msgstr ""
+
+msgid "Create SEPA-PAIN-file"
 msgstr ""
 
 msgid "Success"

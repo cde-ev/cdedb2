@@ -311,7 +311,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         lastschrift_ids: Collection[int] | None = None,
         stati: Collection[const.LastschriftTransactionStati] | None = None,
         periods: Collection[int] | None = None,
-    ) -> dict[int, int]:
+    ) -> dict[vtypes.ID, int]:
         """List direct debit transactions.
         :param lastschrift_ids: If this is not None show only those
           transactions originating with ids in the list.

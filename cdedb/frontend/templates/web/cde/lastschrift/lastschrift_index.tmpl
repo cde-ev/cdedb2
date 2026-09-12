@@ -42,9 +42,11 @@
     </p>
     <p>
         {% trans %}
-            To do this, generate a SEPA-PAIN-file and import it into the online banking software.
-            Directly afterwards (at the same day!) activate the Direct Debits in the DB by clicking “Perform Direct Debit”.
+            To do this, first activate the Direct Debits in the DB by clicking “Perform Direct Debit”.
             This sends a notification to the members informing them about the transaction.
+            Some of them may contact the management with a revocation or account change for their Direct Debit permits.
+            Afterwards, but at least a few days before the announced booking date, generate a SEPA-PAIN-file
+            and import it into the online banking software.
         {% endtrans %}
     </p>
     <p>
@@ -63,14 +65,6 @@
                                  persona|persona_name) }}
                     {{ util.href(show_user_link(user, lastschrift['persona_id']),
                                  gettext("Profile"), icon='user', aclass="btn btn-xs btn-default pull-right") }}
-                </td>
-                <td>
-                    <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
-                            id="downloadsepapainform{{ lastschrift_id }}" class="downloadsepapainform">
-                        {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
-                        {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-xs btn-default') }}
-                    </form>
                 </td>
                 <td>
                     <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
@@ -95,11 +89,6 @@
         </tbody>
     </table>
 
-    <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
-      id="downloadsepapainform" style="display: inline;">
-        {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
-        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-default') }}
-    </form>
     <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
       id="generatetransactionsform" style="display: inline;">
         {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
@@ -194,6 +183,7 @@
                 {% endtrans -%}
             </span>:
             {{ util.input_submit(label=gettext("SEPA-PAIN"), name='download', aclass="btn btn-default", icon="download",
+                                 title=gettext("Create SEPA-PAIN-file"),
                                  anid="finalization-download",
                                  formaction=cdedblink("cde/lastschrift_download_sepapain"), formmethod="GET") }}
             {{ util.input_submit(label=gettext("Success"), name='success', aclass="btn btn-success") }}

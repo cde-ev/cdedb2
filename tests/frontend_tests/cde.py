@@ -1321,16 +1321,8 @@ class TestCdEFrontend(FrontendTest):
             div='open-dd',
             exact=True,
         )
-        f = self.response.forms['downloadsepapainform']
+        # issue transactions for this semester
         g = self.response.forms['generatetransactionsform']
-        self.submit(f, check_notification=False)
-        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
-            expectation = f.read().split(b'\n')
-        exceptions = (5, 6, 14, 28, 66, 98)
-        for index, line in enumerate(self.response.body.split(b'\n')):
-            if index not in exceptions:
-                with self.subTest(i=index):
-                    self.assertEqual(expectation[index].strip(), line.strip())
         self.submit(g)
         self.assertPresence("2 Lastschriften initialisiert.", div="notifications")
         self.assertPresence(
@@ -1340,6 +1332,22 @@ class TestCdEFrontend(FrontendTest):
         )
         self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
 
+        # download sepa XML
+        f = self.response.forms['finalizationform']
+        # hack around webtest not properly supporting formaction and formmethod attributes of this submit button
+        f.action = "/cde/lastschrift/transaction/download"
+        f.method = "GET"
+        self.submit(f, button="download")
+        with open(self.testfile_dir / "sepapain.xml", 'rb') as painfile:
+            expectation = painfile.read().split(b'\n')
+        exceptions = (5, 6, 14, 28, 66, 98)
+        for index, line in enumerate(self.response.body.split(b'\n')):
+            if index not in exceptions:
+                with self.subTest(i=index):
+                    self.assertEqual(expectation[index].strip(), line.strip())
+
+        # finalize
+        self.get("/cde/lastschrift")
         f = self.response.forms['finalizationform']
         f['transaction_ids'] = [1001, 1002]
         self.submit(f, button="success")
@@ -1402,9 +1410,26 @@ class TestCdEFrontend(FrontendTest):
             div='open-dd',
             exact=True,
         )
-        f = self.response.forms['downloadsepapainform2']
         g = self.response.forms['generatetransactionform2']
-        self.submit(f, check_notification=False)
+        self.submit(g)
+        self.assertPresence("1 Lastschriften initialisiert.", div="notifications")
+        self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
+        self.assertNonPresence("Bertå Beispiel", div='open-dd-authorization')
+        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
+
+        # the SEPA-PAIN download button is a plain GET-request in the non-JS variant
+        self.assertPresence("SEPA-PAIN", div='open-dd')
+        f = self.response.forms["finalizationform"]
+        f["transaction_ids"] = "1001"
+        # hack around webtest not properly supporting formaction and formmethod attributes of this submit button
+        f.action = "/cde/lastschrift/transaction/download"
+        f.method = "GET"
+        self.submit(f, button="download")
+        # persona ID in filename when only one transaction downloaded
+        self.assertEqual(
+            self.response.headers["Content-Disposition"],
+            "attachment; filename=i25p_semester43_persona2.xml",
+        )
         with open(self.testfile_dir / "sepapain_single.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66)
@@ -1412,11 +1437,6 @@ class TestCdEFrontend(FrontendTest):
             if index not in exceptions:
                 with self.subTest(i=index):
                     self.assertEqual(expectation[index].strip(), line.strip())
-        self.submit(g)
-        self.assertPresence("1 Lastschriften initialisiert.", div="notifications")
-        self.assertPresence("Petra Philanthrop", div='open-dd-authorization')
-        self.assertNonPresence("Bertå Beispiel", div='open-dd-authorization')
-        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
 
     @as_users("farin")
     def test_lastschrift_transaction_rollback(self) -> None:
