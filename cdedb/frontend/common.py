@@ -1104,7 +1104,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if effective != nonempty:
                 diff = nonempty - effective
                 self.logger.warning(
-                    f"Dropped the following recipients from email: {diff}"
+                    f"Dropped the following recipients from email: {", ".join(xsorted(diff))}."
+                    f" Subject: {headers["Subject"]!r}"
                 )
             if effective:
                 msg[header] = ", ".join(effective)
