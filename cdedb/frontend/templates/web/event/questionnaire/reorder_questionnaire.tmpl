@@ -43,7 +43,7 @@
         {{ util.input_hidden(name="kind") }}
         <div class="orderrow-container" id="rowlist">
             {% for entry in questionnaire %}
-            <div class="orderrow-outer" data-id="{{ loop.index0 }}" tabindex="0">
+            <div class="orderrow-outer {{ entry.entry_get_drow_html_classes()|join(" ") }}" data-id="{{ loop.index0 }}" tabindex="0">
                 <div class="orderrow-inner clearfix" draggable="true">
                     <div class="orderrow-indicator">
                         <span class="label label-primary">
@@ -121,11 +121,9 @@
                             {{ generic_event.fee_breakdown_by_kind(fake_complex_fee) }}
                         </div>
                     {% elif entry.name == "CourseChoices" %}
-                        {% if choice_objects %}
-                            <div class="miniature-heading">
-                                {% trans %}Course Choices{% endtrans %}
-                            </div>
-                        {% endif %}
+                        <div class="miniature-heading">
+                            {{ gettext(entry.get_toc_entries()[0].title) }}
+                        </div>
                         {% for cco in choice_objects %}
                             {% if choice_objects|length > 1 %}
                                 <div class="miniature-heading small">
@@ -247,7 +245,7 @@
                             </div>
                         </div>
                     {% else %}
-                        <div class="miniature-heading alert alert-info {{ entry.get_drow_html_classes()|join(" ") }}">
+                        <div class="miniature-heading alert alert-info {{ entry.entry_get_drow_html_classes()|join(" ") }}">
                             {% trans %}Magic Role{% endtrans %}:
                             {{ util.make_icon(entry.get_icon()) }}
                             {{ gettext(entry.role|string) }}
