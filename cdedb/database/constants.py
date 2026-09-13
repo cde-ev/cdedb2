@@ -194,11 +194,29 @@ class QuestionnaireUsages(CdEIntEnum):
 
     def allow_readonly(self) -> bool:
         """Whether or not rows with this usage are allowed to be readonly."""
-        return self == QuestionnaireUsages.additional
+        return self != QuestionnaireUsages.registration
 
     def allow_fee_condition(self) -> bool:
         """Whether or not rows with this usage may use fee condition fields."""
         return self == QuestionnaireUsages.registration
+
+    def get_icon(self) -> str:
+        return {
+            self.registration: "sign-in-alt",
+            self.additional: "edit",
+        }[self]
+
+    @classmethod
+    def get_preview_icon(cls) -> str:
+        return "eye"
+
+    @classmethod
+    def get_edit_icon(cls) -> str:
+        return "edit"
+
+    @classmethod
+    def get_sort_icon(cls) -> str:
+        return "sort"
 
     @property
     def title_level(self) -> int:

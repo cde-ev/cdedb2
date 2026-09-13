@@ -2404,8 +2404,8 @@ class TestEventBackend(BackendTest):
         ]
         self.assertLess(
             0,
-            self.event.set_questionnaire(
-                self.key, event_id, const.QuestionnaireUsages.additional, aq_data
+            self.event.set_questionnaires(
+                self.key, event_id, {const.QuestionnaireUsages.additional: aq_data}
             ),
         )
         rq_data: list[CdEDBObject] = [
@@ -2437,14 +2437,14 @@ class TestEventBackend(BackendTest):
             },
         ]
         with self.assertRaisesRegex(ValueError, "Missing role:"):
-            self.event.set_questionnaire(
-                self.key, event_id, const.QuestionnaireUsages.registration, rq_data
+            self.event.set_questionnaires(
+                self.key, event_id, {const.QuestionnaireUsages.registration: rq_data}
             )
         rq_data.append({'role': const.QuestionnaireRowRole.foto_notice})
         self.assertLess(
             0,
-            self.event.set_questionnaire(
-                self.key, event_id, const.QuestionnaireUsages.registration, rq_data
+            self.event.set_questionnaires(
+                self.key, event_id, {const.QuestionnaireUsages.registration: rq_data}
             ),
         )
         for pos, row in enumerate(aq_data):
@@ -4468,8 +4468,8 @@ class TestEventBackend(BackendTest):
                 'text': 'nur etwas mehr Text',
             },
         ]
-        self.event.set_questionnaire(
-            self.key, EventID(1), const.QuestionnaireUsages.additional, q_data
+        self.event.set_questionnaires(
+            self.key, EventID(1), {const.QuestionnaireUsages.additional: q_data}
         )
 
         # now check it

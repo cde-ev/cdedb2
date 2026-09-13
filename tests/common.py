@@ -1575,7 +1575,8 @@ class FrontendTest(BackendTest):
             self.fail(f"Element '{selector}' not found.")
         return nodes
 
-    def _normalize_whitespace(self, s: str) -> str:
+    @staticmethod
+    def _normalize_whitespace(s: str) -> str:
         return re.sub(r'\s+', ' ', s).strip()
 
     def _get_raw_content(self, selector: str, *, check_exists: bool, index: int) -> str:

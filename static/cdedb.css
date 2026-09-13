@@ -789,10 +789,10 @@ tr.ls-selected td, tr:target td, .list-group-item:target
 
 
 /* dynamic row js */
-tr.drow-new>td, tr.drow-new1>td {
+tr.drow-new>td {
     background-color: #dff0d8;
 }
-tr.drow-delete>td, tr.drow-delete1>td {
+tr.drow-delete>td {
     background-color: #f2dede;
 }
 .panel.questionnaire-row-config {
@@ -815,7 +815,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
         padding: 3px 10px 3px 15px;
     }
 }
-.panel.drow-new, .panel.drow-new {
+.panel.drow-new {
     border-color: #d6e9c6;
 }
 .panel.drow-new>.panel-heading, .drow-new .panel>.panel-heading {
@@ -835,9 +835,10 @@ tr.drow-delete>td, tr.drow-delete1>td {
 .panel.drow-delete>.panel-body, .drow-delete .panel>.panel-body {
     background-color: #f3e8e8;
 }
-.drow-delete input, .drow-delete textarea, .drow-delete select,
-.drow-delete1 input, .drow-delete1 textarea, .drow-delete1 select {
-    text-decoration: line-through;
+.drow-delete {
+    & input, & textarea, & select, & label, & h1, & h2, & h3, & h4, & h5, & h6 {
+        text-decoration: line-through;
+    }
 }
 
 /* Profile's past event table */
