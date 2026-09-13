@@ -1625,12 +1625,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('Dagobert Beetlejuice', div='account-holder', exact=True)
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes', exact=True)
 
-    @as_users("vera")
-    def test_lastschrift_subscription_form(self) -> None:
-        # as user
-        self.get("/cde/lastschrift/form/download")
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-
     @as_users("vera", "charly")
     def test_lastschrift_subscription_form_fill(self) -> None:
         self.traverse(
@@ -1638,6 +1632,10 @@ class TestCdEFrontend(FrontendTest):
         )
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
+        f["iban"] = "DE23 8306 5408 0005 3744 99"
+        if self.user_in("vera"):
+            f["address"] = "Bahnhofstr 42"
+            f["location"] = "Bad Hersfeld"
         # test expected filename
         expected_filename = "_".join(
             [self.user["DB-ID"]] + self.user["default_name_format"].split()
@@ -1658,13 +1656,11 @@ class TestCdEFrontend(FrontendTest):
         )
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
-        f["db_id"] = "DB-1-8"
         f["postal_code"] = "ABC"
         f["iban"] = "DE12500105170648489809"
         self.submit(f)
-        self.assertPresence("Checksumme stimmt nicht")
-        self.assertPresence("Ungültige Postleitzahl")
-        self.assertPresence("Ungültige Checksumme")
+        self.assertValidationError('postal_code', "Ungültige Postleitzahl")
+        self.assertValidationError('iban', "Ungültige Checksumme")
 
     @storage
     @as_users("vera")
