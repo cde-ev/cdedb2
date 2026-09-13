@@ -1052,3 +1052,14 @@ class TestComplaintFrontend(FrontendTest):
             regex=True,
         )
         self.assertHasClass("#version4", "bg-danger")
+
+    @as_users("simon")
+    def test_list_companions(self) -> None:
+        self.traverse("Fallarchiv", "Fallbegleitungen")
+        self.assertTitle("Fallbegleitungen")
+        self.assertPresence(
+            "Garcia Generalis: Laufende Fälle: Fall 1", div='active-companions'
+        )
+        self.assertPresence(
+            "Charly Clown: Frühere Fälle: Fall 1", div='inactive-companions'
+        )

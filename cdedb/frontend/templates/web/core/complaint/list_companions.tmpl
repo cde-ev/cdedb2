@@ -1,0 +1,71 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans %}Companions_[[plural]]{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
+    {{ util.breadcrumb_link(cdedblink("core/list_complaint_helpers"), gettext("Companions_[[plural]]"), active="True") }}
+{% endblock %}
+{% block content %}
+    {{ util.h(n_("Active Companions"), level=2) }}
+    <ul id="active-companions">
+        {% for companion in personas if companion.id in active_companions %}
+            <li>
+                {{ util.persona_anchor(companion) }}:<br />
+                {% trans %}
+                    Ongoing cases:
+                {% endtrans %}
+                {% set ns = namespace(inactive_cases=false) %}
+                {% for case_id in companions_to_cases[companion.id] %}
+                    {% set case = cases[case_id] %}
+                    {% if case.is_active %}
+                        {{ print_case(case, companion.id) }}
+                    {% else %}
+                        {% set ns.inactive_cases = true %}
+                    {% endif %}
+                {% endfor %}
+                {% if ns.inactive_cases %}
+                    <span class="text-muted">
+                        {% trans %}
+                            Concluded cases:
+                        {% endtrans %}
+                        {% for case_id in companions_to_cases[companion.id] if not cases[case_id].is_active %}
+                            {{ print_case(cases[case_id], companion.id) }}
+                        {% endfor %}
+                    </span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    {{ util.h(n_("Inactive Companions"), level=2) }}
+    <ul id="inactive-companions">
+        {% for companion in personas if companion.id not in active_companions %}
+            <li>
+                {{ util.persona_anchor(companion) }}:<br />
+                {% trans %}
+                    Previous cases:
+                {% endtrans %}
+                {% for case_id in companions_to_cases[companion.id] %}
+                    {% set case = cases[case_id] %}
+                    <span {% if not case.is_active %}class="text-muted"{% endif %}>
+                        {{ print_case(case, companion.id) }}
+                    </span>
+                {% endfor %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+{% macro print_case(case, companion_id) %}
+    {{ util.href(
+        cdedblink("core/show_case", {'case_id': case.id}),
+        gettext("Case %s")|s|format(case.id),
+        readonly=not case.is_visible_for(user),
+        aclass="strikethrough" if companion_id in case.get_companions(is_active=False) else ""
+    ) }}
+{% endmacro %}
+

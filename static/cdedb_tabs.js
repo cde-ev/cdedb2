@@ -21,14 +21,15 @@
                 }
             })
             .each(function() {
-                if ($($(this).data('target')).find('.has-error').length > 0) {
-                    $(this)
-                        .append("&emsp;")
-                        .append($(
-                            '<span class="text-danger">' +
-                            '<span class="fas fa-exclamation-triangle"></span></span>'
-                        ))
-                }
+                let nav_tab = $(this);
+                $($(this).data('target')).on("has-error-change", function () {
+                    let error = nav_tab.find(".nav-tab-error");
+                    if ($(this).find(".has-error").length > 0) {
+                        error.show();
+                    } else {
+                        error.hide();
+                    }
+                }).trigger("has-error-change");
             })
             // Update current URL with new target.
             .on('shown.bs.tab', function (event) {

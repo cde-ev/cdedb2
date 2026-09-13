@@ -19,7 +19,6 @@ import abc
 import functools
 import operator
 import typing
-from collections import OrderedDict
 from collections.abc import Callable, Collection
 from typing import Any, cast
 
@@ -422,17 +421,15 @@ class EventBaseFrontend(AbstractUserFrontend):
     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices: dict[str, OrderedDict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))
-            ),
-            'gender': OrderedDict(
+        choices: dict[str, dict[Any, str]] = {
+            'pevent_id': dict(xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': dict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext,
                 )
             ),
-            'country': OrderedDict(get_localized_country_codes(rs)),
+            'country': dict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs,

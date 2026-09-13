@@ -17,6 +17,7 @@ from cdedb.common import (
     GenesisDecision,
     PrivilegeError,
     get_hash,
+    get_tor_exit_nodes,
     make_persona_name,
     now,
 )
@@ -660,7 +661,7 @@ class TestCoreFrontend(FrontendTest):
         )
         check_kind(
             "past_event_user",
-            cde_admins | auditors,
+            cde_admins | event_admins | auditors,
             ins=("hades",),
             outs=("kalif", "janis"),
         )
@@ -3461,6 +3462,19 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(self.core.is_relative_admin(self.key, 1002))
         self._decide_genesis_case(GenesisDecision.approve, persona_id=1002)
 
+    def test_genesis_tor_block(self) -> None:
+        self.get('/core/genesis/request')
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        for field, entry in self.ML_GENESIS_DATA.items():
+            f[field] = entry
+        self.submit(
+            f,
+            extra_environ={"REMOTE_ADDR": next(iter(get_tor_exit_nodes()))},
+            check_notification=False,
+        )
+        self.assertNotification("Accountanfrage via TOR exit node blockiert.", "error")
+
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
         token_key = model_droid.APIToken.request_header_key
@@ -3713,8 +3727,8 @@ class TestCoreFrontend(FrontendTest):
     def test_auditor(self) -> None:
         realm_logs = {
             "Index": ("Account-Log", "Änderungs-Log"),
-            "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log"),
-            "Veranstaltungen": ("Log",),
+            "Mitglieder": ("CdE-Log", "Finanz-Log"),
+            "Veranstaltungen": ("Log", "Verg.-Veranstaltungen-Log"),
             "Mailinglisten": ("Log",),
             "Versammlungen": ("Log",),
         }

@@ -36,7 +36,7 @@
                                                  'title': settings.delButtonTitle,
                                                  'aria-label': settings.delButtonTitle,
                                                  'aria-pressed': 'false',
-                                                 'class': 'btn btn-danger btn-sm',
+                                                 'class': 'btn btn-danger btn-sm drow-delete-button',
                                                  'id': 'dynamicrow-delete-button-' + $row.data("drow-id"),})
                     .append($('<span></span>', {'class': 'far fa-trash-alt'}));
 
@@ -68,6 +68,7 @@
                         $(this).addClass('active')
                             .attr('aria-pressed','true');
                     }
+                    $row.find(":input").trigger("change");
                 });
             }
             $row.find('.drow-buttonspace').after($deleteButton);
@@ -102,7 +103,8 @@
                     (button.is(":visible") ? button : $row.find(up)).trigger("focus");
                 })
                 // .show();
-            $row.show();
+            if (newrow)
+                $row.show();
         }
 
         /**
@@ -154,7 +156,7 @@
         };
 
         var moveRow = function($row, up) {
-            let $other = up ? $row.prev() : $row.next();
+            let $other = up ? $row.prevAll(":visible").first() : $row.nextAll(":visible").first();
             $row.detach;
             up ? $other.before($row) : $other.after($row);
             refresh();

@@ -204,6 +204,10 @@ ul.slim {
 }
 .help-block {
     margin-bottom: 6px;
+    color: inherit;
+    &.no-color {
+        color: #737373;
+    }
 }
 hr.strong {
     border-top: 1px solid #ddd;
@@ -481,6 +485,9 @@ h1.title {
 .panel-primary .panel-heading .nav-tabs>li.active>a {
     background: #fff;
     color: #337ab7;
+}
+.tab-container .nav-tab-error {
+    display: none;
 }
 
 
@@ -806,6 +813,9 @@ tr.drow-delete>td {
     }
     &.questionnaire-row-config-magic .panel-body {
         display: none;
+    }
+    & .panel-footer {
+        padding: 3px 10px 3px 15px;
     }
 }
 .panel.drow-new {

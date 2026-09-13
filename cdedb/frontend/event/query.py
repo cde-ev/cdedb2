@@ -87,7 +87,7 @@ class EventQueryMixin(EventBaseFrontend):
                     reg['birthday'], event_parts[part_id].part_begin
                 )
 
-        per_part_statistics = collections.OrderedDict()
+        per_part_statistics = {}
         for reg_stat in EventRegistrationPartStatistic:
             _parts = {
                 part.id: set(
@@ -115,7 +115,7 @@ class EventQueryMixin(EventBaseFrontend):
             EventRegistrationTrackStatistic | EventCourseStatistic,
             Mapping[str, Mapping[vtypes.ID, Collection[vtypes.ID]]],
         ]
-        per_track_statistics = collections.OrderedDict()
+        per_track_statistics = {}
         grouper = None
         if tracks:
             for course_stat in EventCourseStatistic:

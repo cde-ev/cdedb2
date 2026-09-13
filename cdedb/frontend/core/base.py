@@ -26,6 +26,7 @@ import cdedb.models.core as models
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 import cdedb.models.past_event as models_past_event
+from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     CdEDBObject,
     DefaultReturnCode,
@@ -138,7 +139,7 @@ class CoreBaseFrontend(AbstractFrontend):
     anonymous access and personas."""
 
     realm = "core"
-    admin_role = Roles.core_admin
+    admin_roles = (Roles.core_admin,)
 
     @access(Roles.anonymous)
     @REQUESTdata("#wants")
@@ -1281,7 +1282,9 @@ class CoreBaseFrontend(AbstractFrontend):
             search_additions.append("username")
             constraints.append(("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
-            if not rs.user.new_roles.has_any(Roles.cde_admin, Roles.auditor):
+            if not rs.user.new_roles.has_any(
+                *PastEventBackend.admin_roles, Roles.auditor
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
@@ -1624,16 +1627,14 @@ class CoreBaseFrontend(AbstractFrontend):
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices: dict[str, dict[Any, str]] = {
-            'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))
-            ),
-            'gender': collections.OrderedDict(
+            'pevent_id': dict(xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': dict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext,
                 )
             ),
-            'country': collections.OrderedDict(get_localized_country_codes(rs)),
+            'country': dict(get_localized_country_codes(rs)),
         }
         if query and query.scope == QueryScope.core_user:
             query.constraints.append(("is_archived", QueryOperators.equal, False))

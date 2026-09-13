@@ -4,7 +4,6 @@
 
 import datetime
 import importlib.metadata
-import os
 import pathlib
 import shutil
 import subprocess
@@ -706,12 +705,12 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                     f'schulze_condorcet=={version}',
                     '--target',
                     'verify_result',
+                    '--link-mode=copy',
                 ],
                 cwd=tmp,
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                env=os.environ | {"UV_CACHE_DIR": tmp},
             )
             self.logger.info(
                 f"Executing {' '.join(cmd)!r}. Output:\n{result.stdout.decode()}"

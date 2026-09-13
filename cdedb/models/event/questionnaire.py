@@ -84,8 +84,11 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         return cls._frequency.get(kind, QuestionnaireFrequency.disallowed)
 
     @classmethod
-    def get_drow_html_classes(cls) -> list[str]:
+    def class_get_drow_html_classes(cls) -> list[str]:
         return ["questionnaire-row-config"]
+
+    def entry_get_drow_html_classes(self) -> list[str]:
+        return self.class_get_drow_html_classes()
 
     _row_html_class: ClassVar[str | None] = None
 
@@ -102,6 +105,9 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 
     def get_toc_entries(self) -> list[_QuestionnaireHeading]:
         """Return ToC-entries resulting from this row."""
+        return []
+
+    def get_footer_texts(self, event: Event) -> list[tuple[str, CdEDBObject]]:
         return []
 
     @staticmethod
@@ -277,8 +283,10 @@ class QuestionnaireMagicRow(QuestionnaireRow):
         )
 
     @classmethod
-    def get_drow_html_classes(cls) -> list[str]:
-        return super().get_drow_html_classes() + ["questionnaire-row-config-magic"]
+    def class_get_drow_html_classes(cls) -> list[str]:
+        return super().class_get_drow_html_classes() + [
+            "questionnaire-row-config-magic"
+        ]
 
     def get_row_html_classes(self) -> list[str]:
         return super().get_row_html_classes() + ["questionnaire-row-magic"]
@@ -293,6 +301,11 @@ class CourseChoices(QuestionnaireMagicRow):
     _toc_entries = [n_("Course Choices")]
     _icon = "book"
 
+    def entry_get_drow_html_classes(self) -> list[str]:
+        if not self.questionnaire.all_questionnaires.event.tracks:
+            return self.class_get_drow_html_classes() + ["softhide"]
+        return super().entry_get_drow_html_classes()
+
 
 @dataclasses.dataclass
 class PartSelection(QuestionnaireMagicRow):
@@ -302,6 +315,11 @@ class PartSelection(QuestionnaireMagicRow):
     }
     _toc_entries = [n_("Registration")]
     _icon = "clock"
+
+    def entry_get_drow_html_classes(self) -> list[str]:
+        if len(self.questionnaire.all_questionnaires.event.parts) <= 1:
+            return self.class_get_drow_html_classes() + ["softhide"]
+        return super().entry_get_drow_html_classes()
 
 
 @dataclasses.dataclass

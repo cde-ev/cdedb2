@@ -366,7 +366,7 @@
                 </div>
             {% endif %}
             {% if user.admin_views.has(AdminViews.event_mgmt) %}
-                {% if "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
+                {% if not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">
                     <div class="col-sm-4">
                         <div class="p">
@@ -391,7 +391,7 @@
                     <div class="col-sm-8">
                         <p class="text-muted">
                             {% trans %}
-                                Archives the event. This creates a new “Past Event” in the CdE-Realm and transfers
+                                Archives the event. This creates a new “Past Event” for user profiles and transfers
                                 course and participant information there.
                             {% endtrans %}
                         </p>

@@ -26,6 +26,8 @@
         {% if cases %}
             {{ util.href("#casesearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
         {% endif %}
+        {{ util.href(cdedblink("core/list_companions"), gettext("Companions_[[plural]]"), aclass="btn btn-sm btn-info",
+                     icon="people-group") }}
     </div>
 
     {% if values['is_search'] %}

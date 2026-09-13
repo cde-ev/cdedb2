@@ -10,7 +10,6 @@ Everything else here requires the "finance_admin" role.
 import datetime
 import random
 import string
-from collections import OrderedDict
 from collections.abc import Collection
 
 import dateutil.easter
@@ -29,6 +28,7 @@ from cdedb.common import (
     lastschrift_reference,
     merge_dicts,
     now,
+    sanitize_filename,
     unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning
@@ -94,18 +94,18 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 active_lastschrifts[anid]['persona_id']
             ].get_sortkey(),
         )
-        active_lastschrifts = OrderedDict(
-            (anid, active_lastschrifts[anid]) for anid in active_last_order
-        )
+        active_lastschrifts = {
+            anid: active_lastschrifts[anid] for anid in active_last_order
+        }
         inactive_last_order = xsorted(
             inactive_lastschrifts.keys(),
             key=lambda anid: personas[
                 inactive_lastschrifts[anid]['persona_id']
             ].get_sortkey(),
         )
-        inactive_lastschrifts = OrderedDict(
-            (anid, inactive_lastschrifts[anid]) for anid in inactive_last_order
-        )
+        inactive_lastschrifts = {
+            anid: inactive_lastschrifts[anid] for anid in inactive_last_order
+        }
 
         def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
             lastschrift_id = transaction["lastschrift_id"]
@@ -423,58 +423,38 @@ class CdELastschriftMixin(CdEBaseFrontend):
         return sepapain_file
 
     @access(Roles.finance_admin)
-    @REQUESTdata("lastschrift_id", "transaction_ids")
+    @REQUESTdata("transaction_ids")
     def lastschrift_download_sepapain(
         self,
         rs: RequestState,
-        lastschrift_id: vtypes.ID | None,
         transaction_ids: Collection[vtypes.ID],
     ) -> Response:
-        """Provide the sepapain file without actually issueing the transactions.
-
-        Creates and returns an XML-file for one lastschrift is a
-        lastschrift_id is given. If it is None, then this creates the file
-        for all open permits (c.f. :py:func:`determine_open_permits`).
-        """
+        """Provide the sepapain file for issued transactions."""
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         period = self.cdeproxy.current_period(rs)
-        payment_date = self._calculate_payment_date()
-        if lastschrift_id and transaction_ids:
-            raise ValueError(
-                "Must specify either lastschrift_id or transaction_ids, not both."
-            )
-        elif not lastschrift_id and not transaction_ids:
-            all_ids = self.cdeproxy.list_lastschrift(rs)
-            lastschrift_ids = tuple(self.determine_open_permits(rs, all_ids.keys()))
-        elif lastschrift_id:
-            lastschrift_ids = (lastschrift_id,)
-            if not self.determine_open_permits(rs, lastschrift_ids):
-                rs.notify("error", n_("Existing pending transaction."))
-                return self.lastschrift_index(rs)
-        elif transaction_ids:
-            transactions = self.cdeproxy.get_lastschrift_transactions(
-                rs, transaction_ids
-            ).values()
-            periods = {transaction["period_id"] for transaction in transactions}
-            stati = {transaction["status"] for transaction in transactions}
-            payment_dates = {
-                transaction["payment_date"] for transaction in transactions
-            }
-            if periods != {period} or stati != {
-                const.LastschriftTransactionStati.issued
-            }:
-                rs.notify("error", n_("Invalid transactions selected."))
-                return self.lastschrift_index(rs)
-            if len(payment_dates) > 1:
-                rs.notify("error", n_("Differing payment dates."))
-                return self.lastschrift_index(rs)
-            payment_date = unwrap(payment_dates)
-            lastschrift_ids = tuple(
-                transaction["lastschrift_id"] for transaction in transactions
-            )
-        else:
-            raise RuntimeError("Impossible.")
+        if not transaction_ids:
+            # selecting nothing means all
+            transaction_ids = self.cdeproxy.list_lastschrift_transactions(
+                rs, periods=(period,), stati=(const.LastschriftTransactionStati.issued,)
+            ).keys()
+
+        transactions = self.cdeproxy.get_lastschrift_transactions(
+            rs, transaction_ids
+        ).values()
+        periods = {transaction["period_id"] for transaction in transactions}
+        stati = {transaction["status"] for transaction in transactions}
+        payment_dates = {transaction["payment_date"] for transaction in transactions}
+        if periods != {period} or stati != {const.LastschriftTransactionStati.issued}:
+            rs.notify("error", n_("Invalid transactions selected."))
+            return self.lastschrift_index(rs)
+        if len(payment_dates) > 1:
+            rs.notify("error", n_("Differing payment dates."))
+            return self.lastschrift_index(rs)
+        payment_date = unwrap(payment_dates)
+        lastschrift_ids = tuple(
+            transaction["lastschrift_id"] for transaction in transactions
+        )
 
         lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
         personas = self.coreproxy.get_personas(
@@ -523,8 +503,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.lastschrift_index(rs)
 
-        if lastschrift_id:
-            persona_id = lastschrifts[lastschrift_id]["persona_id"]
+        if len(transaction_ids) == 1:
+            persona_id = persona.id
             filename = f"i25p_semester{period}_persona{persona_id}.xml"
         else:
             filename = f"i25p_semester{period}.xml"
@@ -796,8 +776,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
             "Form could not be created. Please refrain from using "
             "special characters if possible."
         )
+
+        filename = full_name or "lastschrift_subscription_form"
+        if db_id:
+            filename = cdedbid_filter(db_id) + " " + filename
         pdf = self.serve_latex_document(
-            rs, tex, "lastschrift_subscription_form", errormsg=errormsg, runs=1
+            rs, tex, sanitize_filename(filename), errormsg=errormsg, runs=1
         )
         if pdf:
             return pdf
