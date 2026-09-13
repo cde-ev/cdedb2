@@ -486,6 +486,9 @@ h1.title {
     background: #fff;
     color: #337ab7;
 }
+.tab-container .nav-tab-error {
+    display: none;
+}
 
 
 /* Helper classes */

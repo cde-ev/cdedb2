@@ -695,6 +695,12 @@
         <a data-toggle="tab" role="tab" data-target="{{ target }}" id="{{ anid }}">
             {{ util.make_icon(icon) if icon }}{{ nbsp if icon and label -}}
             {{ label }}
+            <span class="nav-tab-error">
+                &emsp;
+                <span class="text-danger">
+                    {{ util.make_icon("exclamation-triangle") }}
+                </span>
+            </span>
         </a>
     </li>
 {% endmacro %}

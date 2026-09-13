@@ -111,15 +111,17 @@
                                 "true": "{{ gettext("true") }}",
                                 "false": "{{ gettext("false") }}",
                             };
-                            $("#drow-container-{{ kind.name }}").cdedbDynamicRow(
-                                {
+                            let duplicate_field_error = '<div class="help-block">{{ util.make_icon('exclamation-circle') }} {{ gettext("Must not duplicate field: '%(field_name)s'") }}</div>';
+                            $("#drow-container-{{ kind.name }}")
+                                .cdedbDynamicRow({
                                     addButton: $("#drow-addbutton-{{ kind.name }}"),
                                     callback: function () {
-                                        $(this).cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes);
+                                        $(this).cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes, duplicate_field_error);
                                     },
                                     delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
-                                });
-                            $(".drow-row,.drow-new").cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes);
+                                })
+                                .find(".drow-row,.drow-new")
+                                .cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes, duplicate_field_error);
                         })()
                     </script>
                 {% endcall %}

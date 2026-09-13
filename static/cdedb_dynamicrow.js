@@ -36,7 +36,7 @@
                                                  'title': settings.delButtonTitle,
                                                  'aria-label': settings.delButtonTitle,
                                                  'aria-pressed': 'false',
-                                                 'class': 'btn btn-danger btn-sm',
+                                                 'class': 'btn btn-danger btn-sm drow-delete-button',
                                                  'id': 'dynamicrow-delete-button-' + $row.data("drow-id"),})
                     .append($('<span></span>', {'class': 'far fa-trash-alt'}));
 
@@ -68,6 +68,7 @@
                         $(this).addClass('active')
                             .attr('aria-pressed','true');
                     }
+                    $row.find(":input").trigger("change");
                 });
             }
             $row.find('.drow-buttonspace').after($deleteButton);
