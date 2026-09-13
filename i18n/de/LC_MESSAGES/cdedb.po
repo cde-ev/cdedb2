@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-13 18:42+0200\n"
+"POT-Creation-Date: 2026-09-13 18:43+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -90,14 +90,17 @@ msgstr "Text (mehrzeilig)"
 msgid "FieldDatatypes.str_monospace"
 msgstr "Text (mehrzeilig, monospace)"
 
-msgid "FieldDatatypes.bool"
-msgstr "Ja/Nein"
-
 msgid "FieldDatatypes.int"
 msgstr "Zahl"
 
 msgid "FieldDatatypes.float"
 msgstr "Dezimalzahl"
+
+msgid "FieldDatatypes.non_negative_int"
+msgstr "Nicht-negative Zahl"
+
+msgid "FieldDatatypes.non_negative_float"
+msgstr "Nicht-negative Dezimalzahl"
 
 msgid "FieldDatatypes.date"
 msgstr "Datum"
@@ -105,11 +108,8 @@ msgstr "Datum"
 msgid "FieldDatatypes.datetime"
 msgstr "Datum mit Zeit"
 
-msgid "FieldDatatypes.non_negative_int"
-msgstr "Nicht-negative Zahl"
-
-msgid "FieldDatatypes.non_negative_float"
-msgstr "Nicht-negative Dezimalzahl"
+msgid "FieldDatatypes.bool"
+msgstr "Ja/Nein"
 
 msgid "FieldDatatypes.phone"
 msgstr "Telefonnummer"
@@ -4846,6 +4846,15 @@ msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 msgid "Text"
 msgstr "Text"
 
+msgid "Numbers"
+msgstr "Zahlen"
+
+msgid "Dates"
+msgstr "Daten"
+
+msgid "Other"
+msgstr "Sonstiges"
+
 msgid "Special_[[QuestionnaireRowRoles]]"
 msgstr "Spezialfunktion"
 
@@ -4908,9 +4917,6 @@ msgstr "Accountanfragen"
 
 msgid "Privilege Change"
 msgstr "Änderung von Admin-Privilegien"
-
-msgid "Other"
-msgstr "Sonstiges"
 
 msgid "Case"
 msgstr "Fall"

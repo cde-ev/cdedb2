@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-13 18:42+0200\n"
+"POT-Creation-Date: 2026-09-13 18:43+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -90,14 +90,17 @@ msgstr "Text (multiline)"
 msgid "FieldDatatypes.str_monospace"
 msgstr "Text (multiline, monospace)"
 
-msgid "FieldDatatypes.bool"
-msgstr "Yes/No"
-
 msgid "FieldDatatypes.int"
 msgstr "Integer"
 
 msgid "FieldDatatypes.float"
 msgstr "Decimal"
+
+msgid "FieldDatatypes.non_negative_int"
+msgstr "Non-negative Integer"
+
+msgid "FieldDatatypes.non_negative_float"
+msgstr "Non-negative Decimal"
 
 msgid "FieldDatatypes.date"
 msgstr "Date"
@@ -105,11 +108,8 @@ msgstr "Date"
 msgid "FieldDatatypes.datetime"
 msgstr "Date and Time"
 
-msgid "FieldDatatypes.non_negative_int"
-msgstr "Non-negative Integer"
-
-msgid "FieldDatatypes.non_negative_float"
-msgstr "Non-negative Decimal"
+msgid "FieldDatatypes.bool"
+msgstr "Yes/No"
 
 msgid "FieldDatatypes.phone"
 msgstr "Phone number"
@@ -4762,6 +4762,15 @@ msgstr ""
 msgid "Text"
 msgstr ""
 
+msgid "Numbers"
+msgstr ""
+
+msgid "Dates"
+msgstr ""
+
+msgid "Other"
+msgstr ""
+
 msgid "Special_[[QuestionnaireRowRoles]]"
 msgstr "Special Role"
 
@@ -4823,9 +4832,6 @@ msgid "Genesis"
 msgstr ""
 
 msgid "Privilege Change"
-msgstr ""
-
-msgid "Other"
 msgstr ""
 
 msgid "Case"

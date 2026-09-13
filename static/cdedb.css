@@ -811,7 +811,7 @@ tr.drow-delete>td {
     & .panel-heading,.panel-body {
         padding: 10px 10px 10px 15px;
     }
-    &.questionnaire-row-magic .panel-body {
+    &.questionnaire-row-config-magic .panel-body {
         display: none;
     }
     & .panel-footer {

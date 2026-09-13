@@ -7,7 +7,7 @@
 import collections
 import datetime
 from collections.abc import Collection
-from typing import Any
+from typing import Any, cast
 
 import werkzeug.exceptions
 from mailmanclient import HeldMessage
@@ -20,6 +20,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     DefaultReturnCode,
+    NotificationType,
     RequestState,
     get_mandatory_form_fields,
     merge_dicts,
@@ -952,7 +953,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         try:
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
         except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
+            rs.notify(cast(NotificationType, se.kind), se.msg)
         except PrivilegeError:
             rs.notify("error", n_("Not privileged to change subscriptions."))
         else:
@@ -1003,7 +1004,12 @@ class MlBaseFrontend(AbstractUserFrontend):
                 )
                 infos_only = False
             except SubscriptionError as se:
-                rs.notify("warning" if se.kind == "error" else se.kind, se.msg)
+                rs.notify(
+                    "warning"
+                    if se.kind == "error"
+                    else cast(NotificationType, se.kind),
+                    se.msg,
+                )
                 if se.kind != 'info':
                     infos_only = False
             except PrivilegeError:
