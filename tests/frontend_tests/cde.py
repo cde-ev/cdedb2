@@ -1023,7 +1023,7 @@ class TestCdEFrontend(FrontendTest):
                 'decided_search': True,
                 'family_name': 'Findus',
                 'free_form': None,
-                'given_names': 'Ferdinand',
+                'given_names': 'Ferdinand ',
                 'personas.id': 6,
                 'username': 'ferdinand@example.cde',
             },
@@ -3051,7 +3051,7 @@ class TestCdEFrontend(FrontendTest):
             # no links are displayed to non-searchable users
             if not self.user_in("charly"):
                 # searchable member
-                self.traverse({'description': 'Ferdinand Findus'})
+                self.traverse("Ferdinand  Findus")
                 _traverse_back()
             else:
                 self.assertNoLink('/core/persona/2/show')
