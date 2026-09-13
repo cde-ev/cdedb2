@@ -53,13 +53,14 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     ) -> tuple[models.questionnaire.QuestionnaireContainer, str]:
         """Helper to retrieve some data for questionnaire configuration."""
         all_questionnaires = self.eventproxy.get_all_questionnaires(rs, event_id)
-        current = {
-            drow_name(key, i, kind.name): value
-            for kind, questionnaire in all_questionnaires.items()
-            for i, entry in enumerate(questionnaire)
-            for key, value in entry.as_dict().items()
-        }
-        merge_dicts(rs.values, current)
+        if "checksum" not in rs.values:
+            current = {
+                drow_name(key, i, kind.name): value
+                for kind, questionnaire in all_questionnaires.items()
+                for i, entry in enumerate(questionnaire)
+                for key, value in entry.as_dict().items()
+            }
+            merge_dicts(rs.values, current)
         # Determine the max of previously submitted rows and current rows.
         for kind in const.QuestionnaireUsages:
             max_index = 0
@@ -93,7 +94,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             role for role, spec in spec_per_role.items() if key in spec
         ]
         drow_classes_by_role = {
-            str(kind): kind.get_class().get_drow_html_classes()
+            str(kind): kind.get_class().class_get_drow_html_classes()
             for kind in const.QuestionnaireRowRole
         }
         return self.render(

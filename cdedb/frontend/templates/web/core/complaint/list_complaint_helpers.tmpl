@@ -14,6 +14,10 @@
     {{ util.breadcrumb_link(cdedblink("core/list_complaint_helpers"), gettext("Complaint Helpers"), active="True") }}
 {% endblock %}
 {% block content %}
+    <div class="p button-par">
+        {{ util.href(cdedblink("core/list_companions"), gettext("Companions_[[plural]]"), aclass="btn btn-sm btn-default",
+                     icon="people-group") }}
+    </div>
     {{ util.h(n_("Enforcers"), level=2) }}
     <p>
         {% trans %}

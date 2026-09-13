@@ -63,7 +63,7 @@ class SessionBackend:
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"],
             (DBRole.anonymous, DBRole.persona),
-            secrets,
+            secrets["CDB_DATABASE_ROLES"],
             self.conf["DB_HOST"],
             self.conf["DB_PORT"],
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED,
@@ -74,7 +74,7 @@ class SessionBackend:
         if self.conf["LOCKDOWN"]:
             return True
         # we do not have the core backend, so we have to query meta info by hand
-        with self.connpool[DBRole.anonymous] as conn:
+        with self.connpool(DBRole.anonymous) as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT info FROM core.meta_info LIMIT 1")
                 data = dict(cur.fetchone() or {})
@@ -98,7 +98,7 @@ class SessionBackend:
                 FROM core.sessions
                 WHERE sessionkey = %s
             """
-            with self.connpool[DBRole.anonymous] as conn:
+            with self.connpool(DBRole.anonymous) as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, (sessionkey,))
                     if cur.rowcount == 1:
@@ -128,7 +128,7 @@ class SessionBackend:
                     SET is_active = False
                     WHERE sessionkey = %s
                 """
-                with self.connpool[DBRole.anonymous] as conn:
+                with self.connpool(DBRole.anonymous) as conn:
                     with conn.cursor() as cur:
                         cur.execute(query, (sessionkey,))
 
@@ -136,7 +136,7 @@ class SessionBackend:
             return User()
 
         query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
-        with self.connpool[DBRole.persona] as conn:
+        with self.connpool(DBRole.persona) as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (sessionkey,))
 
@@ -212,7 +212,7 @@ class SessionBackend:
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
             raise APITokenError(n_("This API is not available in offline mode."))
 
-        with self.connpool[DBRole.anonymous] as conn:
+        with self.connpool(DBRole.anonymous) as conn:
             with conn.cursor() as cur:
                 query = f"""
                     SELECT

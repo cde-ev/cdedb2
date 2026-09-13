@@ -25,6 +25,7 @@ alias app-logs="sudo journalctl --no-hostname -u cdedb-app -p info"
 alias ldap-logs="sudo journalctl --no-hostname -u cde-ldap -p info"
 alias all-logs="sudo journalctl --no-hostname -u cdedb-app -u cde-ldap -p info"
 
+alias cron-logs="sudo journalctl --no-hostname -t cdedb-cron -p info"
 alias test-logs="sudo journalctl --no-hostname -t cdedb-test -p info"
 alias test-logs-ldap="sudo journalctl --no-hostname -u cde-ldap-test -p info"
 

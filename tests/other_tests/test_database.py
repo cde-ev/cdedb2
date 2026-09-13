@@ -35,11 +35,11 @@ class TestDatabase(unittest.TestCase):
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
             DATABASE_ROLES,
-            self.secrets,
+            self.secrets["CDB_DATABASE_ROLES"],
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
-        with factory[DBRole.persona] as conn:
+        with factory(DBRole.persona) as conn:
             self.assertIsInstance(conn, psycopg2.extensions.connection)
             self.assertIsInstance(conn, IrradiatedConnection)
 
@@ -47,22 +47,22 @@ class TestDatabase(unittest.TestCase):
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
             (DBRole.anonymous, DBRole.admin),
-            self.secrets,
+            self.secrets["CDB_DATABASE_ROLES"],
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
         with self.assertRaises(ValueError):
-            factory[DBRole.persona]  # exception in __getitem__
+            factory(DBRole.persona)
 
     def test_atomizer(self) -> None:
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
             (DBRole.persona,),
-            self.secrets,
+            self.secrets["CDB_DATABASE_ROLES"],
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
-        conn = factory[DBRole.persona]
+        conn = factory(DBRole.persona)
 
         rs = ConnectionContainer()
         rs.conn = rs._conn = conn
@@ -106,11 +106,11 @@ class TestDatabase(unittest.TestCase):
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
             (DBRole.admin,),
-            self.secrets,
+            self.secrets["CDB_DATABASE_ROLES"],
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
-        conn = factory[DBRole.admin]
+        conn = factory(DBRole.admin)
 
         rs = ConnectionContainer()
         rs.conn = rs._conn = conn

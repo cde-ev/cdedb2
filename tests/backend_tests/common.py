@@ -33,7 +33,7 @@ def database_lock_job(
     connpool = connection_pool_factory(
         config["CDB_DATABASE_NAME"],
         DATABASE_ROLES,
-        secrets,
+        secrets["CDB_DATABASE_ROLES"],
         config["DB_HOST"],
         config["DB_PORT"],
     )
@@ -56,7 +56,7 @@ def database_lock_job(
             translations=translations,
         )
         # We want to use this in the frontend, so we need to peek
-        rs._conn = connpool[DBRole.admin]
+        rs._conn = connpool(DBRole.admin)
         rs.conn = None  # type: ignore[assignment]
         return rs
 

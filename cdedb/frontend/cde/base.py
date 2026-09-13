@@ -12,7 +12,6 @@ import csv
 import decimal
 import itertools
 import operator
-from collections import OrderedDict
 from collections.abc import Collection, Sequence
 from typing import Any, cast
 
@@ -352,23 +351,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @staticmethod
-    def _fix_search_validation_error_references(
-        rs: RequestState, skip: Collection[str] = ()
-    ) -> None:
-        """A little hack to fix displaying of errors for course and meber search:
-
-        The form uses 'qval_<field>' as input name, the validation only returns the
-        field's name.
-        """
-        appraised = rs.validation_appraised
-        current = tuple(rs.retrieve_validation_errors())
-        rs.replace_validation_errors([
-            (f'qval_{k}', v) if k not in skip else (k, v) for k, v in current
-        ])
-        if appraised:
-            rs.ignore_validation_errors()
-
     @access(Roles.core_admin, Roles.cde_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
@@ -377,21 +359,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         courses = self.pasteventproxy.list_past_courses(rs)
-        choices: dict[str, OrderedDict[Any, str]] = {
-            'pevent_id': OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(1))
-            ),
-            'pcourse_id': OrderedDict(
-                xsorted(courses.items(), key=operator.itemgetter(1))
-            ),
-            'gender': OrderedDict(
+        choices: dict[str, dict[Any, str]] = {
+            'pevent_id': dict(xsorted(events.items(), key=operator.itemgetter(1))),
+            'pcourse_id': dict(xsorted(courses.items(), key=operator.itemgetter(1))),
+            'gender': dict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext,
                 )
             ),
-            'country': OrderedDict(get_localized_country_codes(rs)),
-            'country2': OrderedDict(get_localized_country_codes(rs)),
+            'country': dict(get_localized_country_codes(rs)),
+            'country2': dict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs,

@@ -5,10 +5,12 @@
 """Base class providing fundamental ml services."""
 
 import collections
+import datetime
 from collections.abc import Collection
 from typing import Any
 
 import werkzeug.exceptions
+from mailmanclient import HeldMessage
 from subman.exceptions import SubscriptionError
 from werkzeug import Response
 
@@ -1395,4 +1397,75 @@ class MlBaseFrontend(AbstractUserFrontend):
 
             ml_store['persona_ids'] = requests
             store[str(ml_id)] = ml_store
+        return store
+
+    @periodic("moderation_remind")
+    def moderation_remind(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        ml_ids = self.mlproxy.list_mailinglists(rs)
+        mls = self.mlproxy.get_mailinglists(rs, ml_ids)
+        today = now().date()
+        current_hour = now().hour
+        repeat_cutoff = datetime.timedelta(days=3) - datetime.timedelta(seconds=300)
+        new_message_cutoff = datetime.timedelta(days=1) - datetime.timedelta(
+            seconds=300
+        )
+        if not 18 <= current_hour <= 20:
+            return store
+
+        personas_last_remind: dict[str, tuple[int, str]] = store.setdefault(
+            "personas_last_remind", {}
+        )
+
+        def hash_messages(message_data: dict[Mailinglist, list[HeldMessage]]) -> int:
+            return hash(
+                tuple(
+                    (ml.id, *(message.request_id for message in messages))
+                    for ml, messages in message_data.items()
+                )
+            )
+
+        moderators: dict[vtypes.PersonaID, dict[Mailinglist, list[HeldMessage]]] = {}
+        for ml in mls.values():
+            held = self.get_mailman().get_held_messages(ml)
+            if not held:
+                continue
+
+            held = xsorted(held, key=lambda m: m.spam_score)
+
+            for moderator in ml.moderators:
+                moderators.setdefault(moderator, {})[ml] = held
+
+        personas = self.coreproxy.get_personas(rs, moderators.keys())
+
+        for moderator, message_data in moderators.items():
+            persona = personas[moderator]
+            last_state = personas_last_remind.get(
+                str(moderator), (0, datetime.date.min.isoformat())
+            )
+            last_hash = last_state[0]
+            last_date = datetime.date.fromisoformat(last_state[1])
+            time_passed = today - last_date
+            current_hash = hash_messages(message_data)
+
+            if time_passed < new_message_cutoff or (
+                last_hash == current_hash and time_passed < repeat_cutoff
+            ):
+                continue
+
+            self.do_mail(
+                rs,
+                "moderation_remind",
+                {
+                    "To": [persona.username],
+                    "Subject": "Übersicht über ausstehende E-Mail-Moderationen",
+                },
+                {
+                    "persona": persona,
+                    "messages": message_data,
+                    "total": sum(map(len, message_data.values())),
+                },
+            )
+
+            personas_last_remind[str(moderator)] = (current_hash, today.isoformat())
+
         return store

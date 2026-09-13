@@ -89,7 +89,7 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"],
             DATABASE_ROLES,
-            secrets,
+            secrets["CDB_DATABASE_ROLES"],
             self.conf["DB_HOST"],
             self.conf["DB_PORT"],
         )
@@ -338,7 +338,7 @@ class Application(BaseApp):
 
             # Store database connection as private attribute.
             # It will be made accessible for the backends by the make_proxy.
-            rs._conn = self.connpool[user.new_roles.get_db_role()]
+            rs._conn = self.connpool(user.new_roles.get_db_role())
 
             # Retrieve entity related privileges for personas.
             # The session backend takes care of this for droids.

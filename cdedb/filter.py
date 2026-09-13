@@ -565,9 +565,12 @@ def get_markdown_parser() -> markdown.Markdown:
                     'right-double-quote': '&ldquo;',
                 },
             },
+            "footnotes": {
+                "UNIQUE_IDS": True,
+            },
         }
         md = markdown.Markdown(
-            extensions=["extra", "sane_lists", "smarty", "toc"],
+            extensions=["extra", "sane_lists", "smarty", "toc", "footnotes"],
             extension_configs=extension_configs,
         )
 

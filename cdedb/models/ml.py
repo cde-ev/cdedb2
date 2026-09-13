@@ -386,6 +386,9 @@ class Mailinglist(CdEDataclass):
             ret[ml.sortkey].append(ml)
         return ret
 
+    def __hash__(self) -> int:
+        return hash((self.id, self.ml_type, self.address))
+
     def __lt__(self, other: "CdEDataclass") -> bool:
         if not isinstance(other, Mailinglist):
             return NotImplemented
@@ -393,12 +396,12 @@ class Mailinglist(CdEDataclass):
         return self._lt_inner(other)
 
 
-@dataclass
+@dataclass(eq=False)
 class GeneralMailinglist(Mailinglist):
     pass
 
 
-@dataclass
+@dataclass(eq=False)
 class AllUsersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with all users as implicit subscribers."""
 
@@ -413,7 +416,7 @@ class AllUsersImplicitMeta(GeneralMailinglist):
         return bc.core.list_all_personas(rs, is_active=False)
 
 
-@dataclass
+@dataclass(eq=False)
 class AllMembersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with members as implicit subscribers."""
 
@@ -432,7 +435,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
         return bc.core.list_current_members(rs, is_active=False)
 
 
-@dataclass
+@dataclass(eq=False)
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
 
@@ -444,7 +447,7 @@ class EventAssociatedMeta(GeneralMailinglist):
         return self.event_id is not None
 
 
-@dataclass
+@dataclass(eq=False)
 class TeamMeta(GeneralMailinglist):
     """Metaclass for all team lists."""
 
@@ -455,7 +458,7 @@ class TeamMeta(GeneralMailinglist):
     notify_owner_on_bounce = True
 
 
-@dataclass
+@dataclass(eq=False)
 class ImplicitsSubscribableMeta(GeneralMailinglist):
     """
     Metaclass for all mailinglists where exactly implicit subscribers may subscribe,
@@ -485,7 +488,7 @@ class ImplicitsSubscribableMeta(GeneralMailinglist):
         return ret
 
 
-@dataclass
+@dataclass(eq=False)
 class CdEMailinglist(GeneralMailinglist):
     """Base class for CdE-Mailinglists."""
 
@@ -495,7 +498,7 @@ class CdEMailinglist(GeneralMailinglist):
     relevant_admins = RoleSet({Roles.cde_admin})
 
 
-@dataclass
+@dataclass(eq=False)
 class EventMailinglist(GeneralMailinglist):
     """Base class for Event-Mailinglists."""
 
@@ -507,7 +510,7 @@ class EventMailinglist(GeneralMailinglist):
     ldap_expose = False
 
 
-@dataclass
+@dataclass(eq=False)
 class AssemblyMailinglist(GeneralMailinglist):
     """Base class for Assembly-Mailinglists."""
 
@@ -518,54 +521,54 @@ class AssemblyMailinglist(GeneralMailinglist):
     ldap_expose = False
 
 
-@dataclass
+@dataclass(eq=False)
 class MemberMailinglist(CdEMailinglist):
     viewer_roles = Roles.member
 
 
-@dataclass
+@dataclass(eq=False)
 class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
 
 
-@dataclass
+@dataclass(eq=False)
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     allow_unsub = True
 
 
-@dataclass
+@dataclass(eq=False)
 class MemberOptInMailinglist(MemberMailinglist):
     role_map = {
         Roles.member: SubscriptionPolicy.subscribable,
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class MemberModeratedOptInMailinglist(MemberMailinglist):
     role_map = {
         Roles.member: SubscriptionPolicy.moderated_opt_in,
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class MemberInvitationOnlyMailinglist(MemberMailinglist):
     role_map = {
         Roles.member: SubscriptionPolicy.invitation_only,
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class TeamMailinglist(TeamMeta, MemberModeratedOptInMailinglist):
     pass
 
 
-@dataclass
+@dataclass(eq=False)
 class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
     pass
 
 
-@dataclass
+@dataclass(eq=False)
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     # An additional part group id limits the implicit subscribers.
     event_part_group_id: vtypes.ID | None = None
@@ -667,7 +670,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         return {e["persona.id"] for e in data}
 
 
-@dataclass
+@dataclass(eq=False)
 class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
     """
     Same as `EventAssociatedMailinglist` but stricly limited by event_part_group_id.
@@ -703,7 +706,7 @@ class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
         }
 
 
-@dataclass
+@dataclass(eq=False)
 class EventOrgaMailinglist(
     EventAssociatedMeta, ImplicitsSubscribableMeta, EventMailinglist
 ):
@@ -744,7 +747,7 @@ class EventOrgaMailinglist(
         return cast(set[int], event.orgas)
 
 
-@dataclass
+@dataclass(eq=False)
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
     assembly_id: vtypes.ID | None = None
@@ -796,7 +799,7 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
         return bc.assembly.list_attendees(rs, self.assembly_id)
 
 
-@dataclass
+@dataclass(eq=False)
 class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
     maxsize_default = vtypes.PositiveInt(8192)
 
@@ -828,14 +831,14 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
         return bc.assembly.list_assembly_presiders(rs, self.assembly_id)
 
 
-@dataclass
+@dataclass(eq=False)
 class AssemblyOptInMailinglist(AssemblyMailinglist):
     role_map = {
         Roles.assembly: SubscriptionPolicy.subscribable,
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
     role_map = {
         Roles.ml: SubscriptionPolicy.subscribable,
@@ -844,33 +847,33 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
     allow_unsub = False
 
 
-@dataclass
+@dataclass(eq=False)
 class GeneralMeta(GeneralMailinglist):
     relevant_admins = RoleSet({Roles.core_admin})
 
 
-@dataclass
+@dataclass(eq=False)
 class GeneralOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = {
         Roles.ml: SubscriptionPolicy.subscribable,
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class GeneralModeratedOptInMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = {
         Roles.ml: SubscriptionPolicy.moderated_opt_in,
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class GeneralInvitationOnlyMailinglist(GeneralMeta, GeneralMailinglist):
     role_map = {
         Roles.ml: SubscriptionPolicy.invitation_only,
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
@@ -886,7 +889,7 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
         return bc.core.list_all_moderators(rs, active=True)
 
 
-@dataclass
+@dataclass(eq=False)
 class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
     relevant_admins = RoleSet({Roles.cdelokal_admin})
 
@@ -905,7 +908,7 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class SemiPublicMailinglist(GeneralMailinglist):
     role_map = {
         Roles.member: SubscriptionPolicy.subscribable,
@@ -913,7 +916,7 @@ class SemiPublicMailinglist(GeneralMailinglist):
     }
 
 
-@dataclass
+@dataclass(eq=False)
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
     available_domains = [MailinglistDomain.cdelokal]
@@ -921,13 +924,13 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     ldap_expose = False
 
 
-@dataclass
+@dataclass(eq=False)
 class PublicMemberImplicitMailinglist(AllMembersImplicitMeta):
     # We want _only_ the role map from the GeneralOptInMailinglist.
     role_map = GeneralOptInMailinglist.role_map
 
 
-@dataclass
+@dataclass(eq=False)
 class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, TeamMailinglist):
     allow_unsub = False
 
@@ -938,7 +941,7 @@ class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, TeamMailingli
         return set(bc.core.list_admins(rs, realm="complaint"))
 
 
-@dataclass
+@dataclass(eq=False)
 class ComplaintEnforcerImplicitMailinglist(ComplaintAdminImplicitMailinglist):
     def get_implicit_subscribers(
         self, rs: RequestState, bc: BackendContainer

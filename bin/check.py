@@ -313,7 +313,7 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    setup_root_logger(test=True, replace=True)
+    setup_root_logger(identifier="cdedb-test", replace=True)
 
     # Set the promised default value if no parts were specified
     if not args.parts and not args.all_ldap:

@@ -10,7 +10,6 @@ import datetime
 import decimal
 import itertools
 import typing
-from collections import OrderedDict
 from collections.abc import Collection
 from typing import overload
 
@@ -1064,11 +1063,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration = payment_data['registration']
 
         age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
-        registration['parts'] = OrderedDict(
-            (part.id, registration['parts'][part.id])
+        registration['parts'] = {
+            part.id: registration['parts'][part.id]
             for part in xsorted(rs.ambience['event'].parts.values())
             if part.id in registration['parts']
-        )
+        }
         reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.registration
         ]
@@ -1850,9 +1849,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             ),
         )
 
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order
-        )
+        registrations = {reg_id: registrations[reg_id] for reg_id in reg_order}
         return self.render(
             rs,
             "registration/change_registrations",
@@ -1971,9 +1968,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order
-        )
+        registrations = {reg_id: registrations[reg_id] for reg_id in reg_order}
         checkin_fields = {
             field_id: f
             for field_id, f in rs.ambience['event'].registration_fields.items()
