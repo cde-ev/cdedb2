@@ -17,7 +17,7 @@
 {# Classical voting: Voting form #}
 {% macro show_classical_voting() -%}
     {{ util.h(n_("Ballot")) }}
-    <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
+    <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal protect">
         {{ util.anti_csrf_token('assembly/vote') }}
         {{ util.form_input_checkboxes("vote", label=gettext("Options"),
                                       entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('shortname', 'title'),
@@ -37,7 +37,6 @@
         {% if ambience['ballot']['votes'] > 1 %}
             $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_SHORTNAME }}');
         {% endif %}
-        $('#voteform').cdedbProtectChanges();
     </script>
 
     <div class="form-horizontal">
@@ -242,15 +241,12 @@
         {# Text based preferential voting form #}
         <div role="tabpanel" class="tab-pane active" id="tab-textform">
             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
-                    class="form-horizontal">
+                    class="form-horizontal protect">
                 {{ util.anti_csrf_token('assembly/vote') }}
                 {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
                                         anid='input-preferencelist') }}
                 {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
             </form>
-            <script nonce="{{ csp_nonce }}">
-                $('#voteform').cdedbProtectChanges();
-            </script>
             {{ show_manual_for_text_preferential_voting() }}
         </div>
 
@@ -320,7 +316,7 @@
 {% macro add_candidate_form() -%}
     {{ util.h(n_("Options")) }}
 
-    <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
+    <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform" class="protect">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}
 
         <table class="table table-condensed" id="drow-table">
@@ -374,7 +370,6 @@
             $('#drow-table').cdedbDynamicRow({
                 addButton: $('#drow-addbutton'),
                 delButtonTitle: "{{ gettext("Delete line") }}"});
-            $('#candidatessummaryform').cdedbProtectChanges();
         });
     </script>
 {%- endmacro %}

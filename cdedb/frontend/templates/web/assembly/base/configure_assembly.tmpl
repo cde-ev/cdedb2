@@ -40,7 +40,7 @@
 {% endblock %}
 {% block content %}
 
-    <form action="{{ cdedblink(action_target) }}" method="POST" id="configureassemblyform" class="form-horizontal">
+    <form action="{{ cdedblink(action_target) }}" method="POST" id="configureassemblyform" class="form-horizontal protect">
         {{ util.anti_csrf_token(action_target) }}
 
         {# Data field definitions. #}
@@ -78,7 +78,4 @@
         {% endif %}
     </form>
 
-    <script nonce="{{ csp_nonce }}">
-        $('#configureassemblyform').cdedbProtectChanges();
-    </script>
 {% endblock %}

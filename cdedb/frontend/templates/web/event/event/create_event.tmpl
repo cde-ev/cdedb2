@@ -14,7 +14,7 @@
 {{ util.breadcrumb_link(cdedblink("event/create_event"), gettext("Create Event"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/create_event') }}" method="POST" id="createeventform" class="form-horizontal">
+    <form action="{{ cdedblink('event/create_event') }}" method="POST" id="createeventform" class="form-horizontal protect">
         {{ util.anti_csrf_token('event/create_event') }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
@@ -62,7 +62,4 @@
 
         {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("event/list_events")) }}
     </form>
-    <script nonce="{{ csp_nonce }}">
-        $('#createeventform').cdedbProtectChanges();
-    </script>
 {% endblock %}

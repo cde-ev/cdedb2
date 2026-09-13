@@ -268,6 +268,8 @@
                                     "close": gettext("Close"),
                                 }|tojson }},
                             );
+                            // Protect all marked forms.
+                            $("form.protect").cdedbProtectChanges();
                         </script>
                     </div>
                 </div>

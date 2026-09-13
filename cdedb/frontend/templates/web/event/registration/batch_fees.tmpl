@@ -28,7 +28,8 @@
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform" enctype="multipart/form-data">
+    <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform" enctype="multipart/form-data"
+          class="protect">
         {{ util.anti_csrf_token('event/batch_fees') }}
         {{ util.input_hidden(name="checksum") }}
         {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Individual Notifications"), defaultvalue="True",
@@ -93,7 +94,6 @@
                     $('.row-key').addClass('clickable').click(function() {
                         $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
                     });
-                    $('#transfersform').cdedbProtectChanges();
                 });
             </script>
         {% endif %}

@@ -27,7 +27,7 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/amend_registration') }}" method="POST" id="amendregistrationform"
-          class="form-horizontal">
+          class="form-horizontal protect">
         {{ util.anti_csrf_token('event/amend_registration') }}
 
         <div id="registrationquestionnaire">
@@ -47,6 +47,6 @@
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'part_ids': {{ payment_parts|tojson }},
         }
-        $('#amendregistrationform').cdedbProtectChanges().cdedbFeePreview(feePreviewConstants);
+        $('#amendregistrationform').cdedbFeePreview(feePreviewConstants);
     </script>
 {% endblock %}

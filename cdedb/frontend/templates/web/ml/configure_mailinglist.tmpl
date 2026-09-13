@@ -88,7 +88,7 @@
         {% else %}
             {% set target = 'ml/create_mailinglist' %}
         {% endif %}
-        <form action="{{ cdedblink(target) }}" method="POST" id="configuremailinglistform" class="form-horizontal">
+        <form action="{{ cdedblink(target) }}" method="POST" id="configuremailinglistform" class="form-horizontal protect">
             {{ util.anti_csrf_token(target) }}
 
             <h3 class="heading-underline">{% trans %}Meta{% endtrans %}</h3>
@@ -222,7 +222,6 @@
 
         <script nonce="{{ csp_nonce }}">
             $('#configuremailinglistform')
-                .cdedbProtectChanges()
                 .cdedbConfigureMailinglist(
                     '{{ gettext("Preview: %(preview)sMail Subject Here")|format(
                             preview='<span id="subject-prefix-preview"></span>')|s }}'

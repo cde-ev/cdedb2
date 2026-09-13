@@ -23,7 +23,7 @@
 
 {% block content %}
     {% set entry_type = ambience['entry'].entry_type %}
-    <form action="{{ cdedblink("core/remove_entry") }}" method="POST" id="removeentryform" class="form-horizontal">
+    <form action="{{ cdedblink("core/remove_entry") }}" method="POST" id="removeentryform" class="form-horizontal protect">
         {% if 'entry' in ambience %}
             {{ util.input_hidden(name="id", value=ambience['entry'].id) }}
         {% endif %}
@@ -49,8 +49,4 @@
         {{ util.form_input_submit(label=gettext("Remove"), cancellink=cdedblink('core/show_case'), aclass="btn btn-primary btn-danger", icon="eye-slash",
                                   info=gettext("Only remove entries if they are erroneous. If they are no longer valid or have been rescinded, revoke them instead.")) }}
     </form>
-
-    <script nonce="{{ csp_nonce }}">
-        $('#removeeentryform').cdedbProtectChanges();
-    </script>
 {% endblock %}

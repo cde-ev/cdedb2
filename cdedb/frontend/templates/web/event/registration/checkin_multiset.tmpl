@@ -34,7 +34,8 @@
             {% if present %}
             <div class="col-sm-{{ '6' if twocolumn else '12' }}">
                 {{ util.h(gettext("Check out"), underline=True) }}
-                <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkoutform" class="form-horizontal">
+                <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkoutform"
+                      class="form-horizontal protect">
                     {{ util.anti_csrf_token('event/checkin_multiset') }}
                     <p>
                         {% trans %}
@@ -106,7 +107,8 @@
             {% if absent %}
             <div class="col-sm-{{ '6' if twocolumn else '12' }}">
                 {{ util.h(gettext("Check in"), underline=True) }}
-                <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkinform" class="form-horizontal">
+                <form action="{{ cdedblink('event/checkin_multiset') }}" method="POST" id="checkinform"
+                      class="form-horizontal protect">
                     {{ util.anti_csrf_token('event/checkin_multiset') }}
                     <p>
                         {% trans %}
@@ -188,9 +190,6 @@
         </p>
     {% endif %}
     <script nonce="{{ csp_nonce }}">
-        $('#checkinform').cdedbProtectChanges();
-        $('#checkoutform').cdedbProtectChanges();
-
         // show buttons with suitable text and icon
         function massreset_buttonchange(action) {
             if ($('#input-' + action + '-massreset').val()) {

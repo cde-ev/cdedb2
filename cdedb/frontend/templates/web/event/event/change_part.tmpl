@@ -37,7 +37,7 @@
         {% endtrans %}
     </p>
 
-    <form action="{{ cdedblink('event/change_part') }}" method="POST" id="changepartform" class="form-horizontal">
+    <form action="{{ cdedblink('event/change_part') }}" method="POST" id="changepartform" class="form-horizontal protect">
         {{ util.anti_csrf_token('event/change_part') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
@@ -177,7 +177,6 @@
             $('#track-drow-table').cdedbDynamicRow({
                 addButton: $('#track-drow-addbutton'),
                 delButtonTitle: "{{ gettext("Delete line") }}"});
-            $('#changepartform').cdedbProtectChanges();
         });
         /* Update maximum number of required choices with total number of choices */
         function update_min_choices_max() {

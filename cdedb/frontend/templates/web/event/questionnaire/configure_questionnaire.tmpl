@@ -130,7 +130,4 @@
 
         {{ util.input_hidden("checksum", value=checksum) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
-        $("form.protect").cdedbProtectChanges();
-    </script>
 {% endblock %}
