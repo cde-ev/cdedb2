@@ -367,13 +367,6 @@
         </span>
         {{ href(docurl("Handbuch_Markdown"), gettext("Tutorial"), title=gettext("Short Markdown summary")) }}
     </p>
-    <script nonce="{{ csp_nonce }}">
-        $("#{{ anid }}").cdedbMarkdownPreview("{{ cdedblink("core/markdown_parse")|e }}",
-                                              {{ {"title": gettext("Markdown Preview"),
-                                                  "loading": gettext("Loading..."),
-                                                  "note": "",
-                                                  "close": gettext("Close") }|tojson }})
-    </script>
 {%- endmacro %}
 
 {# ################### #

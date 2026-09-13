@@ -345,20 +345,20 @@
      * @param translations (object) A dict containing the localized labels for the preview modal. Should have
      *                              "title", "loading", "note" and "close" as keys.
      */
-    $.fn.cdedbMarkdownPreview = function (link, translations) {
+    $.fn.cdedbMarkdownPreviews = function (link, translations) {
         $(".mdjs").show();
-        let input = this;  // we need it inside the onclick-function
-        $(`#${ input.attr("id") }-mdpreview`).click(function() {
+        $(document).on("click", ".mdjs a", function () {
             cdedb_show_modal(translations);
-            $.post(link,
-                { md_str: input.val() },
-                function(result) {
+            $.post(
+                link,
+                { md_str: $(this).closest(".form-group").find(":input").val() },
+                function (result) {
                     $("#cdedb-modal-content").html(result);
                 }
             );
+            console.log($(this), " clicked.")
             return false; // this prevents the browser from jumping to the top via <a href="#">
         });
-        return this;
     };
 
     /**

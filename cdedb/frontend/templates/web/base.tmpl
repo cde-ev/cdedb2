@@ -22,6 +22,7 @@
         <link href="{{ staticurl("fontawesome/css/all.min.css") }}" rel="stylesheet" />
         <script src="{{ staticurl("bootstrap-3/js/bootstrap.min.js") }}"></script>
         <script src="{{ staticurl("cdedb-general.js") }}"></script>
+        {{ util.cdedb_script("cdedb_helper.js") }}
         {% if CDEDB_DEV %}
             <!-- script for adding links to view emails -->
             <script nonce="{{ csp_nonce }}">
@@ -255,6 +256,19 @@
                                 {% trans %}This should not be visible.{% endtrans %}
                             {% endblock %}
                         </div>
+
+                        <script nonce="{{ csp_nonce }}">
+                            // Activate Markdown preview for all markdown inputs.
+                            $().cdedbMarkdownPreviews(
+                                "{{ cdedblink("core/markdown_parse")|e }}",
+                                {{ {
+                                    "title": gettext("Markdown Preview"),
+                                    "loading": gettext("Loading..."),
+                                    "note": "",
+                                    "close": gettext("Close"),
+                                }|tojson }},
+                            );
+                        </script>
                     </div>
                 </div>
             </div>
