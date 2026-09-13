@@ -1699,7 +1699,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :returns: The processed input datum.
         """
-        raw = {k: (v.strip() if v else v) for k, v in datum['raw'].items()}
+        raw = datum["raw"]
         problems: list[Error] = []
         infos: list[Error] = []
 
