@@ -94,7 +94,7 @@ class MlMailmanMixin(MlBaseFrontend):
             'unsubscription_policy': 'moderate',
             'archive_policy': 'private',
             'dmarc_mitigate_action': 'munge_from',
-            'dmarc_mitigate_unconditionally': db_list.wrap_unconditionally,
+            'dmarc_mitigate_unconditionally': db_list.mitigate_unconditionally,
             # 'dmarc_wrapped_message_text': (
             #    "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
             #    " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"

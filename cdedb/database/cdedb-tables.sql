@@ -1695,7 +1695,7 @@ CREATE TABLE ml.mailinglists (
         -- see cdedb.database.constants.AttachmentPolicy
         attachment_policy       integer NOT NULL,
         convert_html            boolean NOT NULL DEFAULT TRUE,
-        wrap_unconditionally    boolean NOT NULL DEFAULT TRUE,
+        mitigate_unconditionally    boolean NOT NULL DEFAULT TRUE,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
         -- see cdedb.database.constants.MailinglistRosterVisibility
