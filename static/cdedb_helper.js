@@ -347,7 +347,8 @@
      */
     $.fn.cdedbMarkdownPreviews = function (link, translations) {
         $(".mdjs").show();
-        $(document).on("click", ".mdjs a", function () {
+        console.log("Setting up markdown previews with root element ", $(this));
+        $(this).on("click", ".mdjs a", function () {
             cdedb_show_modal(translations);
             $.post(
                 link,
@@ -356,7 +357,7 @@
                     $("#cdedb-modal-content").html(result);
                 }
             );
-            console.log($(this), " clicked.")
+            console.log($(this), " clicked. Calling ", link);
             return false; // this prevents the browser from jumping to the top via <a href="#">
         });
     };

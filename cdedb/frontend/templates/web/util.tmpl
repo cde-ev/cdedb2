@@ -356,11 +356,11 @@
     {% endif %}
 {% endmacro %}
 
-{% macro markdown_preview(anid, infotext=_("Supports Markdown.")) %}
+{% macro markdown_preview(infotext=_("Supports Markdown.")) %}
     <p class="help-block no-color">
         {{ make_icon('fab fa-markdown') }} {{ gettext(infotext) }}
         <span class="mdjs" style="display: none;">
-            <a id="{{ anid }}-mdpreview" title="{% trans %}Open Markdown Preview{% endtrans %}"
+            <a title="{% trans %}Open Markdown Preview{% endtrans %}"
                href="#" style="display: inline-block;">
                 {{ gettext("Preview") }}
             </a> |
@@ -438,7 +438,7 @@
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
             {{- output_errors(errorname or name, displayerrors) }}
             {{- output_info(info) }}
-        {%- if markdown %}{{ markdown_preview(anid) }}{% endif %}
+        {%- if markdown %}{{ markdown_preview() }}{% endif %}
         {%- if horizontal %}</div>{% endif %}
     </div>
 {%- endmacro %}

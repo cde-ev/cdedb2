@@ -36,7 +36,7 @@
                     anid=key + '-input',
                     attributes='style="margin-bottom: 5px;" autofocus'|s) }}
             {% if markdown %}
-                {{ util.markdown_preview(key + '-input') }}
+                {{ util.markdown_preview() }}
             {% endif %}
             {{ util.input_submit(anid=key + '-submit') }}
             &emsp;

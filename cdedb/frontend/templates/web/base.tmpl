@@ -259,7 +259,7 @@
 
                         <script nonce="{{ csp_nonce }}">
                             // Activate Markdown preview for all markdown inputs.
-                            $().cdedbMarkdownPreviews(
+                            $(document).cdedbMarkdownPreviews(
                                 "{{ cdedblink("core/markdown_parse")|e }}",
                                 {{ {
                                     "title": gettext("Markdown Preview"),
