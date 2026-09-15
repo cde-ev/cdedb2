@@ -114,6 +114,8 @@ class MlMailmanMixin(MlBaseFrontend):
             'default_member_action': POLICY_MEMBER_CONVERT[db_list.mod_policy],
             'default_nonmember_action': POLICY_OTHER_CONVERT[db_list.mod_policy],
             'digests_enabled': False,
+            # For some lists do not send immediate notifications about pending posts.
+            'admin_immed_notify': db_list.immediate_notify,
             # Dropping mails silently, even after moderation is worse than rejecting...
             'filter_content': True,
             'filter_action': 'reject',
