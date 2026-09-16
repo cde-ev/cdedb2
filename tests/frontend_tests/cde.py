@@ -918,7 +918,7 @@ class TestCdEFrontend(FrontendTest):
             '3;Charly;Clown;charly@example.cde;1984-05-13;True;'
             '"Ich bin ein ""Künstler""; im weiteren Sinne."',
             '4;Daniel;Dino;daniel@example.cde;1963-02-19;False;',
-            '6;Ferdinand;Findus;ferdinand@example.cde;1988-01-01;True;',
+            '6;Ferdinand ;Findus;ferdinand@example.cde;1988-01-01;True;',
             '',
         )).encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
@@ -972,7 +972,7 @@ class TestCdEFrontend(FrontendTest):
                 'decided_search': True,
                 'family_name': 'Findus',
                 'free_form': None,
-                'given_names': 'Ferdinand',
+                'given_names': 'Ferdinand ',
                 'personas.id': 6,
                 'username': 'ferdinand@example.cde',
             },
@@ -1625,16 +1625,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('Dagobert Beetlejuice', div='account-holder', exact=True)
         self.assertPresence('reicher Onkel (neu verheiratet)', div='notes', exact=True)
 
-    @as_users("vera")
-    def test_lastschrift_subscription_form(self) -> None:
-        # as user
-        self.get("/cde/lastschrift/form/download")
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-
-    def test_lastschrift_subscription_form_anonymous(self) -> None:
-        self.get("/cde/lastschrift/form/download")
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
-
     @as_users("vera", "charly")
     def test_lastschrift_subscription_form_fill(self) -> None:
         self.traverse(
@@ -1642,17 +1632,19 @@ class TestCdEFrontend(FrontendTest):
         )
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
+        f["iban"] = "DE23 8306 5408 0005 3744 99"
+        if self.user_in("vera"):
+            f["address"] = "Bahnhofstr 42"
+            f["location"] = "Bad Hersfeld"
         # test expected filename
-        if self.user_in("charly"):
-            f["full_name"] = ""
-            expected_filename = "DB-3-5_lastschrift_subscription_form.pdf"
-        else:
-            expected_filename = "DB-22-1_Vera_Verwaltung.pdf"
+        expected_filename = "_".join(
+            [self.user["DB-ID"]] + self.user["default_name_format"].split()
+        )
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertEqual(
+            f"inline; filename={expected_filename}.pdf",
             self.response.headers["Content-Disposition"],
-            f"inline; filename={expected_filename}",
         )
 
     @as_users("inga")
@@ -1664,21 +1656,11 @@ class TestCdEFrontend(FrontendTest):
         )
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
-        f["db_id"] = "DB-1-8"
         f["postal_code"] = "ABC"
         f["iban"] = "DE12500105170648489809"
         self.submit(f)
-        self.assertPresence("Checksumme stimmt nicht")
-        self.assertPresence("Ungültige Postleitzahl")
-        self.assertPresence("Ungültige Checksumme")
-
-    def test_lastschrift_subscription_form_fill_anonymous(self) -> None:
-        self.get("/cde/lastschrift/form/fill")
-        self.assertTitle("Einzugsermächtigung ausfüllen")
-        f = self.response.forms['filllastschriftform']
-        f["iban"] = "DE12500105170648489890"
-        self.submit(f)
-        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.assertValidationError('postal_code', "Ungültige Postleitzahl")
+        self.assertValidationError('iban', "Ungültige Checksumme")
 
     @storage
     @as_users("vera")
@@ -3024,7 +3006,7 @@ class TestCdEFrontend(FrontendTest):
             # no links are displayed to non-searchable users
             if not self.user_in("charly"):
                 # searchable member
-                self.traverse({'description': 'Ferdinand Findus'})
+                self.traverse("Ferdinand  Findus")
                 _traverse_back()
             else:
                 self.assertNoLink('/core/persona/2/show')

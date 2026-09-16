@@ -65,16 +65,23 @@
                 View Your {{ link }}.
             {% endtrans %}
         </p>
-    {% else %}
+    {% elif "cde" in user.roles %}
     <h2>{% trans %}Authorization Form{% endtrans %}</h2>
 
     <p>
         {% trans %}
-        	For legal reasons, we need the Direct Debit Authorization Form in written form.
-            Please fill out the form linked below and send it to us by mail (not E-Mail).
+            To participate, please fill out the form linked below and send it to us by e-mail or mail.
         {% endtrans %}
     </p>
 
     {{ util.href(cdedblink('cde/lastschrift_subscription_form_fill'), gettext("Participate"), aclass="btn btn-primary", icon='chevron-right') }}
+    {% else %}
+    <hr />
+    <p>
+        {% trans faq=util.href("https://www.cde-ev.de/wir/mitglied/faq/", gettext("FAQ")) %}
+            The Lastschriftinitiative is available for (former) members.
+            For more information about membership refer to the {{ faq }} at the CdE Website.
+        {% endtrans %}
+    </p>
     {% endif %}
 {% endblock %}

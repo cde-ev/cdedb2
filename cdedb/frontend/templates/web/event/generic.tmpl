@@ -286,10 +286,11 @@
     {% elif row.name == "PartSelection" %}
         {% if ambience['event'].parts|length > 1 %}
             {% set heading = row.get_toc_entries()[0] %}
+            {% set readonly = registration and not preview %}
             {{ util.h(heading.title, level=heading.level, underline=True) }}
             {{ util.form_input_checkboxes(
-                    name="parts", label=gettext("Event Parts"), entries=part_options, readonly=(registration and not preview),
-                    defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.")
+                    name="parts", label=gettext("Event Parts"), entries=part_options, readonly=readonly,
+                    defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.") if readonly
                 ) }}
         {% elif ambience['event'].parts|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event'].parts|list)[0]) }}

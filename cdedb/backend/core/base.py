@@ -1097,6 +1097,7 @@ class CoreBaseBackend(AbstractBackend):
             raise PrivilegeError(n_("Membership modification prevented."))
         if (
             current['decided_search']
+            and rs.user.new_roles.has(Roles.searchable)
             and not data.get("is_searchable", True)
             and not rs.user.new_roles.has_any(Roles.cde_admin, Roles.core_admin)
         ):

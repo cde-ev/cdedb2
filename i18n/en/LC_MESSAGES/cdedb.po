@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-12 23:05+0200\n"
+"POT-Creation-Date: 2026-09-16 20:27+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -8036,9 +8036,14 @@ msgid "Bildung & Begabung gem. GmbH"
 msgstr ""
 
 msgid ""
-"For legal reasons, we need the Direct Debit Authorization Form in written "
-"form. Please fill out the form linked below and send it to us by mail (not E-"
-"Mail)."
+"To participate, please fill out the form linked below and send it to us by e-"
+"mail or mail."
+msgstr ""
+
+#, python-format
+msgid ""
+"The Lastschriftinitiative is available for (former) members. For more "
+"information about membership refer to the %(faq)s at the CdE Website."
 msgstr ""
 
 msgid "Edit Direct Debit Authorization"
@@ -8276,6 +8281,15 @@ msgid ""
 msgstr ""
 
 msgid "Personal Information"
+msgstr ""
+
+#, python-format
+msgid ""
+"This data is taken from your personal profile. To change it, use this "
+"%(link)s."
+msgstr ""
+
+msgid "form to edit your profile"
 msgstr ""
 
 msgid "Address (of account holder)"
@@ -12385,15 +12399,6 @@ msgstr ""
 msgid "Notes for Orgas"
 msgstr ""
 
-#, python-format
-msgid ""
-"This data is taken from your personal profile. To change it, use this "
-"%(link)s."
-msgstr ""
-
-msgid "form to edit your profile"
-msgstr ""
-
 msgid ""
 "Any changes made to your profile data will be carried over automatically and "
 "shared with the orgateam."
@@ -14181,6 +14186,17 @@ msgstr ""
 msgid ""
 "Disable this in cases of lists with external correspondence (e.g. business "
 "emails) as there are actors causing problems with malformed emails."
+msgstr ""
+
+msgid "Replace the sender of all mails sent via this list"
+msgstr ""
+
+msgid ""
+"The sender will be shown as 'XY' via 'some list'. This reduces trouble with "
+"senders with bad DMARC policies. If this is disabled, this mitigation is "
+"only applied to known bad senders, otherwise it is applied to every mail. "
+"Disabling this may cause additional bounces for some subscribers and is not "
+"recommended for large mailinglists."
 msgstr ""
 
 msgid "max. message size (in kB)"
