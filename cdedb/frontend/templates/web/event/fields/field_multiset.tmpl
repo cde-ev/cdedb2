@@ -52,7 +52,7 @@
         {% endtrans %}
     </p>
     {% if ordered %}
-        <form action="{{ cdedblink('event/field_multiset') }}" method="POST" id="fieldform" class="form-horizontal">
+        <form action="{{ cdedblink('event/field_multiset') }}" method="POST" id="fieldform" class="form-horizontal protect">
             <p class="multiset-explanation text-info" style="display: none;">
                 {{ util.make_icon("info-circle") }}
                 {% trans %}
@@ -96,7 +96,7 @@
         </p>
     {% endif %}
     <script nonce="{{ csp_nonce }}">
-        $('#fieldform').cdedbProtectChanges().multiset(
+        $('#fieldform').multiset(
             '{{ util.make_icon("trash-alt") }}', '{{ gettext("Delete") }}',
             '{{ util.make_icon("redo") }}', '{{ gettext("Restore") }}',
         );

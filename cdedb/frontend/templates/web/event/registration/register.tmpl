@@ -88,7 +88,7 @@
         {% endif %}
     </p>
 
-    <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
+    <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal protect">
     {% if not preview %}
         {{ util.anti_csrf_token('event/register') }}
     {% endif %}
@@ -158,7 +158,8 @@
             'part_ids': {{ (ambience['event'].parts|list if ambience['event'].parts|length <= 1 else None)|tojson }},
         }
 
-        $form.cdedbProtectChanges().dynamicCourseChoices(ccos_per_part, part_map)
+        $form
+            .dynamicCourseChoices(ccos_per_part, part_map)
             .cdedbFeePreview(feePreviewConstants);
     </script>
 {% endblock %}

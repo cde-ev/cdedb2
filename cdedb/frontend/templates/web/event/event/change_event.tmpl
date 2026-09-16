@@ -30,7 +30,7 @@
         {% endif %}
     </div>
 
-    <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
+    <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal protect">
         {{ util.anti_csrf_token('event/change_event') }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
@@ -134,7 +134,4 @@
 
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=not is_privileged_for('change_event')) }}
     </form>
-    <script nonce="{{ csp_nonce }}">
-        $('#changeeventform').cdedbProtectChanges();
-    </script>
 {% endblock %}

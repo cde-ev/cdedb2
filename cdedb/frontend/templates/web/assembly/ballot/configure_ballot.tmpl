@@ -46,7 +46,7 @@
         {% set submit_endpoint="assembly/create_ballot" %}
         {% set cancel_endpoint="assembly/list_ballots" %}
     {% endif %}
-    <form action="{{ cdedblink(submit_endpoint) }}" method="POST" id="configureballotform" class="form-horizontal">
+    <form action="{{ cdedblink(submit_endpoint) }}" method="POST" id="configureballotform" class="form-horizontal protect">
         {{ util.anti_csrf_token(submit_endpoint) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
@@ -71,7 +71,4 @@
                                                 "visible to all CdE-Members and Assembly-Participants.")) }}
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink(cancel_endpoint)) }}
     </form>
-    <script nonce="{{ csp_nonce }}">
-        $('#configureballotform').cdedbProtectChanges();
-    </script>
 {% endblock %}

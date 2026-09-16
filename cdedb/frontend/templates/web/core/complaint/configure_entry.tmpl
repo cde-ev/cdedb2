@@ -67,7 +67,7 @@
         {% if is_revocation or parent_id %}
             {{ generic_complaint.entry_parent(ambience['entry']) }}
         {% endif %}
-        <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal"
+        <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal protect"
               {% if entry_type.allows_attachment %}enctype="multipart/form-data"{% endif %}>
             {{ util.anti_csrf_token(action_target) }}
 
@@ -142,8 +142,4 @@
             {% endif %}
         </form>
     {% endif %}
-
-    <script nonce="{{ csp_nonce }}">
-        $('#configureentryform').cdedbProtectChanges();
-    </script>
 {% endblock %}

@@ -20,13 +20,8 @@
 {% endblock %}
 
 {% block content %}
-    <script nonce="{{ csp_nonce }}">
-        $(function() {
-            $('#changelastschriftform').cdedbProtectChanges();
-        });
-    </script>
     <form action="{{ cdedblink('cde/lastschrift_change') }}" method="POST" id="changelastschriftform"
-          class="form-horizontal">
+          class="form-horizontal protect">
         {{ util.anti_csrf_token('cde/lastschrift_change') }}
         {{ util.form_input_static(label=gettext("Member"),
                                   value=persona|persona_name(with_titles=True)) }}

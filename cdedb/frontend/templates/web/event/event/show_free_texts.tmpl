@@ -27,7 +27,7 @@
             button=generic.edit_free_text_button(key, display=(edit != key))) %}
         {# Form is hidden unless edit matches. #}
         <form action="{{ cdedblink('event/change_free_text') }}" method="POST"
-                id="changefreetextform-{{ key }}" class="form-horizontal freetextform"
+                id="changefreetextform-{{ key }}" class="form-horizontal freetextform protect"
                 {% if edit != key %}style="display: none;"{% endif %}>
             {{ util.input_hidden('free_text_key', key) }}
             {{ util.anti_csrf_token('event/change_free_text') }}
@@ -94,8 +94,4 @@
     {{ render_free_text_panel("participant_info", gettext("Participant Info"), gettext('Shown on the "Participant Info" page only to participants.'), "info") }}
     {{ render_free_text_panel("field_definition_notes", gettext("Custom Field Notes"), gettext('Shown to orgas on the "Configure Custom Fields" page.'), "tag") }}
     {{ render_free_text_panel("questionnaire_notes", gettext("Questionnaire Notes"), gettext('Shown to orgas on the "Configure Questionnaire" and "Conigure Registration" pages.'), "tag") }}
-    <script nonce="{{ csp_nonce }}">
-        // Do this once for all forms, otherwise it only applies to the last one.
-        $('.freetextform').cdedbProtectChanges();
-    </script>
 {% endblock %}
