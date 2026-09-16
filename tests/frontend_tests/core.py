@@ -26,7 +26,7 @@ from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import AdminViews, Realms, Roles, RoleSet
-from cdedb.filter import iban_filter
+from cdedb.filter import cdedbid_filter, iban_filter
 from tests.common import (
     ANONYMOUS,
     USER_DICT,
@@ -2826,7 +2826,11 @@ class TestCoreFrontend(FrontendTest):
         # accidently correct for the personas table.
         execsql("SELECT setval('core.personas_id_seq', 2000);")
 
-        self.submit(f, button="decision", value=str(GenesisDecision.approve))
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve_grant_trial_membership),
+        )
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()
@@ -2926,7 +2930,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
         self.submit(f)
-        self._decide_genesis_case(GenesisDecision.approve)
+        self._decide_genesis_case(GenesisDecision.approve_grant_trial_membership)
         assert_account_presence(ml=False, event=True, cde=False)
 
         # decide event request
@@ -3196,14 +3200,9 @@ class TestCoreFrontend(FrontendTest):
             f,
             button="decision",
             value=str(GenesisDecision.approve),
-            check_notification=False,
         )
         new_persona_id = 1001
         log_expectation.extend([
-            {
-                'code': const.CoreLogCodes.genesis_change,
-                'change_note': self.EVENT_GENESIS_DATA['username'],
-            },
             {
                 'code': const.CoreLogCodes.persona_creation,
                 'persona_id': new_persona_id,
@@ -3259,7 +3258,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(
             f,
             button="decision",
-            value=str(GenesisDecision.approve),
+            value=str(GenesisDecision.approve_grant_trial_membership),
             check_notification=False,
         )
         self.assertPresence(
@@ -3289,12 +3288,12 @@ class TestCoreFrontend(FrontendTest):
                 'change_note': alternate_username,
             },
             {
-                'code': const.CoreLogCodes.genesis_merged,
+                'code': const.CoreLogCodes.username_change,
                 'persona_id': new_persona_id,
                 'change_note': alternate_username,
             },
             {
-                'code': const.CoreLogCodes.username_change,
+                'code': const.CoreLogCodes.genesis_merged,
                 'change_note': alternate_username,
                 'persona_id': new_persona_id,
             },
@@ -3325,13 +3324,15 @@ class TestCoreFrontend(FrontendTest):
             f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
             f" {self.CDE_GENESIS_DATA['family_name']}"
         )
-        self._decide_genesis_case(GenesisDecision.approve, check=False)
+        self._decide_genesis_case(
+            GenesisDecision.approve_grant_trial_membership, check=False
+        )
         self.assertNotification("müssen eine vergangene Veranstaltung enthalten")
         self.traverse("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
         self.submit(f)
-        self._decide_genesis_case(GenesisDecision.approve)
+        self._decide_genesis_case(GenesisDecision.approve_grant_trial_membership)
         new_persona_id = 1001
 
         # archive the new user
@@ -3363,7 +3364,9 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f["pevent_id"] = 1
         self.submit(f)
-        self._decide_genesis_case(GenesisDecision.approve, persona_id=1001)
+        self._decide_genesis_case(
+            GenesisDecision.approve_grant_trial_membership, persona_id=1001
+        )
 
         # Check that the data of the second genesis request persisted
         self.traverse(
@@ -3387,7 +3390,7 @@ class TestCoreFrontend(FrontendTest):
         )
         self.assertPresence("(archiviert)", div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
-        f['persona_id'] = hades['id']
+        f['persona_id'] = hades["DB-ID"]
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         self.assertPresence("Account aktualisiert.", div="notifications")
 
@@ -3399,7 +3402,7 @@ class TestCoreFrontend(FrontendTest):
     ) -> None:
         f = self.response.forms['genesisdecisionform']
         if persona_id:
-            f['persona_id'] = persona_id
+            f['persona_id'] = cdedbid_filter(persona_id)
         self.submit(f, button='decision', value=str(decision), check_notification=check)
 
     @as_users("annika")
@@ -3474,6 +3477,113 @@ class TestCoreFrontend(FrontendTest):
             check_notification=False,
         )
         self.assertNotification("Accountanfrage via TOR exit node blockiert.", "error")
+
+    @storage
+    def test_genesis_upgrade(self) -> None:
+        with self.switch_user("simon"):
+            # Check links to get to the upgrade page.
+            self.traverse("Simon", "Mitgliedschaft beantragen")
+            self.assertTitle("CdE-Mitgliedschaft beantragen")
+            self.traverse("Veranstaltungen", "Große Testakademie", "Anmelden")
+            self.assertPresence("kein CdE-Mitglied bist, musst Du möglicherweise einen")
+            self.traverse("deine Mitgliedschaft im CdE beantragen")
+            self.assertTitle("CdE-Mitgliedschaft beantragen")
+
+            # Submit Simons upgrade request.
+            f = self.response.forms["genesis-upgrade"]
+            self.submit(f, check_notification=False)
+            msg = "Eine Datei muss hochgeladen oder eine Vergangene Veranstaltung"
+            # No error at the field, because it is not shown, since there are no
+            #  past events to choose from.
+            # self.assertValidationError("pevent_id", msg)
+            self.assertValidationError("attachment", msg)
+            f = self.response.forms["genesis-upgrade"]
+            # simon participated at no past event
+            with self.assertRaisesRegex(
+                AssertionError, "No field by the name 'pevent_id' found"
+            ):
+                f["pevent_id"] = 1
+            with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
+                data = datafile.read()
+            f["attachment"] = webtest.Upload(
+                "file.pdf", data, content_type="application/pdf"
+            )
+            self.submit(f)
+
+        def _submit_emilia() -> None:
+            with self.switch_user("emilia"):
+                # Submit Emilias upgrade request.
+                self.traverse("Emilia", "Mitgliedschaft beantragen")
+                self.assertTitle("CdE-Mitgliedschaft beantragen")
+                f = self.response.forms["genesis-upgrade"]
+                f["pevent_id"].select(text="PfingstAkademie 2014")
+                self.submit(f)
+
+                # Submitting an upgrade request multiple times is disallowed
+                self.get("/core/genesis/upgrade")
+                self.assertNotification("Du hast bereits eine laufende Upgradeanfrage.")
+
+        _submit_emilia()
+
+        # Approve both upgrade requests.
+        with self.switch_user("quintus"):
+            self.traverse("Accountanfragen", "Details")
+            self.assertTitle("Upgradeanfrage von Emilia Eventis")
+            self.assertPresence("PfingstAkademie 2014")
+            f = self.response.forms["genesisdecisionform"]
+            self.submit(
+                f,
+                button="decision",
+                value=str(GenesisDecision.approve),
+                check_notification=False,
+            )
+            self.assertNotification(
+                "Nur Core-Admins können Accountupgrades bestätigen."
+            )
+            self.submit(
+                f,
+                button="decision",
+                value=str(GenesisDecision.deny),
+                check_notification=False,
+            )
+            self.assertNotification("Anfrage abgewiesen.")
+
+            self.assertTitle("Accountanfragen")
+            self.traverse("Emilia Eventis")
+            self.assertTitle("Upgradeanfrage von Emilia Eventis")
+            self.assertNotIn("genesisdecisionform", self.response.forms)
+
+        _submit_emilia()
+
+        with self.switch_user("vera"):
+            self.admin_view_profile("emilia")
+            self.assertNonPresence("CdE", div="has-realm")
+
+            self.admin_view_profile("simon")
+            self.assertNonPresence("CdE", div="has-realm")
+
+            self.traverse("Accountanfragen", "Details")
+            self.assertTitle("Upgradeanfrage von Emilia Eventis")
+            self.assertPresence("PfingstAkademie 2014")
+            f = self.response.forms["genesisdecisionform"]
+            self.submit(f, button="decision", value=str(GenesisDecision.approve))
+
+            self.traverse("Accountanfragen", "Details")
+            self.assertTitle("Upgradeanfrage von Simon Struktur")
+            f = self.response.forms["genesisdecisionform"]
+            self.traverse("Anhang herunterladen")
+            self.assertTrue(self.response.body.startswith(b"%PDF"))
+            self.submit(
+                f,
+                button="decision",
+                value=str(GenesisDecision.approve_grant_trial_membership),
+            )
+
+            self.admin_view_profile("emilia")
+            self.assertPresence("CdE", div="has-realm")
+
+            self.admin_view_profile("simon")
+            self.assertPresence("CdE", div="has-realm")
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
@@ -3674,8 +3784,11 @@ class TestCoreFrontend(FrontendTest):
         f['pcourse_id'] = 1
         self.submit(f)
         f = self.response.forms['genesisdecisionform']
-        self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        logs.append(const.CoreLogCodes.genesis_change)
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve_grant_trial_membership),
+        )
         logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.persona_creation)
@@ -3685,7 +3798,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Details")
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.persona_creation)
         logs.append(const.CoreLogCodes.genesis_approved)
         logs.append(const.CoreLogCodes.password_reset_cookie)

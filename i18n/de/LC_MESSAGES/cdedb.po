@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-13 20:17+0200\n"
+"POT-Creation-Date: 2026-09-16 20:27+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -605,6 +605,9 @@ msgstr "Passwort zurückgesetzt"
 
 msgid "CoreLogCodes.password_invalidated"
 msgstr "Passwort gelöscht"
+
+msgid "CoreLogCodes.genesis_upgrade_requested"
+msgstr "Accountupgrade beantragt"
 
 msgid "CoreLogCodes.genesis_request"
 msgstr "Neue Accountanfrage"
@@ -3180,6 +3183,9 @@ msgstr "Unbekannte Nachrichten-ID."
 msgid "Blocked genesis request from TOR exit node."
 msgstr "Accountanfrage via TOR exit node blockiert."
 
+msgid "Invalid account for upgrade request."
+msgstr "Ungültiger Account für eine Upgradeanfrage."
+
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 "Accountanfrage kann vor Ablauf der Verifizierung nicht gelöscht werden."
@@ -3194,8 +3200,11 @@ msgstr "Accountanfrage ist bereits abgeschlossen."
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
-msgid "Genesis modification failed."
-msgstr "Modifikation fehlgeschlagen."
+msgid "Granting CdE realm failed."
+msgstr "CdE-Bereich Hinzufügung ist fehlgeschlagen."
+
+msgid "Email address already taken."
+msgstr "Emailadresse bereits vergeben."
 
 msgid "Dearchival failed."
 msgstr "Fehler bei der Wiederherstellung."
@@ -3203,11 +3212,8 @@ msgstr "Fehler bei der Wiederherstellung."
 msgid "Username change failed."
 msgstr "Fehler bei Aktualisierung des Benutzernamens."
 
-msgid "Email address already taken."
-msgstr "Emailadresse bereits vergeben."
-
-msgid "Invalid genesis state."
-msgstr "Ungültiger Zustand für Accountanfrage."
+msgid "Genesis modification failed."
+msgstr "Modifikation fehlgeschlagen."
 
 msgid "Event mismatch."
 msgstr "Falsche Veranstaltung."
@@ -4488,6 +4494,11 @@ msgstr "Gib den Namen des Landes auf Englisch an."
 msgid "Birthday was less than a year ago. Please check the birth year."
 msgstr ""
 "Geburtstag war vor weniger als einem Jahr. Bitte überprüfe das Geburtsjahr."
+
+msgid "Must provide at least one of an attachment and a past event."
+msgstr ""
+"Eine Datei muss hochgeladen oder eine Vergangene Veranstaltung angegeben "
+"werden."
 
 msgid "Not a FileStorage."
 msgstr "Muss ein FileStorage sein."
@@ -5934,6 +5945,18 @@ msgstr ""
 "Wir haben dir eine E-Mail gesendet. Um die Accountanfrage abzuschließen, "
 "besuche bitte den in der E-Mail enthaltenen Link."
 
+msgid "You already have CdE realm."
+msgstr "Du bist bereits zur Mitgliedschaft im CdE berechtigt."
+
+msgid "You already have a pending account upgrade request."
+msgstr "Du hast bereits eine laufende Upgradeanfrage."
+
+msgid "You didn't participate at this event."
+msgstr "Du hast an dieser Veranstaltung nicht teilgenommen."
+
+msgid "Your request has been submitted."
+msgstr "Deine Anfrage wurde abgeschickt."
+
 msgid "Verification failed. Please contact the administrators."
 msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 
@@ -5961,18 +5984,24 @@ msgstr ""
 msgid "You need to specify a past event for CdE genesis requests."
 msgstr "CdE Account Anfragen müssen eine vergangene Veranstaltung enthalten."
 
+msgid "Only core admins may approve upgrade requests."
+msgstr "Nur Core-Admins können Accountupgrades bestätigen."
+
+msgid "Case rejected."
+msgstr "Anfrage abgewiesen."
+
 msgid "Past event attendance could not be established."
 msgstr ""
 "Teilnahme an vergangener Veranstaltung konnte nicht eingetragen werden."
+
+msgid "Account upgraded."
+msgstr "Accountupgrade durchgeführt."
 
 msgid "Case approved."
 msgstr "Antrag genehmigt."
 
 msgid "User updated."
 msgstr "Account aktualisiert."
-
-msgid "Case rejected."
-msgstr "Anfrage abgewiesen."
 
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
@@ -6473,23 +6502,6 @@ msgstr ""
 
 msgid "Must be Orga to use preview."
 msgstr "Du musst Orga sein, um die Fragebogen-Vorschau zu nutzen."
-
-#, python-format
-msgid ""
-"Because you are not a CdE-Member, you will have to pay an additional "
-"\"External Fee\" of %(additional_fee)s (already included in the figure "
-"below)."
-msgstr ""
-"Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen "
-"\"Externenbeitrag\" in Höhe von %(additional_fee)s bezahlen (ereits in der "
-"folgenden Summe enthalten)."
-
-msgid ""
-"If you pay your membership fee before your registration fee, the additional "
-"fee will be waived."
-msgstr ""
-"Wenn du deinen Mitgliedsbeitrag vor deinem Teilnahmebeitrag bezahlst, wird "
-"dieser Zusatzbeitrag erlassen."
 
 msgid "Instructed course must not be chosen."
 msgstr "Geleiteter Kurs kann nicht gewählt werden."
@@ -8687,6 +8699,17 @@ msgstr ""
 msgid "Personal Information"
 msgstr "Person"
 
+#, python-format
+msgid ""
+"This data is taken from your personal profile. To change it, use this "
+"%(link)s."
+msgstr ""
+"Diese Daten werden aus Deinem persönlichen Profil übernommen. Um sie zu "
+"ändern, verwende bitte das %(link)s."
+
+msgid "form to edit your profile"
+msgstr "Fomular zum Bearbeiten des Profils"
+
 msgid "Address (of account holder)"
 msgstr "Anschrift (der Kontoinhaber:in)"
 
@@ -10051,6 +10074,12 @@ msgstr "Versammlungs-Accountanfragen"
 msgid "Mailinglist Account Requests"
 msgstr "Mailinglisten-Accountanfragen"
 
+msgid ""
+"Account upgrade requested by existing user. Please check for eligibility."
+msgstr ""
+"Upgrade eines bereits bestehenden Accounts beantragt. Bitte auf Legitimität "
+"überprüfen."
+
 #, python-format
 msgid "There are currently no %(realm)s pending for approval."
 msgstr "Aktuell stehen keine %(realm)s zur Bestätigung aus."
@@ -10059,14 +10088,21 @@ msgid "Recently Concluded Account Requests"
 msgstr "Kürzlich geschlossene Accountanfragen"
 
 #, python-format
+msgid "Edit Upgrade Request (%(name)s)"
+msgstr "Upgradeanfrage bearbeiten (%(name)s)"
+
+#, python-format
 msgid "Edit Account Request (%(name)s)"
 msgstr "Accountanfrage bearbeiten (%(name)s)"
 
-msgid "Account Request"
-msgstr "Accountanfrage"
-
 msgid "Edit Account Request"
 msgstr "Accountanfrage bearbeiten"
+
+msgid "Edit Upgrade Request"
+msgstr "Upgradeanfrage bearbeiten"
+
+msgid "Account Request"
+msgstr "Accountanfrage"
 
 msgid "Rationale"
 msgstr "Begründung"
@@ -10122,6 +10158,51 @@ msgstr "Bitte lade hier eine Teilnahmeurkunde von deiner DSA, DJA, etc. hoch."
 msgid "Confirm Request"
 msgstr "Anfrage abschicken"
 
+msgid "Request CdE Membership"
+msgstr "CdE-Mitgliedschaft beantragen"
+
+msgid ""
+"With the following form you can voice your desire to become a CdE member."
+msgstr ""
+"Mit diesem Formular kannst du deinen Wunsch äußern CdE Mitglied zu werden."
+
+msgid "If you participated at a DSA, DJA etc.:"
+msgstr "Wenn du an einer DSA, DJA o.ä. teilgenommen hast:"
+
+msgid ""
+"Upload your participation certificate below. Once your request is approved, "
+"you will receive a notification and automatically be granted a free trial "
+"membership."
+msgstr ""
+"Lade unten deine Teilnahmeurkunde hoch. Nachdem wir deine Anfrage bestätigt "
+"haben, erhältst du eine Benachrichtigung und eine kostenlose "
+"Probemitgliedschaft im CdE."
+
+msgid "Alternatively, if you participated at a CdE event:"
+msgstr "Andernfalls, wenn du an einer CdE Veranstaltung teilgenommen hast:"
+
+msgid ""
+"Select your event in the dropdown below. Take care that the selected event "
+"makes you elegible to become a CdE member, i.e. is a longer CdE event. Once "
+"your request is approved, you will receive a notification and need to "
+"transfer the membership fee to become a member."
+msgstr ""
+"Wähle die entsprechende Veranstaltung im Dropdown Menü unten aus. Achte "
+"darauf, dass die Teilnahme an der Veranstaltung dich zur Aufnahme in den CdE "
+"berechtigt, in der Regel sind dies längere CdE-Akademien. Sobald deine "
+"Anfrage bestätigt wurde, erhältst du eine Benachrichtigung und musst dann "
+"noch den Mitgliedsbeitrag überweisen um Mitglied im CdE zu werden."
+
+msgid ""
+"Select one of your past events which entitles you to become a CdE member."
+msgstr ""
+"Wähle eine deiner Vergangenen Veranstaltungen aus, die dich zur "
+"Mitgliedschaft im CdE berechtigt."
+
+#, python-format
+msgid "Upgrade Request of %(name)s"
+msgstr "Upgradeanfrage von %(name)s"
+
 #, python-format
 msgid "Account Request of %(name)s"
 msgstr "Accountanfrage von %(name)s"
@@ -10153,14 +10234,6 @@ msgstr "Gutachter:in"
 msgid "Persona Information"
 msgstr "Personeninformationen"
 
-msgid ""
-"Trial membership will automatically be granted if the persona is not a "
-"member. You can undo this by changing their profile afterwards."
-msgstr ""
-"Dieser Person wird automatisch eine Probemitgliedschaft gewährt, wenn sie "
-"aktuell kein Mitglied ist. Dies kann später durch Bearbeitung des Profils "
-"rückgängig gemacht werden."
-
 msgid "Academy Information"
 msgstr "Akademie-Informationen"
 
@@ -10189,6 +10262,9 @@ msgstr "Willkommensmail"
 
 msgid "Approve"
 msgstr "Genehmigen"
+
+msgid "Approve (grant trial membership)"
+msgstr "Genehmigen (Probemitgliedschaft)"
 
 msgid "Reject"
 msgstr "Ablehnen"
@@ -10761,11 +10837,8 @@ msgstr "Bürgerlichen Vornamen für Mitgliedersuche anzeigen"
 msgid "Account active"
 msgstr "Account aktiv"
 
-#, python-format
-msgid "To request an upgrade to a member account, contact %(mailto)s."
-msgstr ""
-"Um ein Upgrade auf einen Mitgliederaccount zu beantragen, kontaktiere "
-"%(mailto)s."
+msgid "Request membership"
+msgstr "Mitgliedschaft beantragen"
 
 msgid "Change Status"
 msgstr "Status ändern"
@@ -13173,12 +13246,36 @@ msgstr ""
 "Mediensammlung verwendet werden. Einzelne Fotos und Aufnahmen können auf "
 "gesonderten Wunsch hin davon ausgenommen werden."
 
+msgid "For former members:"
+msgstr "Für ehemalige Mitglieder:"
+
 msgid ""
 "Because you are not a CdE-Member, you might have to pay an additional "
 "\"External Fee\"."
 msgstr ""
 "Da Du kein CdE-Mitglied bist, musst Du möglicherweise einen zuätzlichen "
 "\"Extenenbeitrag\" bezahlen."
+
+msgid ""
+"If you pay your membership fee before your registration fee, the additional "
+"fee will be waived."
+msgstr ""
+"Wenn du deinen Mitgliedsbeitrag vor deinem Teilnahmebeitrag bezahlst, wird "
+"dieser Zusatzbeitrag erlassen."
+
+msgid "For externals:"
+msgstr "Für Externe:"
+
+#, python-format
+msgid ""
+"You can also %(link)s instead. Note that it can take a couple of days before "
+"we can process your request."
+msgstr ""
+"Du kannst stattdessen auch %(link)s. Beachte das es ein paar Tage dauern "
+"kann bis wir deinen Antrag bearbeiten."
+
+msgid "request a CdE membership"
+msgstr "deine Mitgliedschaft im CdE beantragen"
 
 msgid "In order to change the parts you are registered for, contact the orgas."
 msgstr ""
@@ -13214,17 +13311,6 @@ msgstr "Anmerkungen für Orgas und Kursleitende"
 
 msgid "Notes for Orgas"
 msgstr "Anmerkungen für Orgas"
-
-#, python-format
-msgid ""
-"This data is taken from your personal profile. To change it, use this "
-"%(link)s."
-msgstr ""
-"Diese Daten werden aus Deinem persönlichen Profil übernommen. Um sie zu "
-"ändern, verwende bitte das %(link)s."
-
-msgid "form to edit your profile"
-msgstr "Fomular zum Bearbeiten des Profils"
 
 msgid ""
 "Any changes made to your profile data will be carried over automatically and "

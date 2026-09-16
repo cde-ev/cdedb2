@@ -1077,17 +1077,12 @@ class CoreBaseBackend(AbstractBackend):
             raise ValueError(n_("Persona does not exist."))
         if not may_wait and generation is not None:
             raise ValueError(n_("Non-waiting change without generation override."))
-        realm_keys = {
-            'is_cde_realm',
-            'is_event_realm',
-            'is_ml_realm',
-            'is_assembly_realm',
-        }
-        if set(data) & realm_keys and (
-            Roles.core_admin not in rs.user.new_roles
-            or not {"realms", "purge"} & set(allow_specials)
-        ):
-            raise PrivilegeError(n_("Realm modification prevented."))
+        realm_keys = set(Realms.all().realm_markers)
+        if set(data) & realm_keys:
+            if not {"realms", "purge"} & set(
+                allow_specials
+            ) or not rs.user.new_roles.has(Roles.core_admin):
+                raise PrivilegeError(n_("Realm modification prevented."))
         if set(data) & set(Roles.all_admin_roles().markers()) and (
             Roles.meta_admin not in rs.user.new_roles or "admins" not in allow_specials
         ):
@@ -2830,7 +2825,7 @@ class CoreBaseBackend(AbstractBackend):
     @access(*Roles.all_user_admin_roles())
     def create_persona(
         self, rs: RequestState, data: CdEDBObject, submitted_by: int | None = None
-    ) -> DefaultReturnCode:
+    ) -> vtypes.PersonaID:
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -2887,7 +2882,7 @@ class CoreBaseBackend(AbstractBackend):
             # apply the previously stashed changes
             if any(stash.values()):
                 self.change_membership_easy_mode(rs, new_id, **stash)
-        return new_id
+        return vtypes.PersonaID(vtypes.ID(new_id))
 
     @access(Roles.anonymous)
     def login(
@@ -3206,9 +3201,10 @@ class CoreBaseBackend(AbstractBackend):
                 FROM core.genesis_cases
                 WHERE username = %(username)s AND status = ANY(%(stati)s)
             """
-            # This should be all stati which are not final.
+            # Consider only open genesis stati.
             params["stati"] = (
-                set(const.GenesisStati) - const.GenesisStati.finalized_stati()
+                const.GenesisStati.unconfirmed,
+                const.GenesisStati.to_review,
             )
             num += unwrap(self.query_one(rs, query, params)) or 0
         return bool(num)
@@ -3240,7 +3236,11 @@ class CoreBaseBackend(AbstractBackend):
             raise ValueError(n_("Persona does not exist."))
 
         if not self.is_admin(rs) and Roles.meta_admin not in rs.user.new_roles:
-            if self.get_persona_status(rs, persona_id).is_any_admin:
+            persona_status = self.get_persona_status(rs, persona_id)
+            if (
+                not self._is_relative_admin(rs, persona_status)
+                and persona_status.is_any_admin
+            ):
                 raise AdminPasswordResetError(n_("Preventing reset of admin."))
 
         # This defines a specific account/password combination as purpose

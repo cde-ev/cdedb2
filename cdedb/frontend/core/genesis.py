@@ -26,6 +26,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTfile,
     access,
+    check_validation as check,
     extract_and_check_dataclass_validation as extract_and_check_dataclass,
     periodic,
 )
@@ -208,6 +209,91 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 " follow the link contained in the email."
             ),
         )
+        return self.redirect(rs, "core/index")
+
+    @access(Roles.event)
+    def genesis_request_upgrade_form(self, rs: RequestState) -> Response:
+        """Render form."""
+        rs.ignore_validation_errors()
+        assert rs.user.persona_id is not None
+        if "cde" in rs.user.roles:
+            rs.notify("info", rs.gettext("You already have CdE realm."))
+            return self.redirect(rs, "core/index")
+        if self.coreproxy.genesis_has_upgrade_request(rs, rs.user.persona_id):
+            rs.notify(
+                "info",
+                rs.gettext("You already have a pending account upgrade request."),
+            )
+            return self.redirect(rs, "core/index")
+        participated = self.pasteventproxy.list_persona_events(rs, rs.user.persona_id)
+        pevents = {int(p.pevent_id): p.pevent for p in participated.values()}
+        return self.render(
+            rs,
+            "genesis/genesis_request_upgrade",
+            {
+                "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
+            },
+        )
+
+    @access(Roles.event, modi={"POST"})
+    @REQUESTdata("attachment_hash", "pevent_id", "attachment_filename")
+    @REQUESTfile("attachment")
+    def genesis_request_upgrade(
+        self,
+        rs: RequestState,
+        attachment: werkzeug.datastructures.FileStorage | None,
+        attachment_hash: vtypes.Identifier | None = None,
+        attachment_filename: str | None = None,
+        pevent_id: int | None = None,
+    ) -> Response:
+        """Request an upgrade to a higher realm.
+
+        Currently, only upgrades from event to cde realm are supported.
+        """
+        assert rs.user.persona_id is not None
+        if "cde" in rs.user.roles:
+            rs.notify("error", rs.gettext("You already have CdE realm."))
+            return self.redirect(rs, "core/index")
+        if self.coreproxy.genesis_has_upgrade_request(rs, rs.user.persona_id):
+            rs.notify(
+                "error",
+                rs.gettext("You already have a pending account upgrade request."),
+            )
+            return self.redirect(rs, "core/index")
+        rs.values['attachment_hash'], rs.values['attachment_filename'] = (
+            self.locate_or_store_attachment(
+                rs,
+                self.coreproxy.get_genesis_attachment_store(rs),
+                attachment,
+                attachment_hash,
+                attachment_filename,
+                is_mandatory=False,
+            )
+        )
+
+        data: CdEDBObject = {
+            "attachment_hash": rs.values['attachment_hash'],
+            "pevent_id": pevent_id,
+        }
+
+        # We need to mock some data so our usual logic works.
+        persona = self.coreproxy.get_persona(rs, rs.user.persona_id)
+        data["username"] = persona.username
+        data["given_names"] = persona.given_names
+        data["family_name"] = persona.family_name
+
+        pevents = self.pasteventproxy.list_persona_events(rs, rs.user.persona_id)
+        if pevent_id and pevent_id not in pevents:
+            msg = ValueError(n_("You didn't participate at this event."))
+            rs.append_validation_error(("pevent_id", msg))
+            return self.genesis_request_upgrade_form(rs)
+
+        data = check(rs, models.GenesisUpgrade, data, creation=True)
+        if rs.has_validation_errors():
+            return self.genesis_request_upgrade_form(rs)
+
+        ret = self.coreproxy.genesis_request_upgrade(rs, data)
+        rs.notify_return_code(ret, success=n_("Your request has been submitted."))
         return self.redirect(rs, "core/index")
 
     @access(Roles.anonymous)
@@ -469,6 +555,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         """Edit a case to fix potential issues before creation."""
         case = rs.ambience['genesis_case']
         case_model = models.GenesisCase.get_model_by_realm(case.realm)
+        if case.is_upgrade:
+            case_model = models.GenesisUpgrade
         data = extract_and_check_dataclass(
             rs, case_model, creation=False, additional_data={"id": genesis_case_id}
         )
@@ -529,7 +617,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs: RequestState,
         genesis_case_id: int,
         decision: GenesisDecision,
-        persona_id: int | None,
+        persona_id: vtypes.PersonaID | None,
     ) -> Response:
         """Approve or decline a genensis case.
 
@@ -541,48 +629,60 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.genesis_show_case(rs, genesis_case_id)
         case = rs.ambience['genesis_case']
 
-        # Do privilege and sanity checks.
+        # Do privilege checks.
         if case.realm not in rs.user.new_roles.get_genesis_realms():
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.redirect(rs, "core/genesis_show_case")
-        # simplify the UI by displaying only one button
-        if persona_id and decision == GenesisDecision.approve:
-            decision = GenesisDecision.update
-        if decision.is_create() and self.coreproxy.verify_existence(
-            rs, case.persona.username, include_genesis=False
-        ):
-            rs.notify("error", n_("Email address already taken."))
-            return self.redirect(rs, "core/genesis_show_case")
-        if decision.is_update():
-            assert persona_id is not None
-            if not self.coreproxy.verify_persona(rs, persona_id, case.realm.role):
+
+        creation = False
+        # Do some sanity checks.
+        if decision.is_approved() and not case.is_upgrade:
+            if persona_id is None:
+                creation = True
+                if self.coreproxy.verify_existence(
+                    rs, case.persona.username, include_genesis=False
+                ):
+                    rs.notify("error", n_("Email address already taken."))
+                    return self.redirect(rs, "core/genesis_show_case")
+            elif not self.coreproxy.verify_persona(rs, persona_id, case.realm.role):
                 msg = n_(
                     "Invalid persona for update. Add additional realm first: %(realm)s."
                 )
                 rs.notify("error", msg, {'realm': rs.gettext(str(case.realm))})
                 return self.redirect(rs, "core/genesis_show_case")
-        if case.realm == Realms.cde and decision.is_create() and case.pevent_id is None:
-            rs.notify(
-                "error",
-                n_("You need to specify a past event for CdE genesis requests."),
-            )
+            if case.realm == Realms.cde and case.pevent_id is None:
+                rs.notify(
+                    "error",
+                    n_("You need to specify a past event for CdE genesis requests."),
+                )
+                return self.redirect(rs, "core/genesis_show_case")
+        if (
+            decision.is_approved()
+            and case.is_upgrade
+            and "core_admin" not in rs.user.roles
+        ):
+            rs.notify("error", n_("Only core admins may approve upgrade requests."))
             return self.redirect(rs, "core/genesis_show_case")
 
         # Apply the decision.
         persona_id = self.coreproxy.genesis_decide(
             rs, genesis_case_id, decision, persona_id
         )
-        if not persona_id:  # Purely an error case. # pragma: no cover
-            rs.notify("error", n_("Failed."))
-            return self.genesis_show_case(rs, genesis_case_id)
+        if not persona_id:
+            self.do_mail(
+                rs,
+                "genesis/genesis_declined",
+                {
+                    'To': (case.persona.username,),
+                    'Subject': "CdEDB Accountanfrage abgelehnt",
+                },
+            )
+            rs.notify("info", n_("Case rejected."))
+            return self.redirect(rs, "core/genesis_list_cases")
 
-        if (
-            (decision.is_create() or decision.is_update())
-            and case.pevent_id
-            and case.realm == Realms.cde
-        ):
+        if decision.is_approved() and case.pevent_id and case.realm == Realms.cde:
             code = 1
             if not self.pasteventproxy.is_participant(rs, case.pevent_id, persona_id):
                 code *= self.pasteventproxy.set_participant(
@@ -598,30 +698,32 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 )
 
         # Send notification to the user, depending on decision.
-        if decision.is_create():
+        if decision.is_approved():
             persona = self.coreproxy.get_persona(rs, persona_id)
             status = self.coreproxy.get_persona_status(rs, persona_id)
-            is_trial_member = case.realm == "cde"
-            self.send_welcome_mail(rs, persona, status, is_trial_member=is_trial_member)
-            rs.notify("success", n_("Case approved."))
-        elif decision.is_update():
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            reset_link = self._password_reset_link(rs, persona_id)
-            self.do_mail(
-                rs,
-                "genesis/genesis_updated",
-                {'To': (persona.username,), 'Subject': "CdEDB-Account reaktiviert"},
-                {'persona': persona, "reset_link": reset_link},
-            )
-            rs.notify("success", n_("User updated."))
-        else:
-            self.do_mail(
-                rs,
-                "genesis/genesis_declined",
-                {
-                    'To': (case.persona.username,),
-                    'Subject': "CdEDB Accountanfrage abgelehnt",
-                },
-            )
-            rs.notify("info", n_("Case rejected."))
+            if case.realm == Realms.cde:
+                trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member
+            else:
+                trial_member = False
+
+            if case.is_upgrade or creation:
+                self.send_welcome_mail(
+                    rs, persona, status, is_trial_member=trial_member
+                )
+                rs.notify(
+                    "success",
+                    n_("Account upgraded.")
+                    if case.is_upgrade
+                    else n_("Case approved."),
+                )
+
+            else:
+                reset_link = self._password_reset_link(rs, persona_id)
+                self.do_mail(
+                    rs,
+                    "genesis/genesis_updated",
+                    {'To': (persona.username,), 'Subject': "CdEDB-Account reaktiviert"},
+                    {'persona': persona, "reset_link": reset_link},
+                )
+                rs.notify("success", n_("User updated."))
         return self.redirect(rs, "core/genesis_list_cases")

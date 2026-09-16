@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-13 20:17+0200\n"
+"POT-Creation-Date: 2026-09-16 20:27+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -605,6 +605,9 @@ msgstr "Password reset"
 
 msgid "CoreLogCodes.password_invalidated"
 msgstr "Password deleted"
+
+msgid "CoreLogCodes.genesis_upgrade_requested"
+msgstr "Account Upgrade requested"
 
 msgid "CoreLogCodes.genesis_request"
 msgstr "Account Request created"
@@ -3146,6 +3149,9 @@ msgstr ""
 msgid "Blocked genesis request from TOR exit node."
 msgstr ""
 
+msgid "Invalid account for upgrade request."
+msgstr ""
+
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 
@@ -3159,7 +3165,10 @@ msgstr ""
 msgid "Case not to review."
 msgstr ""
 
-msgid "Genesis modification failed."
+msgid "Granting CdE realm failed."
+msgstr ""
+
+msgid "Email address already taken."
 msgstr ""
 
 msgid "Dearchival failed."
@@ -3168,10 +3177,7 @@ msgstr ""
 msgid "Username change failed."
 msgstr ""
 
-msgid "Email address already taken."
-msgstr ""
-
-msgid "Invalid genesis state."
+msgid "Genesis modification failed."
 msgstr ""
 
 msgid "Event mismatch."
@@ -4412,6 +4418,9 @@ msgid "Enter actual country name in English."
 msgstr ""
 
 msgid "Birthday was less than a year ago. Please check the birth year."
+msgstr ""
+
+msgid "Must provide at least one of an attachment and a past event."
 msgstr ""
 
 msgid "Not a FileStorage."
@@ -5800,6 +5809,18 @@ msgid ""
 "the link contained in the email."
 msgstr ""
 
+msgid "You already have CdE realm."
+msgstr ""
+
+msgid "You already have a pending account upgrade request."
+msgstr ""
+
+msgid "You didn't participate at this event."
+msgstr ""
+
+msgid "Your request has been submitted."
+msgstr ""
+
 msgid "Verification failed. Please contact the administrators."
 msgstr ""
 
@@ -5822,16 +5843,22 @@ msgstr ""
 msgid "You need to specify a past event for CdE genesis requests."
 msgstr ""
 
+msgid "Only core admins may approve upgrade requests."
+msgstr ""
+
+msgid "Case rejected."
+msgstr ""
+
 msgid "Past event attendance could not be established."
+msgstr ""
+
+msgid "Account upgraded."
 msgstr ""
 
 msgid "Case approved."
 msgstr ""
 
 msgid "User updated."
-msgstr ""
-
-msgid "Case rejected."
 msgstr ""
 
 msgid "This page can only be accessed by orgas."
@@ -6295,18 +6322,6 @@ msgid "No minors may register. Please contact the Orgateam."
 msgstr ""
 
 msgid "Must be Orga to use preview."
-msgstr ""
-
-#, python-format
-msgid ""
-"Because you are not a CdE-Member, you will have to pay an additional "
-"\"External Fee\" of %(additional_fee)s (already included in the figure "
-"below)."
-msgstr ""
-
-msgid ""
-"If you pay your membership fee before your registration fee, the additional "
-"fee will be waived."
 msgstr ""
 
 msgid "Instructed course must not be chosen."
@@ -8268,6 +8283,15 @@ msgstr ""
 msgid "Personal Information"
 msgstr ""
 
+#, python-format
+msgid ""
+"This data is taken from your personal profile. To change it, use this "
+"%(link)s."
+msgstr ""
+
+msgid "form to edit your profile"
+msgstr ""
+
 msgid "Address (of account holder)"
 msgstr ""
 
@@ -9506,6 +9530,10 @@ msgstr ""
 msgid "Mailinglist Account Requests"
 msgstr ""
 
+msgid ""
+"Account upgrade requested by existing user. Please check for eligibility."
+msgstr ""
+
 #, python-format
 msgid "There are currently no %(realm)s pending for approval."
 msgstr ""
@@ -9514,14 +9542,21 @@ msgid "Recently Concluded Account Requests"
 msgstr ""
 
 #, python-format
-msgid "Edit Account Request (%(name)s)"
+msgid "Edit Upgrade Request (%(name)s)"
 msgstr ""
 
-msgid "Account Request"
+#, python-format
+msgid "Edit Account Request (%(name)s)"
 msgstr ""
 
 msgid "Edit Account Request"
 msgstr "Accountanfrage bearbeiten"
+
+msgid "Edit Upgrade Request"
+msgstr ""
+
+msgid "Account Request"
+msgstr ""
 
 msgid "Rationale"
 msgstr ""
@@ -9567,6 +9602,40 @@ msgstr ""
 msgid "Confirm Request"
 msgstr ""
 
+msgid "Request CdE Membership"
+msgstr ""
+
+msgid ""
+"With the following form you can voice your desire to become a CdE member."
+msgstr ""
+
+msgid "If you participated at a DSA, DJA etc.:"
+msgstr ""
+
+msgid ""
+"Upload your participation certificate below. Once your request is approved, "
+"you will receive a notification and automatically be granted a free trial "
+"membership."
+msgstr ""
+
+msgid "Alternatively, if you participated at a CdE event:"
+msgstr ""
+
+msgid ""
+"Select your event in the dropdown below. Take care that the selected event "
+"makes you elegible to become a CdE member, i.e. is a longer CdE event. Once "
+"your request is approved, you will receive a notification and need to "
+"transfer the membership fee to become a member."
+msgstr ""
+
+msgid ""
+"Select one of your past events which entitles you to become a CdE member."
+msgstr ""
+
+#, python-format
+msgid "Upgrade Request of %(name)s"
+msgstr ""
+
 #, python-format
 msgid "Account Request of %(name)s"
 msgstr ""
@@ -9596,11 +9665,6 @@ msgstr ""
 msgid "Persona Information"
 msgstr ""
 
-msgid ""
-"Trial membership will automatically be granted if the persona is not a "
-"member. You can undo this by changing their profile afterwards."
-msgstr ""
-
 msgid "Academy Information"
 msgstr ""
 
@@ -9623,6 +9687,9 @@ msgid "welcome email"
 msgstr ""
 
 msgid "Approve"
+msgstr ""
+
+msgid "Approve (grant trial membership)"
 msgstr ""
 
 msgid "Reject"
@@ -10171,8 +10238,7 @@ msgstr ""
 msgid "Account active"
 msgstr ""
 
-#, python-format
-msgid "To request an upgrade to a member account, contact %(mailto)s."
+msgid "Request membership"
 msgstr ""
 
 msgid "Change Status"
@@ -12279,9 +12345,29 @@ msgid ""
 "request."
 msgstr ""
 
+msgid "For former members:"
+msgstr ""
+
 msgid ""
 "Because you are not a CdE-Member, you might have to pay an additional "
 "\"External Fee\"."
+msgstr ""
+
+msgid ""
+"If you pay your membership fee before your registration fee, the additional "
+"fee will be waived."
+msgstr ""
+
+msgid "For externals:"
+msgstr ""
+
+#, python-format
+msgid ""
+"You can also %(link)s instead. Note that it can take a couple of days before "
+"we can process your request."
+msgstr ""
+
+msgid "request a CdE membership"
 msgstr ""
 
 msgid "In order to change the parts you are registered for, contact the orgas."
@@ -12311,15 +12397,6 @@ msgid "Notes for Orgas and Instructors"
 msgstr ""
 
 msgid "Notes for Orgas"
-msgstr ""
-
-#, python-format
-msgid ""
-"This data is taken from your personal profile. To change it, use this "
-"%(link)s."
-msgstr ""
-
-msgid "form to edit your profile"
 msgstr ""
 
 msgid ""

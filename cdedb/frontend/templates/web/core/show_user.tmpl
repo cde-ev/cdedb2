@@ -295,16 +295,12 @@
                             {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pen",
                                     aclass="btn btn-xs btn-warning") }}
                         {% endif %}
+                        {% if data['id'] == user.persona_id and data.is_false('is_cde_realm') and data.is_true('is_event_realm') %}
+                            {# Button should be btn-warning, but the default user does not know that "adding a realm" means "editing your account" #}
+                            {{ util.href(cdedblink("core/genesis_request_upgrade"), gettext("Request membership"), icon=util.realm_icon("is_cde_realm"),
+                                    aclass="btn btn-xs btn-success") }}
+                        {% endif %}
                     </dd>
-                    {% if data['id'] == user.persona_id and data.is_false('is_cde_realm') %}
-                        <dt></dt>
-                        <dd class="text-info">
-                            {{ util.make_icon('info-circle') }}
-                            {% trans mailto=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
-                                To request an upgrade to a member account, contact {{ mailto }}.
-                            {% endtrans %}
-                        </dd>
-                    {% endif %}
 
                     {% if admin_bits is not none %}
                         <dt title="{% trans %}Admin Privileges{% endtrans %}">

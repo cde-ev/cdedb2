@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-13 20:17+0200\n"
+"POT-Creation-Date: 2026-09-16 20:27+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -685,6 +685,10 @@ msgstr "Inscriptiones pro exPulso probatae"
 
 #, fuzzy
 msgid "CoreLogCodes.password_invalidated"
+msgstr "Proximus exPulsus"
+
+#, fuzzy
+msgid "CoreLogCodes.genesis_upgrade_requested"
 msgstr "Proximus exPulsus"
 
 #, fuzzy
@@ -3472,6 +3476,10 @@ msgstr "inscriptio electronica nova"
 msgid "Blocked genesis request from TOR exit node."
 msgstr ""
 
+#, fuzzy
+msgid "Invalid account for upgrade request."
+msgstr "signum arcanum muta"
+
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 
@@ -3486,8 +3494,12 @@ msgid "Case not to review."
 msgstr ""
 
 #, fuzzy
-msgid "Genesis modification failed."
-msgstr "epistula electronica ad verificandum mitte"
+msgid "Granting CdE realm failed."
+msgstr "inscriptionem electronicam muta"
+
+#, fuzzy
+msgid "Email address already taken."
+msgstr "inscriptio electronica pristina"
 
 #, fuzzy
 msgid "Dearchival failed."
@@ -3498,12 +3510,8 @@ msgid "Username change failed."
 msgstr "epistula electronica ad verificandum mitte"
 
 #, fuzzy
-msgid "Email address already taken."
-msgstr "inscriptio electronica pristina"
-
-#, fuzzy
-msgid "Invalid genesis state."
-msgstr "Annuntiationes"
+msgid "Genesis modification failed."
+msgstr "epistula electronica ad verificandum mitte"
 
 #, fuzzy
 msgid "Event mismatch."
@@ -4862,6 +4870,9 @@ msgid "Enter actual country name in English."
 msgstr ""
 
 msgid "Birthday was less than a year ago. Please check the birth year."
+msgstr ""
+
+msgid "Must provide at least one of an attachment and a past event."
 msgstr ""
 
 msgid "Not a FileStorage."
@@ -6364,6 +6375,20 @@ msgid ""
 "the link contained in the email."
 msgstr ""
 
+#, fuzzy
+msgid "You already have CdE realm."
+msgstr "hic ades:"
+
+msgid "You already have a pending account upgrade request."
+msgstr ""
+
+#, fuzzy
+msgid "You didn't participate at this event."
+msgstr "haec videri non possit."
+
+msgid "Your request has been submitted."
+msgstr ""
+
 msgid "Verification failed. Please contact the administrators."
 msgstr ""
 
@@ -6386,16 +6411,24 @@ msgstr ""
 msgid "You need to specify a past event for CdE genesis requests."
 msgstr ""
 
+#, fuzzy
+msgid "Only core admins may approve upgrade requests."
+msgstr "signum arcanum muta"
+
+msgid "Case rejected."
+msgstr ""
+
 msgid "Past event attendance could not be established."
 msgstr ""
+
+#, fuzzy
+msgid "Account upgraded."
+msgstr "vestigium novum crea"
 
 msgid "Case approved."
 msgstr ""
 
 msgid "User updated."
-msgstr ""
-
-msgid "Case rejected."
 msgstr ""
 
 msgid "This page can only be accessed by orgas."
@@ -6906,18 +6939,6 @@ msgid "No minors may register. Please contact the Orgateam."
 msgstr ""
 
 msgid "Must be Orga to use preview."
-msgstr ""
-
-#, python-format
-msgid ""
-"Because you are not a CdE-Member, you will have to pay an additional "
-"\"External Fee\" of %(additional_fee)s (already included in the figure "
-"below)."
-msgstr ""
-
-msgid ""
-"If you pay your membership fee before your registration fee, the additional "
-"fee will be waived."
 msgstr ""
 
 msgid "Instructed course must not be chosen."
@@ -8992,6 +9013,15 @@ msgstr ""
 msgid "Personal Information"
 msgstr "notitiae rationis"
 
+#, python-format
+msgid ""
+"This data is taken from your personal profile. To change it, use this "
+"%(link)s."
+msgstr ""
+
+msgid "form to edit your profile"
+msgstr ""
+
 #, fuzzy
 msgid "Address (of account holder)"
 msgstr "visibilitas"
@@ -10335,6 +10365,10 @@ msgstr "vestigium novum crea"
 msgid "Mailinglist Account Requests"
 msgstr "vestigium novum crea"
 
+msgid ""
+"Account upgrade requested by existing user. Please check for eligibility."
+msgstr ""
+
 #, python-format
 msgid "There are currently no %(realm)s pending for approval."
 msgstr ""
@@ -10344,15 +10378,23 @@ msgid "Recently Concluded Account Requests"
 msgstr "vestigium novum crea"
 
 #, fuzzy, python-format
+msgid "Edit Upgrade Request (%(name)s)"
+msgstr "vestigium novum crea"
+
+#, fuzzy, python-format
 msgid "Edit Account Request (%(name)s)"
 msgstr "vestigium novum crea"
 
 #, fuzzy
-msgid "Account Request"
+msgid "Edit Account Request"
 msgstr "vestigium novum crea"
 
 #, fuzzy
-msgid "Edit Account Request"
+msgid "Edit Upgrade Request"
+msgstr "vestigium novum crea"
+
+#, fuzzy
+msgid "Account Request"
 msgstr "vestigium novum crea"
 
 #, fuzzy
@@ -10402,6 +10444,42 @@ msgstr ""
 msgid "Confirm Request"
 msgstr "vestigium novum crea"
 
+#, fuzzy
+msgid "Request CdE Membership"
+msgstr "consocietanda"
+
+msgid ""
+"With the following form you can voice your desire to become a CdE member."
+msgstr ""
+
+msgid "If you participated at a DSA, DJA etc.:"
+msgstr ""
+
+msgid ""
+"Upload your participation certificate below. Once your request is approved, "
+"you will receive a notification and automatically be granted a free trial "
+"membership."
+msgstr ""
+
+#, fuzzy
+msgid "Alternatively, if you participated at a CdE event:"
+msgstr "haec videri non possit."
+
+msgid ""
+"Select your event in the dropdown below. Take care that the selected event "
+"makes you elegible to become a CdE member, i.e. is a longer CdE event. Once "
+"your request is approved, you will receive a notification and need to "
+"transfer the membership fee to become a member."
+msgstr ""
+
+msgid ""
+"Select one of your past events which entitles you to become a CdE member."
+msgstr ""
+
+#, fuzzy, python-format
+msgid "Upgrade Request of %(name)s"
+msgstr "vestigium novum crea"
+
 #, fuzzy, python-format
 msgid "Account Request of %(name)s"
 msgstr "vestigium novum crea"
@@ -10436,11 +10514,6 @@ msgstr ""
 msgid "Persona Information"
 msgstr "notitiae rationis"
 
-msgid ""
-"Trial membership will automatically be granted if the persona is not a "
-"member. You can undo this by changing their profile afterwards."
-msgstr ""
-
 #, fuzzy
 msgid "Academy Information"
 msgstr "notitiae rationis"
@@ -10466,6 +10539,10 @@ msgstr ""
 
 msgid "Approve"
 msgstr ""
+
+#, fuzzy
+msgid "Approve (grant trial membership)"
+msgstr "consocietanda"
 
 msgid "Reject"
 msgstr ""
@@ -11059,9 +11136,9 @@ msgstr "quaesitio consociorum CdEi"
 msgid "Account active"
 msgstr "vestigium novum crea"
 
-#, python-format
-msgid "To request an upgrade to a member account, contact %(mailto)s."
-msgstr ""
+#, fuzzy
+msgid "Request membership"
+msgstr "consocietanda"
 
 #, fuzzy
 msgid "Change Status"
@@ -13339,10 +13416,31 @@ msgid ""
 "request."
 msgstr ""
 
+msgid "For former members:"
+msgstr ""
+
 msgid ""
 "Because you are not a CdE-Member, you might have to pay an additional "
 "\"External Fee\"."
 msgstr ""
+
+msgid ""
+"If you pay your membership fee before your registration fee, the additional "
+"fee will be waived."
+msgstr ""
+
+msgid "For externals:"
+msgstr ""
+
+#, python-format
+msgid ""
+"You can also %(link)s instead. Note that it can take a couple of days before "
+"we can process your request."
+msgstr ""
+
+#, fuzzy
+msgid "request a CdE membership"
+msgstr "consocietanda"
 
 msgid "In order to change the parts you are registered for, contact the orgas."
 msgstr ""
@@ -13371,15 +13469,6 @@ msgid "Notes for Orgas and Instructors"
 msgstr ""
 
 msgid "Notes for Orgas"
-msgstr ""
-
-#, python-format
-msgid ""
-"This data is taken from your personal profile. To change it, use this "
-"%(link)s."
-msgstr ""
-
-msgid "form to edit your profile"
 msgstr ""
 
 msgid ""

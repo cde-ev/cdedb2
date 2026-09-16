@@ -1008,6 +1008,7 @@ class CoreLogCodes(CdEIntEnum):
     password_invalidated = 13  #:
 
     # Genesis
+    genesis_upgrade_requested = 19  #:
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
