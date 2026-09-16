@@ -170,10 +170,9 @@
                      */
                     fee_preview.show().find("#fee-amount").html(result["fee"]);
                     /**
-                     * If the nonmember info should be shown replace the text and show its parent, otherwise hide it.
+                     * If the nonmember info should be shown, show it, otherwise hide it.
                      */
                     if (result["show_nonmember"]) {
-                        nonmember_surcharge.html(result["nonmember"]);
                         nonmember_surcharge.show();
                     }
                     else {

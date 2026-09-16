@@ -38,7 +38,11 @@
                         </p>
                     </div>
                     <div class="col-sm-5">
-                        {% if entry['notes'] %}<p class="textbox">{{ entry['notes'] }}</p>{% endif %}
+                        {% if entry['is_upgrade'] %}
+                            <p class="text-muted">{% trans %}Account upgrade requested by existing user. Please check for eligibility.{% endtrans %}</p>
+                        {% elif entry['notes'] %}
+                            <p class="textbox">{{ entry['notes'] }}</p>
+                        {% endif %}
                     </div>
                     <div class="col-sm-4 button-par">
                         {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}), gettext("Details"),

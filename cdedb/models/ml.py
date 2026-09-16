@@ -66,7 +66,7 @@ class MailinglistGroup(CdEIntEnum):
     cdelokal = 30
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Mailinglist(CdEDataclass):
     """Base class for all mailinglist types.
 
@@ -96,6 +96,7 @@ class Mailinglist(CdEDataclass):
     mod_policy: const.ModerationPolicy
     attachment_policy: const.AttachmentPolicy
     convert_html: bool
+    mitigate_unconditionally: bool = True
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
