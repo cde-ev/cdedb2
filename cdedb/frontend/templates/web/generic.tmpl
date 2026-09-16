@@ -116,7 +116,7 @@
 
 
 {% macro format_query(scope, spec, output_selection=True, selection_blacklist=[], selection_default=[]) %}
-    <form action="{{ cdedblink(scope.get_target()) }}#query-results" method="GET" id="queryform" aria-labelledby="qf_title">
+    <form action="{{ cdedblink(scope.get_target()) }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
             <div class="panel-heading">
@@ -443,6 +443,7 @@
     {% else %}
         <script nonce="{{ csp_nonce }}">
             $(function(){
+                $("#query-results")[0].scrollIntoView();
                 $('.ls-list').cdedbListSelect({
                     'callback': function () {
                         $('#label-select-num').text($(this).find('.ls-selected').length.toString());
