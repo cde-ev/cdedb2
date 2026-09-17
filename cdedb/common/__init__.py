@@ -1599,4 +1599,5 @@ def is_tor_exit_node(ip: str) -> bool:
     exit_nodes = get_tor_exit_nodes()
     if not exit_nodes:
         _LOGGER.error(f"No TOR exit nodes found while checking {ip}")
+        get_tor_exit_nodes.cache_clear()
     return ip.strip() in get_tor_exit_nodes()
