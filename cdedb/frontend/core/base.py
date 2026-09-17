@@ -2359,7 +2359,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 }
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
                 submitter = self.coreproxy.get_persona(rs, change["submitted_by"])
-                to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
+                to = {self.conf["BOARD_ADDRESS"], self.conf["META_ADMIN_ADDRESS"]}
                 gained_privileges = xsorted(
                     privilege
                     for privilege in Roles.all_admin_roles()

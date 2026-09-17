@@ -205,6 +205,9 @@ MAIL_HOST = "localhost"
 # email for internal system trouble notifications
 TROUBLESHOOTING_ADDRESS = "admin@cde-ev.de"
 
+# email of the board, used for semester notification emails and eFZ stuff
+BOARD_ADDRESS = "vorstand@cde-ev.de"
+
 # email for cde account requests
 CDE_USER_MANAGEMENT_ADDRESS = "cde-admins@cde-ev.de"
 
