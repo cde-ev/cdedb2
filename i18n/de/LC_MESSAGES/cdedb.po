@@ -5575,7 +5575,7 @@ msgstr "Link ungültig."
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
-msgid "This page can only be accessed by the mailinglist’s moderators."
+msgid "This page can only be accessed by the mailinglist's moderators."
 msgstr "Auf diese Seite kann nur die Mailinglisten-Moderation zugreifen."
 
 msgid ""
