@@ -7,6 +7,7 @@ managing an event itself, including event parts and course tracks.
 This also includes all functionality directly avalable on the `show_event` page.
 """
 
+import abc
 import copy
 import datetime
 import json
@@ -294,7 +295,16 @@ class EventEventMixin(EventBaseFrontend):
 
         code = self.eventproxy.set_event(rs, event_id, data)
         rs.notify_return_code(code)
+
+        new_event = self.eventproxy.get_event(rs, event_id)
+        self._skipped_notify_on_registration(rs, rs.ambience["event"], new_event)
+
         return self.redirect(rs, "event/show_event")
+
+    @abc.abstractmethod
+    def _skipped_notify_on_registration(
+        self, rs: RequestState, old_event: models.Event, new_event: models.Event
+    ) -> int: ...
 
     @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)

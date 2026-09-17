@@ -3694,7 +3694,7 @@ class CoreBaseBackend(AbstractBackend):
         """Helper to determine whether the CdEDB is currently locked."""
         return bool(self.conf["LOCKDOWN"] or self.get_meta_info(rs).lockdown_web)
 
-    @access(Roles.core_admin)
+    @access(Roles.persona)
     def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:
         """Retrieve the persistent store of a cron job.
 
@@ -3705,7 +3705,7 @@ class CoreBaseBackend(AbstractBackend):
         )
         return unwrap(ret) or {}
 
-    @access(Roles.core_admin)
+    @access(Roles.persona)
     def set_cron_store(
         self, rs: RequestState, name: str, data: CdEDBObject
     ) -> DefaultReturnCode:
