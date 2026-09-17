@@ -316,9 +316,12 @@ class Application(BaseApp):
             frontend: AbstractFrontend = getattr(self, component)
             handler: FrontendEndpoint = getattr(frontend, action)
             if request.method not in handler.modi:
-                raise werkzeug.exceptions.MethodNotAllowed(
-                    handler.modi, f"Unsupported request method {request.method}."
+                self.logger.error(
+                    msg := f"Unsupported request method {request.method} for"
+                    f" '{frontend.__class__.__name__}.{handler.__name__}'."
+                    f" Allowed methods: {", ".join(handler.modi)}.",
                 )
+                raise werkzeug.exceptions.MethodNotAllowed(handler.modi, msg)
 
             # Check anti CSRF token (if required by the endpoint)
             if handler.anti_csrf.check and Roles.droid not in user.new_roles:

@@ -15,7 +15,11 @@
             {% trans %}Couldn’t find the requested page.{% endtrans %}
             {% if error.description %}({{ gettext(error.description) }}){% endif %}
         {% elif error.code == 405 %}
-            {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
+            {% if error.description %}
+                {{ gettext(error.description) }}
+            {% else %}
+                {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
+            {% endif %}
         {% elif error.code == 429 %}
             {% trans %}Quota exceeded.{% endtrans %}
         {% elif error.code == 500 %}

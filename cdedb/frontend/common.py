@@ -2448,6 +2448,7 @@ class AntiCSRFMarker(NamedTuple):
 class FrontendEndpoint(Protocol):
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
+    __name__: str
 
     def __call__(
         self, rs: RequestState, *args: Any, **kwargs: Any
