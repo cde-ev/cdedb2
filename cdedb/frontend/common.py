@@ -2966,7 +2966,7 @@ def mailinglist_guard[F: Callable[..., Any]](
             if allow_moderators:
                 if not obj.mlproxy.may_manage(rs, **{argname: arg}):
                     msg = n_(
-                        "This page can only be accessed by the mailinglist’s moderators."
+                        "This page can only be accessed by the mailinglist's moderators."
                     )
                     raise werkzeug.exceptions.Forbidden(msg)
                 if requires_privilege and not obj.mlproxy.may_manage(
