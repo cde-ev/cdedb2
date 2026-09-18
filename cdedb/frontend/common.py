@@ -716,6 +716,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         attachment: werkzeug.datastructures.FileStorage | None,
         attachment_hash: vtypes.Identifier | None,
         attachment_filename: str | None = None,
+        is_mandatory: bool = True,
     ) -> tuple[vtypes.Identifier | None, str | None]:
         """Locate an attachment by hash and store it, if necessary
 
@@ -723,6 +724,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             (cached) data, if present.
         :param attachment_hash: Hash to locate file uploaded within earlier request
         :param attachment_filename: Filename of file uploaded in earlier request
+        :param is_mandatory: Uploading an attachment is required in this form.
         """
         attachment_data = new_filename = None
         if attachment:
@@ -743,7 +745,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if not attachment_stored:
                 attachment_hash = None
                 rs.append_validation_error(("cached_attachment", ValueError(msg)))
-        if attachment_hash is None:
+        if attachment_hash is None and is_mandatory:
             rs.append_validation_error(
                 ("attachment", ValueError(n_("Must not be empty."))),
             )
@@ -2446,6 +2448,7 @@ class AntiCSRFMarker(NamedTuple):
 class FrontendEndpoint(Protocol):
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
+    __name__: str
 
     def __call__(
         self, rs: RequestState, *args: Any, **kwargs: Any
@@ -2964,7 +2967,7 @@ def mailinglist_guard[F: Callable[..., Any]](
             if allow_moderators:
                 if not obj.mlproxy.may_manage(rs, **{argname: arg}):
                     msg = n_(
-                        "This page can only be accessed by the mailinglist’s moderators."
+                        "This page can only be accessed by the mailinglist's moderators."
                     )
                     raise werkzeug.exceptions.Forbidden(msg)
                 if requires_privilege and not obj.mlproxy.may_manage(

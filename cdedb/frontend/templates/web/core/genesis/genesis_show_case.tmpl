@@ -4,9 +4,15 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=ambience['genesis_case'].persona|persona_name %}
-        Account Request of {{ name }}
-    {% endtrans %}
+    {% if ambience["genesis_case"].is_upgrade %}
+        {% trans name=ambience["genesis_case"].persona|persona_name %}
+            Upgrade Request of {{ name }}
+        {% endtrans %}
+    {% else %}
+        {% trans name=ambience["genesis_case"].persona|persona_name %}
+            Account Request of {{ name }}
+        {% endtrans %}
+    {% endif %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -18,7 +24,7 @@
 {% macro print_doppelganger_genesis(doppelganger) %}
     {{ util.print_doppelganger(doppelganger, link=True) }}
     {% if doppelganger["id"] in doppelgangers_with_missing_realms %}
-        </br>
+        <br />
         {% trans promote=util.href(cdedblink('core/promote_user_form', {"persona_id": doppelganger["id"],
                                    "target_realm": ambience["genesis_case"].realm}), gettext("promote")),
                  realm=util.realm_icon(ambience['genesis_case'].realm.realm_marker, desc=True)%}
@@ -42,7 +48,7 @@
         </dt>
         <dd id="realm">
             {{ util.realm_icon(ambience['genesis_case'].realm.realm_marker, desc=True) }}
-            {% if ambience["genesis_case"].realm != enums["Realms"].ml %}
+            {% if ambience["genesis_case"].realm != enums["Realms"].ml and not ambience["genesis_case"].is_upgrade %}
                 {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == enums["Realms"].cde else "graduation-cap" %}
                 {% set label = gettext("Change Realm to Event") if ambience["genesis_case"].realm == enums["Realms"].cde else gettext("Change Realm to CdE")%}
                 <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST" id="genesismodifyrealmform" style="display: inline-block">
@@ -56,12 +62,6 @@
         </dt>
         <dd>
             {{ ambience['genesis_case']['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}
-        </dd>
-        <dt title="{% trans %}Rationale{% endtrans %}">
-            {% trans %}Rationale{% endtrans %}
-        </dt>
-        <dd id="notes">
-            {{ ambience['genesis_case']['notes'] }}
         </dd>
         <dt title="{% trans %}Reviewer{% endtrans %}">
             {% trans %}Reviewer{% endtrans %}
@@ -85,6 +85,19 @@
             </dd>
         </dt>
     </dl>
+
+    {% if ambience['genesis_case']['is_upgrade'] %}
+        <p class="text-muted">
+            {{ util.make_icon("info-circle") }}
+            {% trans %}
+                Account upgrade requested by existing user. Please check for eligibility.
+            {% endtrans %}
+        </p>
+    {% else %}
+        {% call util.bootstrap_panel(title=gettext("Rationale"), anid="notes") %}
+            {{ ambience['genesis_case']['notes']|linebreaks }}
+        {% endcall %}
+    {% endif %}
 
     <h4 class="heading-underline">{% trans %}Persona Information{% endtrans %}</h4>
     {% set persona = ambience['genesis_case'].persona %}
@@ -134,16 +147,6 @@
                 {% trans %}Mobile Phone{% endtrans %}
             </dt>
             <dd id="mobile">{{ util.tel_link(persona.mobile|phone) }}</dd>
-        {% endif %}
-        {% if ambience['genesis_case']['realm'] == 'cde' %}
-            <dt title="{% trans %}Membership{% endtrans %}">
-                {% trans %}Membership{% endtrans %}
-            </dt>
-            <dd>
-                <i>
-                    {% trans %}Trial membership will automatically be granted if the persona is not a member. You can undo this by changing their profile afterwards.{% endtrans %}
-                </i>
-            </dd>
         {% endif %}
         {% if (persona.has("address") or persona.has("address_supplement") or persona.has("postal_code") or persona.has("location") or persona.has("country")) %}
             <dt title="{% trans %}Address{% endtrans %}">
@@ -198,7 +201,9 @@
          id="genesisdecisionform" style="display: inline;">
             {{ util.anti_csrf_token('core/genesis_decide') }}
 
-            {% if doppelgangers %}
+            {% if ambience['genesis_case']['is_upgrade'] %}
+                {{ util.input_hidden("persona_id", ambience['genesis_case']['persona_id']|cdedbid) }}
+            {% elif doppelgangers %}
                 <h4 class="heading-underline">{% trans %}Doppelgangers{% endtrans %}</h4>
                 <p class="text-warning">{{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
                 {% trans %}
@@ -213,7 +218,7 @@
                 <div role="radiogroup" aria-labelledby="doppelgangers-label" id="doppelgangers">
                     {% set entries = [("", "–")] %}
                     {% for key, value in doppelgangers|keydictsort(EntitySorter.persona) %}
-                        {% do entries.append((key, print_doppelganger_genesis(value))) %}
+                        {% do entries.append((key|cdedbid, print_doppelganger_genesis(value))) %}
                     {% endfor %}
                     {# This actually becomes the persona_id to be saved into the genesis request! #}
                     {{ util.input_checkboxes("persona_id", entries, radio=True, readonly_map=disabled_radios, title_map=title_map) }}
@@ -227,14 +232,32 @@
             </div>
 
             <div class="button-par">
-                {{ util.input_submit(
-                    name="decision", value = enums['GenesisDecision'].approve,
-                    label=gettext("Approve"), aclass="btn btn-success") }}
+                {% set no_approve = (ambience["genesis_case"].is_upgrade and "core_admin" not in user.roles) %}
+                {% set title = gettext("Only core admins may approve upgrade requests.") if no_approve else "" %}
+                {% if ambience["genesis_case"].is_upgrade %}
+                    {{ util.input_submit(
+                        name="decision", value=enums['GenesisDecision'].approve, label=gettext("Approve"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
+                    {{ util.input_submit(
+                        name="decision", value=enums['GenesisDecision'].approve_grant_trial_membership,
+                        label=gettext("Approve (grant trial membership)"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
+                {% elif ambience["genesis_case"].realm == enums["Realms"].cde %}
+                    {{ util.input_submit(
+                        name="decision", value=enums['GenesisDecision'].approve_grant_trial_membership,
+                        label=gettext("Approve (grant trial membership)"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
+                {% else %}
+                    {{ util.input_submit(
+                        name="decision", value=enums['GenesisDecision'].approve, label=gettext("Approve"),
+                        aclass="btn btn-success", title=title, readonly=no_approve) }}
+                {% endif %}
+
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].deny,
                     label=gettext("Reject"), aclass="btn btn-danger", icon="ban") }}
-                {{ util.href(cdedblink('core/genesis_modify_form'), label=gettext("Edit Account Request"),
-                    aclass="btn btn-warning", icon="pen") }}
+                {{ util.href(cdedblink('core/genesis_modify_form'), aclass="btn btn-warning", icon="pen",
+                        label=gettext("Edit Upgrade Request") if ambience["genesis_case"].is_upgrade else gettext("Edit Account Request")) }}
                 &emsp;
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
                              aclass="btn btn btn-default", icon="times-circle") }}

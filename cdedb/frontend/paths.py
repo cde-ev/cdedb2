@@ -167,6 +167,8 @@ rules = [
                 "/genesis",
                 get_("/request", endpoint="genesis_request_form"),
                 post("/request", endpoint="genesis_request"),
+                get_("/upgrade", endpoint="genesis_request_upgrade_form"),
+                post("/upgrade", endpoint="genesis_request_upgrade"),
                 get_("/verify", endpoint="genesis_verify"),
                 get_("/list", endpoint="genesis_list_cases"),
                 get_(
