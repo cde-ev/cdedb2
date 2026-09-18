@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-16 20:27+0200\n"
+"POT-Creation-Date: 2026-09-18 20:55+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5993,7 +5993,7 @@ msgstr ""
 msgid "Invalid argtype {t} found."
 msgstr "signum arcanum muta"
 
-msgid "This page can only be accessed by the mailinglist’s moderators."
+msgid "This page can only be accessed by the mailinglist's moderators."
 msgstr ""
 
 msgid ""
@@ -6147,6 +6147,9 @@ msgstr ""
 msgid "No promotion necessary."
 msgstr ""
 
+msgid "Email sent."
+msgstr ""
+
 msgid "Revoked active permit."
 msgstr ""
 
@@ -6174,9 +6177,6 @@ msgid "Password changed."
 msgstr "Signum arcanum"
 
 msgid "Email sent. Please also check your spam folder."
-msgstr ""
-
-msgid "Email sent."
 msgstr ""
 
 #, fuzzy
@@ -11143,6 +11143,10 @@ msgstr "consocietanda"
 #, fuzzy
 msgid "Change Status"
 msgstr "signum arcanum muta"
+
+#, fuzzy
+msgid "Send Welcome Mail again"
+msgstr "epistula electronica ad verificandum mitte"
 
 msgid "Data is visible for other Members."
 msgstr ""

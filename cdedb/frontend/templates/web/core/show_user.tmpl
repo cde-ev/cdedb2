@@ -353,6 +353,14 @@
                         {% if is_relative_admin_view and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
+                            {% if data.is_true('is_active') %}
+                                <form action="{{ cdedblink('core/resend_welcome_mail') }}"
+                                      method="POST" id="resendwelcomemailform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/resend_welcome_mail') }}
+                                    {{ util.input_submit(label=gettext("Send Welcome Mail again"), icon="paper-plane",
+                                                aclass="btn btn-xs btn-warning") }}
+                                </form>
+                            {% endif %}
                         {% endif %}
                     </dd>
                 {% endif %}

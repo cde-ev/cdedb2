@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-16 20:27+0200\n"
+"POT-Creation-Date: 2026-09-18 20:55+0000\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -5457,7 +5457,7 @@ msgstr ""
 msgid "Invalid argtype {t} found."
 msgstr ""
 
-msgid "This page can only be accessed by the mailinglist’s moderators."
+msgid "This page can only be accessed by the mailinglist's moderators."
 msgstr ""
 
 msgid ""
@@ -5601,6 +5601,9 @@ msgstr ""
 msgid "No promotion necessary."
 msgstr ""
 
+msgid "Email sent."
+msgstr ""
+
 msgid "Revoked active permit."
 msgstr ""
 
@@ -5626,9 +5629,6 @@ msgid "Password changed."
 msgstr ""
 
 msgid "Email sent. Please also check your spam folder."
-msgstr ""
-
-msgid "Email sent."
 msgstr ""
 
 msgid "Lockdown active. Try again later."
@@ -10242,6 +10242,9 @@ msgid "Request membership"
 msgstr ""
 
 msgid "Change Status"
+msgstr ""
+
+msgid "Send Welcome Mail again"
 msgstr ""
 
 msgid "Data is visible for other Members."

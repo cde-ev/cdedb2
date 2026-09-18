@@ -141,6 +141,7 @@ rules = [
                 post("/promote", endpoint="promote_user"),
                 get_("/membership/change", endpoint="modify_membership_form"),
                 post("/membership/change", endpoint="modify_membership"),
+                post("/welcome/send", endpoint="resend_welcome_mail"),
                 get_("/balance/change", endpoint="modify_balance_form"),
                 post("/balance/change", endpoint="modify_balance"),
                 get_("/foto/change", endpoint="set_foto_form"),

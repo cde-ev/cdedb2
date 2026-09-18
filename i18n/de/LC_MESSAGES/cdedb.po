@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-16 20:27+0200\n"
+"POT-Creation-Date: 2026-09-18 20:55+0000\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -5734,6 +5734,9 @@ msgstr "Passwort eines neuen Admins ungültig gemacht."
 msgid "No promotion necessary."
 msgstr "Keine Änderung erforderlich."
 
+msgid "Email sent."
+msgstr "E-Mail abgeschickt."
+
 msgid "Revoked active permit."
 msgstr "Aktives Lastschriftmandat widerrufen."
 
@@ -5760,9 +5763,6 @@ msgstr "Passwort geändert."
 
 msgid "Email sent. Please also check your spam folder."
 msgstr "Email abgeschickt. Bitte sieh auch in deinem Spam-Ordner nach."
-
-msgid "Email sent."
-msgstr "E-Mail abgeschickt."
 
 msgid "Lockdown active. Try again later."
 msgstr "Datenbank für Wartungsarbeiten gesperrt. Versuch es später nochmal."
@@ -10842,6 +10842,9 @@ msgstr "Mitgliedschaft beantragen"
 
 msgid "Change Status"
 msgstr "Status ändern"
+
+msgid "Send Welcome Mail again"
+msgstr "Willkommensmail erneut verschicken"
 
 msgid "Data is visible for other Members."
 msgstr "Daten sind für andere Mitglieder sichtbar."
