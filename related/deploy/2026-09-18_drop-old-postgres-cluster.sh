@@ -7,3 +7,4 @@ if [ "$choice" != "y" ]; then
 fi
 
 sudo rm -r /var/lib/postgresql/13
+sudo rm -r /etc/postgresql/13
