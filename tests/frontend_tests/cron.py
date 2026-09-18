@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import collections.abc
+import copy
 import datetime
 import decimal
 import enum
@@ -547,11 +548,13 @@ class TestCron(CronTest):
             frozen_time.tick(delta * 2)
 
             execsql(f"UPDATE event.log SET ctime = '{base_time + delta}'")
+            self.mails = []
 
+            # Test period based non-sending.
             for _ in range(const.NotifyOnRegistration.hourly - 1):
                 self.execute(cronjob)
                 self.assertEqual(
-                    mail_expectation,
+                    [],
                     [mail.template for mail in self.mails],
                 )
                 store_expectation['period'] += 1
@@ -564,7 +567,7 @@ class TestCron(CronTest):
 
             self.execute(cronjob)
 
-            mail_expectation *= 2
+            mail_expectation = ["notify_on_registration"]
             store_expectation['period'] += 1
             self.assertEqual(
                 mail_expectation,
@@ -583,6 +586,94 @@ class TestCron(CronTest):
                     "4": now().isoformat(),
                 },
             }
+            self.assertEqual(
+                store_expectation,
+                self.core.get_cron_store(RS, cronjob),
+            )
+
+            # Test that time based filter depends on last timestamp not passed time.
+            execsql(f"UPDATE event.log SET ctime = '{now() + delta}'")
+            self.mails = []
+            store_expectation["period"] -= 1
+            self.core.set_cron_store(RS, cronjob, store_expectation)
+
+            frozen_time.tick(datetime.timedelta(days=100))
+
+            self.execute(cronjob)
+            mail_expectation = ["notify_on_registration"]
+            self.assertEqual(
+                mail_expectation,
+                [mail.template for mail in self.mails],
+            )
+
+            # Test additional send upon switching periodic send -> everytime.
+            execsql(f"UPDATE event.log SET ctime = '{now() + delta}'")
+            self.mails = []
+            store_expectation["period"] -= 1
+            self.core.set_cron_store(RS, cronjob, store_expectation)
+
+            frozen_time.tick(datetime.timedelta(days=100))
+            old_event = self.event.get_event(RS, EventID(1))
+            new_event = copy.deepcopy(old_event)
+            new_event.notify_on_registration = const.NotifyOnRegistration.never
+
+            rs = self.cron.make_request_state()
+            self.assertEqual(
+                -1,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, old_event, old_event
+                ),
+            )
+            self.assertEqual(
+                -1,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, new_event, new_event
+                ),
+            )
+            self.assertEqual(
+                -1,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, new_event, old_event
+                ),
+            )
+            self.assertEqual(
+                -1,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, old_event, new_event
+                ),
+            )
+
+            new_event.notify_on_registration = const.NotifyOnRegistration.everytime
+            self.assertEqual(
+                -1,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, old_event, old_event
+                ),
+            )
+            self.assertEqual(
+                -1,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, new_event, new_event
+                ),
+            )
+            self.assertEqual(
+                -1,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, new_event, old_event
+                ),
+            )
+            self.assertLess(
+                0,
+                self.cron.event._skipped_notify_on_registration(
+                    rs, old_event, new_event
+                ),
+            )
+            mail_expectation = ["notify_on_registration"]
+            self.assertEqual(
+                mail_expectation,
+                [mail.template for mail in self.mails],
+            )
+            store_expectation["timestamps"]["1"] = now().isoformat()
             self.assertEqual(
                 store_expectation,
                 self.core.get_cron_store(RS, cronjob),
