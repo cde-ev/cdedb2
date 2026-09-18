@@ -225,11 +225,25 @@
                 </div>
             {% endif %}
 
-            <div class="text-muted" style="margin-bottom: 8px">
-                {% trans welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"), gettext("welcome email")) %}
-                    The CdEDB will automatically send a %(welcome_mail)s to the new user.
-                {% endtrans %}
-            </div>
+            {% if doppelgangers %}
+                <p>
+                    {{ util.make_icon('info-circle') }}
+                    {% trans
+                        update_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-genesis-updated-tmpl"), gettext("notification email")),
+                        welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"), gettext("welcome email"))
+                    %}
+                        When updating an existing account, the CdEDB will only send an %(update_mail)s to the user.
+                        You can choose to send the full %(welcome_mail)s instead:
+                    {% endtrans %}
+                    {{ util.input_checkbox("resend_welcome_mail", gettext("Send Welcome Mail")) }}
+                </p>
+            {% else %}
+                <div class="text-muted" style="margin-bottom: 8px">
+                    {% trans welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"), gettext("welcome email")) %}
+                        The CdEDB will automatically send a %(welcome_mail)s to the new user.
+                    {% endtrans %}
+                </div>
+            {% endif %}
 
             <div class="button-par">
                 {% set no_approve = (ambience["genesis_case"].is_upgrade and "core_admin" not in user.roles) %}

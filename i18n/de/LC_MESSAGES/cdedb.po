@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-18 20:55+0000\n"
+"POT-Creation-Date: 2026-09-18 21:23+0000\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -10252,13 +10252,26 @@ msgstr ""
 "aktualisiert werden, anstatt einen neuen Account zu erstellen."
 
 #, python-format
+msgid ""
+"When updating an existing account, the CdEDB will only send an "
+"%(update_mail)s to the user. You can choose to send the full "
+"%(welcome_mail)s instead:"
+msgstr ""
+"Bei der Aktualisierung eines bestehenden Accounts sendet die CdEDB nur eine "
+"%(update_mail)s. Du kannst stattdessen die lange %(welcome_mail)s erneut "
+"verschicken:"
+
+msgid "notification email"
+msgstr "Benachrichtigungsmail"
+
+msgid "welcome email"
+msgstr "Willkommensmail"
+
+#, python-format
 msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
 msgstr ""
 "Die CdEDB wird eine automatische %(welcome_mail)s an den neuen Account "
 "schicken."
-
-msgid "welcome email"
-msgstr "Willkommensmail"
 
 msgid "Approve"
 msgstr "Genehmigen"
