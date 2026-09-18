@@ -13254,7 +13254,7 @@ msgid ""
 "\"External Fee\"."
 msgstr ""
 "Da Du kein CdE-Mitglied bist, musst Du möglicherweise einen zuätzlichen "
-"\"Extenenbeitrag\" bezahlen."
+"\"Externenbeitrag\" bezahlen."
 
 msgid ""
 "If you pay your membership fee before your registration fee, the additional "
