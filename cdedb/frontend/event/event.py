@@ -538,14 +538,18 @@ class EventEventMixin(EventBaseFrontend):
 
         if code and persona_ids and role != 'checkin_helper':
             personas = self.coreproxy.get_personas(rs, persona_ids)
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             if role == 'caretaker':
                 role_str = "Betreuer"
             else:
                 role_str = "Orgas"
+                # Orga change may be relevant for the financial calculation...
+                to.append(self.conf["EVENT_FINANCE_ADMIN_ADDRESS"])
+                # ... and for eFZ tracking
+                to.append(self.conf["BOARD_ADDRESS"])
             subject = f"{len(persona_ids)} {role_str} hinzugefügt ({rs.ambience['event'].shortname})"
-            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
-            if rs.ambience['event'].orga_address:
-                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
                 "orgas_added",
@@ -609,7 +613,11 @@ class EventEventMixin(EventBaseFrontend):
         if code:
             orga = self.coreproxy.get_persona(rs, orga_id)
             subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
-            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            to = [
+                self.conf["EVENT_ADMIN_ADDRESS"],
+                self.conf["EVENT_FINANCE_ADMIN_ADDRESS"],
+                self.conf["BOARD_ADDRESS"],
+            ]
             if rs.ambience['event'].orga_address:
                 to.append(rs.ambience['event'].orga_address)
             self.do_mail(
