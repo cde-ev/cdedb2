@@ -7,6 +7,7 @@ managing an event itself, including event parts and course tracks.
 This also includes all functionality directly avalable on the `show_event` page.
 """
 
+import abc
 import copy
 import datetime
 import json
@@ -294,7 +295,16 @@ class EventEventMixin(EventBaseFrontend):
 
         code = self.eventproxy.set_event(rs, event_id, data)
         rs.notify_return_code(code)
+
+        new_event = self.eventproxy.get_event(rs, event_id)
+        self._skipped_notify_on_registration(rs, rs.ambience["event"], new_event)
+
         return self.redirect(rs, "event/show_event")
+
+    @abc.abstractmethod
+    def _skipped_notify_on_registration(
+        self, rs: RequestState, old_event: models.Event, new_event: models.Event
+    ) -> int: ...
 
     @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
@@ -528,14 +538,18 @@ class EventEventMixin(EventBaseFrontend):
 
         if code and persona_ids and role != 'checkin_helper':
             personas = self.coreproxy.get_personas(rs, persona_ids)
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             if role == 'caretaker':
                 role_str = "Betreuer"
             else:
                 role_str = "Orgas"
+                # Orga change may be relevant for the financial calculation...
+                to.append(self.conf["EVENT_FINANCE_ADMIN_ADDRESS"])
+                # ... and for eFZ tracking
+                to.append(self.conf["BOARD_ADDRESS"])
             subject = f"{len(persona_ids)} {role_str} hinzugefügt ({rs.ambience['event'].shortname})"
-            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
-            if rs.ambience['event'].orga_address:
-                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
                 "orgas_added",
@@ -599,7 +613,11 @@ class EventEventMixin(EventBaseFrontend):
         if code:
             orga = self.coreproxy.get_persona(rs, orga_id)
             subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
-            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            to = [
+                self.conf["EVENT_ADMIN_ADDRESS"],
+                self.conf["EVENT_FINANCE_ADMIN_ADDRESS"],
+                self.conf["BOARD_ADDRESS"],
+            ]
             if rs.ambience['event'].orga_address:
                 to.append(rs.ambience['event'].orga_address)
             self.do_mail(

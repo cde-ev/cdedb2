@@ -69,8 +69,8 @@
     <h2>{% trans %}Authorization Form{% endtrans %}</h2>
 
     <p>
-        {% trans %}
-            To participate, please fill out the form linked below and send it to us by e-mail or mail.
+        {% trans management_email=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
+            To participate, please fill out the form linked below and send it by e-mail to {{ management_email }} or by mail.
         {% endtrans %}
     </p>
 

@@ -488,6 +488,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'EntitySorter': EntitySorter,
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
+            'BOARD_ADDRESS': self.conf['BOARD_ADDRESS'],
             'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
@@ -2454,6 +2455,7 @@ class AntiCSRFMarker(NamedTuple):
 class FrontendEndpoint(Protocol):
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
+    __name__: str
 
     def __call__(
         self, rs: RequestState, *args: Any, **kwargs: Any
@@ -2972,7 +2974,7 @@ def mailinglist_guard[F: Callable[..., Any]](
             if allow_moderators:
                 if not obj.mlproxy.may_manage(rs, **{argname: arg}):
                     msg = n_(
-                        "This page can only be accessed by the mailinglist’s moderators."
+                        "This page can only be accessed by the mailinglist's moderators."
                     )
                     raise werkzeug.exceptions.Forbidden(msg)
                 if requires_privilege and not obj.mlproxy.may_manage(
