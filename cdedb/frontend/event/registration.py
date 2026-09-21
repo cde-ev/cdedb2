@@ -1040,6 +1040,38 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         return store
 
+    def _skipped_notify_on_registration(
+        self, rs: RequestState, old_event: models.Event, new_event: models.Event
+    ) -> int:
+        """
+        Send any pending not. upon switching from periodic to immediate notifications.
+
+        Called by 'change_event'.
+        """
+        if (
+            new_event.notify_on_registration.send_on_register()
+            and old_event.notify_on_registration.send_periodically()
+        ):
+            store = self.coreproxy.get_cron_store(rs, "notify_on_registration")
+
+            if prev_timestamp := store["timestamps"].get(str(new_event.id)):
+                prev_timestamp = datetime.datetime.fromisoformat(prev_timestamp)
+
+            new_event.notify_on_registration = old_event.notify_on_registration
+            num, new_timestamp = self._notify_on_registration(
+                rs, new_event, prev_timestamp=prev_timestamp
+            )
+
+            store["timestamps"][str(new_event.id)] = new_timestamp
+            if num:
+                self.logger.info(
+                    f"Sent notification to orgas of {new_event.title}"
+                    f" about {num} new registrations."
+                )
+            self.coreproxy.set_cron_store(rs, "notify_on_registration", store)
+            return num
+        return -1
+
     @access(Roles.event)
     def registration_status(
         self, rs: RequestState, event_id: vtypes.EventID

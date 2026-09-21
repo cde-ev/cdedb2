@@ -482,6 +482,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'EntitySorter': EntitySorter,
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
+            'BOARD_ADDRESS': self.conf['BOARD_ADDRESS'],
             'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
@@ -1995,10 +1996,6 @@ class CdEMailmanClient(mailmanclient.Client):
                 for message in held:
                     headers = email.parser.HeaderParser().parsestr(message.msg)
                     message.spam_score = headers.get("X-Spam-Score", "—")
-                    if isinstance(message.hold_date, str):
-                        message.hold_date = datetime.datetime.fromisoformat(
-                            message.hold_date
-                        )
 
                 return held
             except urllib.error.HTTPError:

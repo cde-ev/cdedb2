@@ -224,6 +224,17 @@ steps:
   commands:
   - sleep 10 # wait until the ldap server comes online
   - COVERAGE_FILE=/coverage/.coverage.4 python3 -m coverage run -p bin/check.py --verbose --all-ldap
+- name: doctest
+  image: cdedb
+  pull: never
+  depends_on:
+  - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  commands:
+    - uv run pytest --doctest-modules cdedb --ignore cdedb/database/evolutions
 - name: coverage
   image: cdedb
   pull: never
@@ -561,6 +572,17 @@ steps:
   commands:
   - sleep 10 # wait until the ldap server comes online
   - COVERAGE_FILE=/coverage/.coverage.4 python3 -m coverage run -p bin/check.py --verbose --all-ldap
+- name: doctest
+  image: cdedb
+  pull: never
+  depends_on:
+  - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  commands:
+    - uv run pytest --doctest-modules cdedb --ignore cdedb/database/evolutions
 - name: coverage
   image: cdedb
   pull: never

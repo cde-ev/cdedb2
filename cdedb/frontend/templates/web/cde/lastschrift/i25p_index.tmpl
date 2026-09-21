@@ -69,8 +69,8 @@
     <h2>{% trans %}Authorization Form{% endtrans %}</h2>
 
     <p>
-        {% trans %}
-            To participate, please fill out the form linked below and send it to us by e-mail or mail.
+        {% trans management_email=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
+            To participate, please fill out the form linked below and send it by e-mail to {{ management_email }} or by mail.
         {% endtrans %}
     </p>
 
@@ -83,5 +83,13 @@
             For more information about membership refer to the {{ faq }} at the CdE Website.
         {% endtrans %}
     </p>
+    {% if "persona" not in user.roles %}
+        <p class="text-info">
+            {{ util.make_icon("info-circle") }}
+            {% trans %}
+                Please log in to fill out the authorization form.
+            {% endtrans %}
+        </p>
+    {% endif %}
     {% endif %}
 {% endblock %}

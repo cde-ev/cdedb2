@@ -202,8 +202,8 @@
                         <div class="miniature-md">
                             <div class="toc">
                                 <ul class="nosp">
-                                    {% for title, title_id in entry.questionnaire.get_toc_entries(gettext) %}
-                                        <li>{{ util.href("#" + "_".join(title_id.split()), title) }}</li>
+                                    {% for heading in entry.questionnaire.get_toc_entries() %}
+                                        <li>{{ gettext(heading.title) if heading.translate else heading.title }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-18 19:20+0200\n"
+"POT-Creation-Date: 2026-09-21 19:01+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -8035,15 +8035,19 @@ msgstr ""
 msgid "Bildung & Begabung gem. GmbH"
 msgstr ""
 
+#, python-format
 msgid ""
-"To participate, please fill out the form linked below and send it to us by e-"
-"mail or mail."
+"To participate, please fill out the form linked below and send it by e-mail "
+"to %(management_email)s or by mail."
 msgstr ""
 
 #, python-format
 msgid ""
 "The Lastschriftinitiative is available for (former) members. For more "
 "information about membership refer to the %(faq)s at the CdE Website."
+msgstr ""
+
+msgid "Please log in to fill out the authorization form."
 msgstr ""
 
 msgid "Edit Direct Debit Authorization"
