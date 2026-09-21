@@ -277,6 +277,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     'part_groups': [],  # Can be configured later if necessary.
                     'assembly_entries': assembly_entries,
                     'ml_type': ml_type,
+                    'ml_class': atype,
                     'available_domains': available_domains,
                     'additional_fields': additional_fields,
                     'maxsize_default': atype.maxsize_default,
@@ -553,6 +554,8 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'restricted': restricted,
                 'readonly': readonly,
                 'available_domains': ml.available_domains,
+                'ml_type': ml.ml_type,
+                'ml_class': type(ml),
             },
             mandatory_fields,
         )

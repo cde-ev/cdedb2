@@ -862,6 +862,7 @@ class TestCron(CronTest):
             'collapse_alternatives': True,
             'dmarc_mitigate_action': 'munge_from',
             'dmarc_mitigate_unconditionally': False,
+            'admin_immed_notify': True,
             # 'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
             'administrivia': True,
             'preferred_language': 'de',
