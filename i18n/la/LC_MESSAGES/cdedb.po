@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-19 11:08+0200\n"
+"POT-Creation-Date: 2026-09-21 20:30+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -8776,6 +8776,9 @@ msgid ""
 "information about membership refer to the %(faq)s at the CdE Website."
 msgstr ""
 
+msgid "Please log in to fill out the authorization form."
+msgstr ""
+
 msgid "Edit Direct Debit Authorization"
 msgstr "tractare mandatum pecuniae expensae lationis"
 
@@ -15388,6 +15391,9 @@ msgid ""
 "only applied to known bad senders, otherwise it is applied to every mail. "
 "Disabling this may cause additional bounces for some subscribers and is not "
 "recommended for large mailinglists."
+msgstr ""
+
+msgid "Receive immediate notifications upon new messages in need of moderation"
 msgstr ""
 
 msgid "max. message size (in kB)"

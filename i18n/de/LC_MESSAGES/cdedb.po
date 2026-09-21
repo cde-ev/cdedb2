@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-19 11:08+0200\n"
+"POT-Creation-Date: 2026-09-21 20:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -8449,6 +8449,9 @@ msgstr ""
 "Die Lastschriftinitiative richtet sich an (ehemalige) Mitglieder. Weitere "
 "Informationen zur Mitgliedschaft findest du im %(faq)s auf der CdE-Website."
 
+msgid "Please log in to fill out the authorization form."
+msgstr "Bitte melde dich an, um die Einzugsermächtigung auszufüllen."
+
 msgid "Edit Direct Debit Authorization"
 msgstr "Einzugsermächtigung bearbeiten"
 
@@ -15306,6 +15309,9 @@ msgstr ""
 "jeder Mail umgeschrieben. Diese Einstellung zu deaktivieren könnte für mehr "
 "Zustellungsprobleme bei den Empfängern sorgen und ist insbesondere für große "
 "Mailinglisten nicht zu empfehlen."
+
+msgid "Receive immediate notifications upon new messages in need of moderation"
+msgstr "Erhalte sofortige Benachrichtigungen über zu moderierende Nachrichten"
 
 msgid "max. message size (in kB)"
 msgstr "max. Nachrichtengröße (in kB)"

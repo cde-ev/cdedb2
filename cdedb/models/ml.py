@@ -97,6 +97,7 @@ class Mailinglist(CdEDataclass):
     attachment_policy: const.AttachmentPolicy
     convert_html: bool
     mitigate_unconditionally: bool = True
+    immediate_notify: bool = True
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
@@ -923,6 +924,7 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     available_domains = [MailinglistDomain.cdelokal]
     relevant_admins = RoleSet({Roles.cdelokal_admin})
     ldap_expose = False
+    immediate_notify: bool = False
 
 
 @dataclass(eq=False)
