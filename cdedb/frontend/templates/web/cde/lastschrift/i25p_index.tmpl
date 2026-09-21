@@ -83,5 +83,13 @@
             For more information about membership refer to the {{ faq }} at the CdE Website.
         {% endtrans %}
     </p>
+    {% if "persona" not in user.roles %}
+        <p class="text-info">
+            {{ util.make_icon("info-circle") }}
+            {% trans %}
+                Please log in to fill out the authorization form.
+            {% endtrans %}
+        </p>
+    {% endif %}
     {% endif %}
 {% endblock %}
