@@ -103,9 +103,9 @@
                         <<%- if mycourses -%>>
                             <<%- for track_id, course_id in mycourses -%>>
                                 <<%- if (course_id == registration['tracks'][track_id]['course_instructor']) -%>>
-                                    \emph{<<< courses[course_id].title|te >>>}
+                                    \emph{<<< courses[course_id].shortname|te >>>}
                                 <<%- else -%>>
-                                    <<< courses[course_id].title|te >>>
+                                    <<< courses[course_id].shortname|te >>>
                                 <<%- endif -%>>
                                 <<%- if not loop.last -%>>
                                     \\
