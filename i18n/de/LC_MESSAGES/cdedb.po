@@ -8441,7 +8441,7 @@ msgstr ""
 "Informationen zur Mitgliedschaft findest du im %(faq)s auf der CdE-Website."
 
 msgid "Please log in to fill out the authorization form."
-msgstr "Bitte logge dich ein, um die Einzugsermächtigung auszufüllen."
+msgstr "Bitte melde dich an, um die Einzugsermächtigung auszufüllen."
 
 msgid "Edit Direct Debit Authorization"
 msgstr "Einzugsermächtigung bearbeiten"
