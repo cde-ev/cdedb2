@@ -5,7 +5,8 @@ on:
 jobs:
     i18n-refresh:
         runs-on: docker
-        image: ghcr.io/astral-sh/uv:python3.13-trixie-slim
+        container:
+            - image: ghcr.io/astral-sh/uv:python3.13-trixie-slim
         steps:
             - name: checkout
               uses: actions/checkout@v4
