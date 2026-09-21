@@ -1996,10 +1996,6 @@ class CdEMailmanClient(mailmanclient.Client):
                 for message in held:
                     headers = email.parser.HeaderParser().parsestr(message.msg)
                     message.spam_score = headers.get("X-Spam-Score", "—")
-                    if isinstance(message.hold_date, str):
-                        message.hold_date = datetime.datetime.fromisoformat(
-                            message.hold_date
-                        )
 
                 return held
             except urllib.error.HTTPError:

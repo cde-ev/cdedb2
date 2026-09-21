@@ -142,11 +142,24 @@ def datetime_filter(
     :param formatstr: Formatting used, if no l10n happens.
     :param lang: If not None, then localize to the passed language.
     :param passthrough: If True return strings unmodified.
+
+    >>> datetime_filter("2026-09-21 12:00:00+00:00")
+    '2026-09-21 14:00 (CEST)'
+    >>> datetime_filter("abc")
+
+    >>> datetime_filter("2026-09-21 12:00:00+00:00", passthrough=True)
+    '2026-09-21 12:00:00+00:00'
     """
     if not val or not isinstance(val, datetime.datetime):
-        if passthrough and isinstance(val, str) and val:
-            return val
-        return None
+        if isinstance(val, str) and val:
+            if passthrough:
+                return val
+            try:
+                val = datetime.datetime.fromisoformat(val)
+            except Exception:
+                return None
+        else:
+            return None
 
     if val.tzinfo is not None:
         val = val.astimezone(_CONFIG["DEFAULT_TIMEZONE"])
