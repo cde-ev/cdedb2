@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-21 19:01+0200\n"
+"POT-Creation-Date: 2026-09-21 20:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -90,14 +90,17 @@ msgstr "Text (multiline)"
 msgid "FieldDatatypes.str_monospace"
 msgstr "Text (multiline, monospace)"
 
-msgid "FieldDatatypes.bool"
-msgstr "Yes/No"
-
 msgid "FieldDatatypes.int"
 msgstr "Integer"
 
 msgid "FieldDatatypes.float"
 msgstr "Decimal"
+
+msgid "FieldDatatypes.non_negative_int"
+msgstr "Non-negative Integer"
+
+msgid "FieldDatatypes.non_negative_float"
+msgstr "Non-negative Decimal"
 
 msgid "FieldDatatypes.date"
 msgstr "Date"
@@ -105,11 +108,8 @@ msgstr "Date"
 msgid "FieldDatatypes.datetime"
 msgstr "Date and Time"
 
-msgid "FieldDatatypes.non_negative_int"
-msgstr "Non-negative Integer"
-
-msgid "FieldDatatypes.non_negative_float"
-msgstr "Non-negative Decimal"
+msgid "FieldDatatypes.bool"
+msgstr "Yes/No"
 
 msgid "FieldDatatypes.phone"
 msgstr "Phone number"
@@ -4600,15 +4600,15 @@ msgid "Invalid magic role."
 msgstr ""
 
 #, python-format
-msgid "Must not duplicate field: '%(field_name)s'"
-msgstr ""
-
-#, python-format
 msgid "Missing role: '%(magic_role)s'."
 msgstr ""
 
 #, python-format
 msgid "Must not duplicate this role: '%(magic_role)s'."
+msgstr ""
+
+#, python-format
+msgid "Must not duplicate field: '%(field_name)s'"
 msgstr ""
 
 msgid "Invalid UTF-8 sequence."
@@ -4771,6 +4771,15 @@ msgstr ""
 msgid "Text"
 msgstr ""
 
+msgid "Numbers"
+msgstr ""
+
+msgid "Dates"
+msgstr ""
+
+msgid "Other"
+msgstr ""
+
 msgid "Special_[[QuestionnaireRowRoles]]"
 msgstr "Special Role"
 
@@ -4832,9 +4841,6 @@ msgid "Genesis"
 msgstr ""
 
 msgid "Privilege Change"
-msgstr ""
-
-msgid "Other"
 msgstr ""
 
 msgid "Case"
@@ -6300,12 +6306,6 @@ msgstr ""
 msgid "Questionnaire is not enabled yet."
 msgstr ""
 
-msgid "Unknown questionnaire kind."
-msgstr ""
-
-msgid "No questionnaire rows of this kind found."
-msgstr ""
-
 msgid "Every row must occur exactly once."
 msgstr ""
 
@@ -7644,6 +7644,15 @@ msgid "subscribed to"
 msgstr ""
 
 msgid "This should not be visible."
+msgstr ""
+
+msgid "Markdown Preview"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+msgid "Close"
 msgstr ""
 
 msgid "Club der Ehemaligen e.V."
@@ -10222,15 +10231,9 @@ msgstr ""
 msgid "QR"
 msgstr ""
 
-msgid "Loading..."
-msgstr ""
-
 msgid ""
 "QR code does not include the profile photo. Consider downloading the vCard "
 "instead."
-msgstr ""
-
-msgid "Close"
 msgstr ""
 
 msgid "VCard"
@@ -10642,10 +10645,7 @@ msgstr ""
 msgid "Configure Custom Fields"
 msgstr ""
 
-msgid "Configure Registration"
-msgstr ""
-
-msgid "Configure Questionnaire"
+msgid "Configure Questionnaires"
 msgstr ""
 
 msgid "This event was cancelled and has been archived."
@@ -13165,6 +13165,12 @@ msgstr ""
 msgid "Participant Questionnaire"
 msgstr ""
 
+msgid "Configure Questionnaire"
+msgstr ""
+
+msgid "Reorder Questionnaire"
+msgstr ""
+
 msgid "Submit"
 msgstr ""
 
@@ -13201,17 +13207,13 @@ msgid "The following problems with your lodgement wishes were detected"
 msgstr ""
 
 #, python-format
-msgid "Configure Registration (%(title)s)"
+msgid "Configure Questionnaires (%(title)s)"
 msgstr ""
 
-#, python-format
-msgid "Configure Questionnaire (%(title)s)"
+msgid "Reorder Questionnaires"
 msgstr ""
 
-msgid "Reorder Registration"
-msgstr ""
-
-msgid "Reorder Questionnaire"
+msgid "Shown to orgas on the \"Configure Questionnaires\" page."
 msgstr ""
 
 msgid "true"
@@ -13224,11 +13226,7 @@ msgid "Delete Questionnaire Part"
 msgstr ""
 
 #, python-format
-msgid "Reorder Registration (%(title)s)"
-msgstr ""
-
-#, python-format
-msgid "Reorder Questionnaire (%(title)s)"
+msgid "Reorder Questionnaires (%(title)s)"
 msgstr ""
 
 msgid "Preview"
@@ -13237,10 +13235,10 @@ msgstr ""
 msgid "Magic Role"
 msgstr ""
 
-msgid "Nr,Nr,Nr,…"
+msgid "Order"
 msgstr ""
 
-msgid "Order"
+msgid "Nr,Nr,Nr,…"
 msgstr ""
 
 msgid "Reorder"
@@ -13498,6 +13496,12 @@ msgstr ""
 
 #, python-format
 msgid "Registration for %(title)s"
+msgstr ""
+
+msgid "Configure Registration"
+msgstr ""
+
+msgid "Reorder Registration"
 msgstr ""
 
 msgid "All data except Event Parts can be changed until the registration ends."
@@ -14509,9 +14513,6 @@ msgid "Short Markdown summary"
 msgstr ""
 
 msgid "Tutorial"
-msgstr ""
-
-msgid "Markdown Preview"
 msgstr ""
 
 msgid "(mandatory input)"

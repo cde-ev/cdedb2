@@ -187,7 +187,7 @@
         </form>
     {% else %}
         <h2>{% trans %}Validation results{% endtrans %}</h2>
-        <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
+        <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform" class="protect">
             {{ util.anti_csrf_token("cde/parse_download") }}
             {{ util.input_hidden(name="count") }}
             {{ util.input_hidden(name="date") }}
@@ -240,8 +240,5 @@
             {% endif %}
             </div>
         </form>
-        <script nonce="{{ csp_nonce }}">
-            $('#parsedownloadform').cdedbProtectChanges();
-        </script>
     {% endif %}
 {% endblock %}

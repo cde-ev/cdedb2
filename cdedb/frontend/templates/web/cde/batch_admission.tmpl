@@ -37,7 +37,8 @@
 {% endmacro %}
 
 {% block content %}
-    <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform" {% if not data %} enctype="multipart/form-data" {% endif %}>
+    <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform"
+            {% if not data %} enctype="multipart/form-data" {% endif %} class="protect">
         {{ util.anti_csrf_token('cde/batch_admission') }}
         {{ util.input_hidden("finalized") }}
         <div class="row">
@@ -231,9 +232,6 @@
                     };
                     $('.select-action').change(updateLineState);
                     $('.select-action').each(function() { updateLineState.call(this) });
-
-                    /* protect form changes */
-                    $('#admissionform').cdedbProtectChanges();
                 });
             </script>
         {% endif %}

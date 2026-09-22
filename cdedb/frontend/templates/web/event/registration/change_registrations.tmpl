@@ -83,7 +83,7 @@
                                 "selected.")) }}
 
     <form action="{{ cdedblink('event/change_registrations') }}" method="POST" id="changeregistrationsform" autocomplete="off"
-          class="form-horizontal">
+          class="form-horizontal protect">
         {{ util.anti_csrf_token('event/change_registrations') }}
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
         <h3 class="heading-underline">{% trans %}Registrations{% endtrans %}</h3>
@@ -282,7 +282,5 @@
             $(this).click(function(){update_style.call($input[0])});
             update_state.call(this);
         });
-
-        $('#changeregistrationsform').cdedbProtectChanges();
     </script>
 {% endblock %}

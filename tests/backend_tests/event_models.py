@@ -1009,63 +1009,70 @@ class TestEventValidation(BackendTest, TestValidationBase):
         all_questionnaires = self.event.get_all_questionnaires(self.key, event.id)
         # Check required field id for full questionnaire validation.
         self.do_validator_test(
-            vtypes.Questionnaire,
+            vtypes.AllQuestionnaires,
             [
                 (
-                    [
-                        {
-                            "role": const.QuestionnaireRowRole.event_field,
-                            "field_id": None,
-                        },
-                    ],
+                    {
+                        const.QuestionnaireUsages.additional: [
+                            {
+                                "role": const.QuestionnaireRowRole.event_field,
+                                "field_id": None,
+                            },
+                        ]
+                    },
                     None,
-                    ValueError("Must not be empty. (field_id_0)"),
+                    ValueError("Must not be empty. (additional_field_id_0)"),
                 ),
             ],
             extraparams={
-                "kind": const.QuestionnaireUsages.additional,
                 "all_questionnaires": all_questionnaires,
             },
         )
 
         self.do_validator_test(
-            vtypes.Questionnaire,
+            vtypes.AllQuestionnaires,
             [
                 # Check that course choices may not be duplicated.
                 (
-                    [
-                        *make_default_questionnaire(event)[
-                            const.QuestionnaireUsages.registration
-                        ],
-                        {
-                            "kind": const.QuestionnaireUsages.registration,
-                            "role": const.QuestionnaireRowRole.course_choices,
-                        },
-                    ],
+                    {
+                        const.QuestionnaireUsages.registration: [
+                            *make_default_questionnaire(event)[
+                                const.QuestionnaireUsages.registration
+                            ],
+                            {
+                                "role": const.QuestionnaireRowRole.course_choices,
+                            },
+                        ]
+                    },
                     None,
                     ValueError(
-                        "Must not duplicate this role: 'CourseChoices'. (role_3)"
+                        "Must not duplicate this role: 'CourseChoices'. (registration_role_3)"
                     ),
                 ),
                 # Check that foto notice must not be missing.
                 (
-                    make_default_questionnaire(event)[
-                        const.QuestionnaireUsages.registration
-                    ][:-3],
+                    {
+                        const.QuestionnaireUsages.registration: make_default_questionnaire(
+                            event
+                        )[const.QuestionnaireUsages.registration][:-3]
+                    },
                     None,
-                    ValueError("Missing role: 'FotoNotice'. (questionnaire)"),
+                    ValueError(
+                        "Missing role: 'FotoNotice'. (registration_questionnaire_)"
+                    ),
                 ),
                 # Check that fee preview may be present multiple times.
                 (
-                    [
-                        *make_default_questionnaire(event)[
-                            const.QuestionnaireUsages.registration
-                        ],
-                        {
-                            "kind": const.QuestionnaireUsages.registration,
-                            "role": const.QuestionnaireRowRole.fee_preview,
-                        },
-                    ],
+                    {
+                        const.QuestionnaireUsages.registration: [
+                            *make_default_questionnaire(event)[
+                                const.QuestionnaireUsages.registration
+                            ],
+                            {
+                                "role": const.QuestionnaireRowRole.fee_preview,
+                            },
+                        ]
+                    },
                     NO_COMPARE,
                     None,
                 ),

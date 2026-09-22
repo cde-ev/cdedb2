@@ -1708,10 +1708,9 @@ class EventEventMixin(EventBaseFrontend):
             for fee_ in fee_data:
                 self.eventproxy.create_event_fee(rs, new_id, fee_)
 
-            for kind, qst in models.questionnaire.make_default_questionnaire(
-                event
-            ).items():
-                self.eventproxy.set_questionnaire(rs, event.id, kind, qst)
+            self.eventproxy.set_questionnaires(
+                rs, event.id, models.questionnaire.make_default_questionnaire(event)
+            )
 
             if create_orga_list:
                 orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
@@ -1839,7 +1838,7 @@ class EventEventMixin(EventBaseFrontend):
         questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[aq]
         for entry in questionnaire.field_rows:
             entry.readonly = True
-        self.eventproxy.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())
+        self.eventproxy.set_questionnaires(rs, event_id, {aq: questionnaire.as_dicts()})
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully

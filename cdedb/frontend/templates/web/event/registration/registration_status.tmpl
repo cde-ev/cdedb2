@@ -49,16 +49,27 @@
 {% block content %}
     {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived']
-            or is_privileged_for("event/configure_registration")  %}
+            or is_privileged_for("event/configure_questionnaire")  %}
     <div class="p button-par">
          {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
             {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning mosp",
                          icon='pen') }}
         {% endif %}
-        {% if is_privileged_for("event/configure_registration") %}
-            {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
-                             aclass="btn btn-info btn-sm", icon="eye") }}
+        {% if age.is_minor() %}
+            {{ util.href(cdedblink("event/minor_form_questionnaire_form"), gettext("Minor Form"),
+                         aclass="btn btn-sm btn-warning mosp", icon='edit') }}
+        {% endif %}
+        {% if is_privileged_for("event/configure_questionnaire") %}
+            {{ util.href(
+                    cdedblink("event/configure_questionnaire_form"), gettext("Configure Questionnaires"),
+                    aclass="btn btn-sm btn-warning", icon=enums["QuestionnaireUsages"].get_edit_icon()) }}
+            {{ util.href(
+                    cdedblink("event/register_form", {"preview": True}), gettext("Registration Preview"),
+                    aclass="btn btn-info btn-sm", icon=enums["QuestionnaireUsages"].registration.get_preview_icon()) }}
+            {{ util.href(
+                    cdedblink("event/additional_questionnaire_form", {"preview": True}), gettext("Questionnaire Preview"),
+                    aclass="btn btn-info btn-sm", icon=enums["QuestionnaireUsages"].additional.get_preview_icon()) }}
         {% endif %}
     </div>
     {% endif %}
@@ -337,9 +348,9 @@
         </dd>
     </dl>
 
-    {% if reg_questionnaire %}
+    {% if reg_questionnaire.field_rows %}
         <dl class="dl-horizontal" id="questionnaire_results">
-        {% for entry in reg_questionnaire if entry|hasattr("field") %}
+        {% for entry in reg_questionnaire.field_rows %}
             <div id="questionnaire_field_result_{{ entry.field.field_name }}">
                 <dt title="{{ entry.get_label() }}">{{ entry.get_label() }}</dt>
                 <dd>

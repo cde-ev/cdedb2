@@ -41,7 +41,7 @@
 
 {% block content %}
     {% set target = 'event/change_course' if 'course' in ambience else 'event/create_course' %}
-    <form action="{{ cdedblink(target) }}" method="POST" id="configurecourseform" class="form-horizontal">
+    <form action="{{ cdedblink(target) }}" method="POST" id="configurecourseform" class="form-horizontal protect">
         {{ util.anti_csrf_token(target) }}
         {{ util.h(n_("Meta"), level=3, underline=True) }}
         {{ util.form_input_text(name="nr", label=gettext("Coursenumber")) }}
@@ -103,7 +103,7 @@
             disabled ? $form_group.hide() : $form_group.show();
         }
 
-        $('#configurecourseform').cdedbProtectChanges().find('.segment-offered').each(
+        $('#configurecourseform').find('.segment-offered').each(
             function () {
                 let $relatedInputs = $(this).closest('form').find('.segment-' + $(this).data('track_id'));
                 update($relatedInputs, !$(this).prop('checked'));

@@ -448,16 +448,16 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
-        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
-            const.QuestionnaireUsages.registration
-        ]
+        kind = const.QuestionnaireUsages.registration
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[kind]
         return self.render(
             rs,
             "registration/register",
             {
-                'semester_fee': semester_fee,
-                'reg_questionnaire': reg_questionnaire,
-                'preview': preview,
+                "semester_fee": semester_fee,
+                "questionnaire": questionnaire,
+                "kind": kind,
+                "preview": preview,
                 **reg_params,
                 **course_choice_params,
             },
@@ -1190,16 +1190,16 @@ class EventRegistrationMixin(EventBaseFrontend):
         values = self._prepare_registration_values(event, reg_params['registration'])
         merge_dicts(rs.values, values, {'parts': reg_params['payment_parts']})
 
-        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
-            const.QuestionnaireUsages.registration
-        ]
+        kind = const.QuestionnaireUsages.registration
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[kind]
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
         return self.render(
             rs,
             "registration/amend_registration",
             {
-                'semester_fee': self.conf['MEMBERSHIP_FEE'],
-                'reg_questionnaire': reg_questionnaire,
+                "semester_fee": self.conf["MEMBERSHIP_FEE"],
+                "questionnaire": questionnaire,
+                "kind": kind,
                 **reg_params,
                 **course_choice_params,
             },
@@ -2442,6 +2442,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             action == 'modify_checkin'
             and any(len(reg['checkin_periods']) >= 2 for reg in regs.values())
             and checkin_time
+            and checkin_time
             < max(
                 reg['checkin_periods'][-2].checkout_time
                 for reg in regs.values()
@@ -2501,6 +2502,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if (
             action == 'modify_checkout'
             and any(reg['checkin_periods'] for reg in regs.values())
+            and checkout_time
             and checkout_time
             < max(
                 reg['checkin_periods'][-1].checkin_time

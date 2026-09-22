@@ -23,4 +23,4 @@ with script:
             for entry in questionnaire:
                 if isinstance(entry, models.questionnaire.QuestionnaireFieldRow):
                     entry.readonly = True
-            event.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())
+            event.set_questionnaires(rs, event_id, {aq: questionnaire.as_dicts()})

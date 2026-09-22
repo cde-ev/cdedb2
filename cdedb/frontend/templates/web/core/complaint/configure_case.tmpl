@@ -33,7 +33,7 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink(action_target) }}" method="POST" id="configurecaseform" class="form-horizontal">
+    <form action="{{ cdedblink(action_target) }}" method="POST" id="configurecaseform" class="form-horizontal protect">
         {{ util.anti_csrf_token(action_target) }}
 
         <h3 class="heading-underline">{% trans %}Metadata{% endtrans %}</h3>
@@ -103,8 +103,4 @@
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('core/complaint_index')) }}
         {% endif %}
     </form>
-
-    <script nonce="{{ csp_nonce }}">
-        $('#configureassemblyform').cdedbProtectChanges();
-    </script>
 {% endblock %}

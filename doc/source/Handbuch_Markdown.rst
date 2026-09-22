@@ -81,13 +81,14 @@ Markdown-Texte nicht benötigt werden.
 
 Die CdE-Datenbank verwendet das ``markdown``-Paket um Markdown zu HTML zu parsen. Das so
 entstandene HTML wird anschließend bis auf eine Liste erlaubter Tags und Attribute escapet. Es ist also auch möglich,
-direkt HTML zu verwenden. Folgende `Extensions <https://www.markdownguide.org/basic-syntax/>`_ werden verwendet:
+direkt HTML zu verwenden. Folgende `Extensions <https://python-markdown.github.io/extensions/>`_ werden verwendet:
 
 - ``extra``
 - ``sane_lists``
 - ``smarty`` (mit deutschen Anführungszeichen)
 - ``toc``
 - ``footnotes`` (mit ``UNIQUE_IDS=True``)
+- ``table`` (mit custom Version um Bootstrap-Klassen hinzuzufügen)
 
 Folgende HTML-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquote``, ``br``, ``code``, ``colgroup``,
 ``col``, ``details``, ``div``, ``dl``, ``dt``, ``dd``, ``em``, ``i``, ``li``, ``h1``, ``h2``, ``h3``, ``h4``,

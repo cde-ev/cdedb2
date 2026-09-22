@@ -10,13 +10,8 @@
 {{ util.breadcrumb_link(cdedblink("event/create_past_event"), gettext("Create Past Event"), active=True) }}
 {% endblock %}
 {% block content %}
-    <script nonce="{{ csp_nonce }}">
-        $(function() {
-            $('#createeventform').cdedbProtectChanges();
-        });
-    </script>
     <form action="{{ cdedblink('event/create_past_event') }}" method="POST" id="createeventform"
-        class="form-horizontal">
+        class="form-horizontal protect">
         {{ util.anti_csrf_token('event/create_past_event') }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}

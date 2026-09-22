@@ -103,11 +103,11 @@
 
 {% macro bootstrap_panel(
         title="", aclass="panel-default", icon=none, anid=none, button=none,
-        footer_text=none, footer_class="", footer_icon=none, level=3
+        footer_text=none, footer_class="", footer_icon=none, level=3, heading_class=""
 ) %}
     <div{{ dict(class="panel " + aclass, id=anid)|xmlattr }}>
         {%- if title or icon or button %}
-            <div class="panel-heading">
+            <div class="panel-heading {{ heading_class }}">
                 {{- button -}}
                 <h{{ level }} class="panel-title">
                     {{- make_icon(icon) + nbsp if icon }}
@@ -356,24 +356,17 @@
     {% endif %}
 {% endmacro %}
 
-{% macro markdown_preview(anid, infotext=_("Supports Markdown.")) %}
+{% macro markdown_preview(infotext=_("Supports Markdown.")) %}
     <p class="help-block no-color">
         {{ make_icon('fab fa-markdown') }} {{ gettext(infotext) }}
         <span class="mdjs" style="display: none;">
-            <a id="{{ anid }}-mdpreview" title="{% trans %}Open Markdown Preview{% endtrans %}"
+            <a title="{% trans %}Open Markdown Preview{% endtrans %}"
                href="#" style="display: inline-block;">
                 {{ gettext("Preview") }}
             </a> |
         </span>
         {{ href(docurl("Handbuch_Markdown"), gettext("Tutorial"), title=gettext("Short Markdown summary")) }}
     </p>
-    <script nonce="{{ csp_nonce }}">
-        $("#{{ anid }}").cdedbMarkdownPreview("{{ cdedblink("core/markdown_parse")|e }}",
-                                              {{ {"title": gettext("Markdown Preview"),
-                                                  "loading": gettext("Loading..."),
-                                                  "note": "",
-                                                  "close": gettext("Close") }|tojson }})
-    </script>
 {%- endmacro %}
 
 {# ################### #
@@ -445,7 +438,7 @@
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
             {{- output_errors(errorname or name, displayerrors) }}
             {{- output_info(info) }}
-        {%- if markdown %}{{ markdown_preview(anid) }}{% endif %}
+        {%- if markdown %}{{ markdown_preview() }}{% endif %}
         {%- if horizontal %}</div>{% endif %}
     </div>
 {%- endmacro %}
@@ -864,7 +857,7 @@
 
 {% macro form_input_submit(label=gettext("Save"), value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel", cancellinks=none,
-        small=False, horizontal=True, title=none, info=none, wide=False, outerclass='') %}
+        small=False, horizontal=True, title=none, info=none, wide=False, outerclass='', formaction=none) %}
     {% if has_warnings() %}
         {{ form_input_checkbox(name=IGNORE_WARNINGS_NAME, label=gettext("Ignore Warnings"), value=True,
                                readonly=readonly, horizontal=horizontal, small=small, outerclass="alert alert-warning") }}
@@ -879,7 +872,7 @@
                     {{- info -}}
                 </p>
             {%- endif %}
-            {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False) }}
+            {{- input_submit(label, value, name, anid, aclass, icon, readonly, title, display_ignore_warnings=False, formaction=formaction) }}
             {%- for cancellink, cancelvalue, cancelicon in (cancellinks or []) + [(cancellink, cancelvalue, "times")] if cancellink %}
                 &emsp;{{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
             {%- endfor %}

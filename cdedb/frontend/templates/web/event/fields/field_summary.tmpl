@@ -156,7 +156,7 @@
             <div id="field-definition-notes">{{ ambience['event']['field_definition_notes']|md }}</div>
         {% endcall %}
     {% endif %}
-    <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
+    <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal protect">
         {{ util.anti_csrf_token('event/field_summary') }}
 
         {% set nav_tabs = [] %}
@@ -207,7 +207,7 @@
         <h3 class="tab-heading-alt heading-underline">{% trans %}New Field{% endtrans %}</h3>
         {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
         <div class="row">
-            {{ print_field(-values.get('create_last_index', 0) - 1, None, False, True, 'drow-prototype', newrow=True) }}
+            {{ print_field(-values.get(drow_last_index(), 0) - 1, None, False, True, 'drow-prototype', newrow=True) }}
         </div>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
@@ -233,8 +233,7 @@
                         .closest('.association-input-container').hide();
                     /* Refocus first field. Focus set by cdedbDynamicRow get's lost by moving to container. */
                     $(this).find('.drow-input').first().focus();
-                 }})
-            .cdedbProtectChanges();
+                 }});
     </script>
 
     <hr />

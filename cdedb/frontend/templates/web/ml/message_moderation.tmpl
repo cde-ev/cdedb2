@@ -36,8 +36,8 @@
          {% endtrans %}
         </p>
         {% if held %}
-            <p>
-                <form action="{{ cdedblink('ml/message_moderation_multi') }}" method="POST" id="moderateallform">
+            <form action="{{ cdedblink('ml/message_moderation_multi') }}" method="POST" id="moderateallform">
+                <p>
                     {{ util.anti_csrf_token('ml/message_moderation_multi') }}
                     {% for email in held %}
                         {{ util.input_hidden("request_ids", email.request_id) }}
@@ -48,8 +48,8 @@
                         {{ util.input_submit(label=label, icon=icon, value=action, name="action",
                                              aclass="btn btn-sm btn-" + coloring) }}
                     {% endfor %}
-                </form>
-            </p>
+                </p>
+            </form>
             <ul>
                 {% for email in held %}
                     <li class="hide-hover-container clearfix-after">
@@ -157,8 +157,8 @@
                     $("#mlmod-modal-" + request_id).modal("hide");
                 });
                 $("#mlmod-textarea-reason-" + request_id).on("keydown", function(event) {
-                    if (event.key == "Enter" && event.ctrlKey) {
-                        $("#mlmod-modal-reject-" + request_id).click();
+                    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                        $("#mlmod-modal-reject-" + request_id).trigger("click");
                         return true;
                     }
                 });
@@ -168,4 +168,3 @@
         }
     </script>
 {% endblock %}
-

@@ -12,8 +12,9 @@ from typing import Any
 
 from playwright.sync_api import Browser, Page, expect, sync_playwright
 
+from cdedb.common import now
 from cdedb.common.roles import Realms
-from tests.common import BrowserTest, event_keeper, storage
+from tests.common import BrowserTest, FrontendTest, event_keeper, storage
 
 _LOGGER = logging.getLogger(__file__)
 
@@ -48,32 +49,48 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                     context = browser.new_context(
                         record_video_dir=video_dir, locale="de-DE"
                     )
+                    context.set_default_timeout(timeout)
+                    context.set_default_navigation_timeout(timeout)
                     page: Page = context.new_page()
                     page.set_default_timeout(timeout)
                     page.set_default_navigation_timeout(timeout)
+                    expect.set_options(timeout=timeout)
                     fkwargs['page'] = page
                     with self.subTest(browser=name):
                         try:
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
-                            if page.video:
-                                _LOGGER.info(
-                                    f"Saved video of failed test at {page.video.path()!r}."
-                                )
-                                path = pathlib.Path(page.video.path()).with_suffix(
-                                    ".png"
-                                )
-                                page.screenshot(full_page=True, path=path)
-                                _LOGGER.info(
-                                    f"Saved screenshot at point of failure to '{path}'."
-                                )
+                            failed = True
+                            screenshot = page.screenshot(full_page=True, timeout=5000)
                             raise
                         else:
-                            if page.video:  # pragma: no cover
-                                pathlib.Path(page.video.path()).unlink()
-                                _LOGGER.info(f"Removed '{page.video.path()}'.")
-                    context.close()
-                    browser.close()
+                            failed = False
+                            screenshot = None
+                        finally:
+                            context.close()
+
+                            if failed and page.video and video_dir:  # pragma: no cover
+                                video_path = pathlib.Path(video_dir) / (
+                                    now()
+                                    .isoformat(timespec="seconds")
+                                    .removesuffix("+00:00")
+                                    + ".webm"
+                                )
+                                page.video.save_as(video_path)
+                                page.video.delete()
+                                _LOGGER.info(
+                                    f"Saved video of failed test at {video_path!r}."
+                                )
+                                if screenshot:
+                                    path = video_path.with_suffix(".png")
+                                    path.write_bytes(screenshot)
+                                    _LOGGER.info(
+                                        f"Saved screenshot at point of failure to '{path}'."
+                                    )
+                            elif page.video:  # pragma: no cover
+                                page.video.delete()
+
+                            browser.close()
 
         return new_func
 
@@ -477,3 +494,196 @@ class TestBrowser(BrowserTest):
 
                 page.get_by_role("button", name="Anfrage abschicken").click()
                 page.wait_for_url("http://localhost:5000/")
+
+    @storage
+    @make_page
+    def test_js_questionnaire(self, page: Page) -> None:
+        page.goto("http://localhost:5000/")
+        page.get_by_label("E-Mail").fill("anton@example.cde")
+        page.get_by_label("Passwort").fill("secret")
+        page.get_by_role("button", name="Anmelden").click()
+        page.wait_for_url("http://localhost:5000/")
+
+        page.get_by_role("link", name="Veranstaltungen").click()
+        page.get_by_role("link", name="Große Testakademie 2222").click()
+        page.get_by_role("button", name="Orga-Schaltflächen").click()
+        page.get_by_role("link", name="Fragebögen konfigurieren").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/questionnaire/config")
+
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Anmeldungs-Fragebogen")
+        ).to_contain_class("active")
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Zusätzlicher Fragebogen")
+        ).not_to_contain_class("active")
+
+        expect(page.locator("#tab_registration")).to_be_visible()
+        expect(page.locator("#tab_additional")).not_to_be_visible()
+
+        page.get_by_role("presentation").filter(
+            has_text="Zusätzlicher Fragebogen"
+        ).click()
+
+        expect(page.locator("#tab_registration")).not_to_be_visible()
+        expect(page.locator("#tab_additional")).to_be_visible()
+
+        inp = page.locator("input[value='Unterüberschrift']")
+        expect(inp).to_be_visible()
+        inp.fill("Test-Überschrift")
+        button = (
+            page
+            .locator("#tab_additional")
+            .get_by_role("button")
+            .get_by_text("Speichern")
+        )
+        expect(button).to_be_visible()
+        button.click()
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/questionnaire/config#tab_additional"
+        )
+
+        expect(page.locator("#tab_registration")).not_to_be_visible()
+        expect(page.locator("#tab_additional")).to_be_visible()
+
+        expect(page.locator("input[value='Test-Überschrift']")).to_be_visible()
+        page.get_by_role("button", name="Neue Zeile hierüber einfügen").filter(
+            visible=True
+        ).first.click()
+
+        role_select = page.locator("*:focus")
+        expect(role_select).to_be_visible()
+        role_select.select_option("Text")
+        role_select.press("Tab")
+        text_inp = page.locator("*:focus")
+        expect(text_inp).to_be_visible()
+        text_inp.fill("Bli bla Blubb")
+        page.get_by_role("button").get_by_text("Speichern").filter(visible=True).click()
+
+        page.get_by_role("link", name="Fragebogen-Vorschau").click()
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/registration/questionnaire?preview=True"
+        )
+
+        expect(page.get_by_text("Bli bla Blubb")).to_be_visible()
+        expect(
+            page.get_by_role("heading").get_by_text("Test-Überschrift ¶")
+        ).to_be_visible()
+
+        row_texts = list(
+            map(
+                FrontendTest._normalize_whitespace,
+                page.locator("[id^='questionnaire_row']").all_text_contents(),
+            )
+        )
+        self.assertLess(
+            row_texts.index("Bli bla Blubb"),
+            row_texts.index("Test-Überschrift ¶"),
+        )
+
+        page.get_by_role("link", name="Fragebögen konfigurieren").first.click()
+        page.wait_for_url("http://localhost:5000/event/event/1/questionnaire/config")
+
+        page.get_by_role("button", name="Neue Zeile hierüber einfügen").filter(
+            visible=True
+        ).first.click()
+
+        role_select = page.locator("*:focus")
+        expect(role_select).to_be_visible()
+        role_select.select_option("Datenfeld")
+        role_select.press("Tab")
+        field_inp = page.locator("*:focus")
+        field_form_group = page.locator(".form-group:has(*:focus)")
+        expect(field_inp).to_be_visible()
+        expect(field_form_group).not_to_contain_class("has-error")
+        field_inp.select_option("brings_balls")
+        expect(field_form_group).to_contain_class("has-error")
+        expect(page.locator("#tab_registration .has-error")).to_have_count(1)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(1)
+
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Anmeldung")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Zusätzlicher Fragebogen")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+
+        page.locator("#usages_tablist").get_by_role("presentation").filter(
+            has_text="Zusätzlicher Fragebogen"
+        ).click()
+
+        other_field_inp = page.locator("#tab_additional .has-error .input-field")
+        expect(other_field_inp).to_have_value("1")
+        other_field_inp.select_option("brings_balls")
+        expect(other_field_inp).to_have_value("1")
+
+        other_field_inp.click()
+        other_field_inp.select_option("transportation")
+        expect(page.locator(".form-group:has(*:focus)")).to_contain_class("has-error")
+        expect(page.locator("#tab_registration .has-error")).to_have_count(0)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(2)
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Anmeldung")
+            .locator(".nav-tab-error")
+        ).not_to_be_visible()
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Zusätzlicher Fragebogen")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+
+        page.locator(".drow-row:has( .has-error) .drow-delete-button").first.click()
+        expect(page.locator("#tab_registration .has-error")).to_have_count(0)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(0)
+        page.locator(".drow-delete .drow-delete-button").click()
+        expect(page.locator("#tab_registration .has-error")).to_have_count(0)
+        expect(page.locator("#tab_additional .has-error")).to_have_count(2)
+
+        page.get_by_role("button").get_by_text("Speichern").filter(visible=True).click()
+        expect(page.locator("#notifications .alert")).to_be_visible()
+        expect(page.locator("#notifications .alert")).to_contain_class("alert-danger")
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Anmeldung")
+            .locator(".nav-tab-error")
+        ).not_to_be_visible()
+        expect(
+            page
+            .locator("#usages_tablist")
+            .get_by_role("presentation")
+            .filter(has_text="Zusätzlicher Fragebogen")
+            .locator(".nav-tab-error")
+        ).to_be_visible()
+
+        expect(page.locator("#tab_additional .has-error")).to_have_count(2)
+        page.locator("#tab_additional .has-error .input-field").first.select_option(
+            "may_reserve"
+        )
+        for elem in page.locator(".form-group").all():
+            expect(elem).not_to_contain_class("has-error")
+        for elem in page.locator(".nav-tab-error").all():
+            expect(elem).not_to_be_visible()
+
+        page.get_by_role("button").get_by_text("Speichern").filter(visible=True).click()
+        expect(page.locator("#notifications .alert")).to_be_visible()
+        expect(page.locator("#notifications .alert")).to_contain_class("alert-success")

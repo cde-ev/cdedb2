@@ -8,7 +8,7 @@
     all_course_choices  A dict containing a mapping from track to a list of ids of all offered courses.
     show_track_titles   A bool deciding whether to print or omit the title of the track.
 #}
-{% macro select_course_choice(cco, all_courses, course_choices, all_course_choices, show_track_title) %}
+{% macro select_course_choice(cco, all_courses, course_choices, all_course_choices, show_track_title, is_locked) %}
     {% set track = cco.reference_track %}
     <div id="course-choice-container-{{ track['id'] if not cco.is_complex() else "group-{}".format(cco['id'])  }}"
          class="course_choice_container">
@@ -34,20 +34,20 @@
         {% set min_choices = track['min_choices'] %}
 
         {% for i in range(num_choices) %}
-            {{ util.form_input_select(name=choice_name.format(i), nulloption=nbsp,
+            {{ util.form_input_select(name=choice_name.format(i), nulloption=nbsp, actualreadonly=is_locked,
                                       aclass="choice_group_select" if cco.is_complex() else "",
                                       attributes="data-track_group_id={}".format(cco['id']) if cco.is_complex() else "",
                                       label=gettext("%s. Choice")|format(i + 1), entries=course_entries,
                                       info=(gettext("Optional choice") if i >= min_choices else "")) }}
         {% endfor %}
 
-        {{ util.form_input_select(name=instructor_name, entries=all_course_entries,
+        {{ util.form_input_select(name=instructor_name, entries=all_course_entries, actualreadonly=is_locked,
                                   nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructed Course"),
                                   info=gettext("If you are instructing a course, please specify which one.")) }}
     </div>
 {% endmacro %}
 
-{% macro select_all_course_choices(involved_tracks=None) %}
+{% macro select_all_course_choices(involved_tracks=None, is_locked=False) %}
     {% for cco in choice_objects %}
         {% if cco.is_complex() %}
             {% set course_choices = courses_per_track_group[cco.id] %}
@@ -58,7 +58,7 @@
         {% endif %}
         {% if involved_tracks is none or involved_tracks.intersection(cco.tracks) %}
             {{ select_course_choice(cco, courses, course_choices, all_course_choices,
-                                    show_track_title=choice_objects|length > 1) }}
+                                    show_track_title=choice_objects|length > 1, is_locked=is_locked) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}
@@ -110,7 +110,7 @@
     <div id="field.{{ field['field_name'] }}" data-field_id="{{ field['id'] }}">
     {%- if field['entries'] %}
         {{- util.input_select(name=name, entries=field['entries'].items(), nulloption=nbsp if None not in field.entries else None,
-                              readonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
+                              actualreadonly=readonly, defaultvalue=defaultvalue, anid=anid, sort=False) }}
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {% set to_input_type = {
@@ -130,17 +130,17 @@
         {% set type = to_input_type.get(field.kind, 'text') %}
         {%- if type == 'bool' %}
             <div class="checkbox{% if readonly %} disabled{% endif %}">
-                {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
+                {{- util.input_checkbox(name=name, actualreadonly=readonly, defaultvalue=defaultvalue,
                                         anid=anid, label=bool_label) -}}
             </div>
         {%- elif type == 'textarea' %}
-            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+            {{- util.input_textarea(name=name, actualreadonly=readonly, defaultvalue=defaultvalue,
                                     anid=anid, rows=field.kind.text_rows) }}
         {%- elif type == 'textarea_monospace' %}
-            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+            {{- util.input_textarea(name=name, actualreadonly=readonly, defaultvalue=defaultvalue,
                                     anid=anid, rows=field.kind.text_rows, aclass='form-control monospace') }}
         {%- else %}
-            {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
+            {{- util.input_text(name=name, actualreadonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
                 attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
         {%- endif %}
     {%- endif %}
@@ -216,13 +216,22 @@
     {% endtrans %}
 {% endmacro %}
 
-{% macro print_questionnaire_entry(row) %}
-    <div id="questionnaire_row_{{ row.pos }}">
+{% macro print_questionnaire_entry(row, is_locked, static=False) %}
+    <div id="questionnaire_row_{{ row.pos }}" class="{{ row.get_row_html_classes()|join(" ") }}">
     {% if row.name == "QuestionnaireFieldRow" %}
-        {{ form_field_input(
-                row.field, label=row.label, info=row.info|md|replace("<p>", "")|replace("</p>", "") if row.info else "",
-                readonly=row.readonly or is_locked, defaultvalue=row.default_value if not (row.readonly or is_locked) else ""
-            ) }}
+        {% if not static %}
+            {{ form_field_input(
+                    row.field, label=row.label, info=row.info|md|replace("<p>", "")|replace("</p>", "") if row.info else "",
+                    readonly=row.readonly or is_locked, defaultvalue=row.default_value if not (row.readonly or is_locked) else ""
+                ) }}
+        {% else %}
+            <dl class="">
+                <dt title="{{ row.label }}">{{ row.label }}</dt>
+                <dd>
+                    {{ display_field(row.field, (registration['fields'] or {}).get(row.field.field_name)) }}
+                </dd>
+            </dl>
+        {% endif %}
     {% elif row.name == "QuestionnaireTextRow" %}
         {{ row.text|md }}
     {% elif row.name == "QuestionnaireHeadingRow" %}
@@ -281,7 +290,7 @@
         {% if choice_objects %}
             {% set heading = row.get_toc_entries()[0] %}
             {{ util.h(heading.title, level=heading.level, underline=True) }}
-            {{ select_all_course_choices(involved_tracks=involved_tracks) }}
+            {{ select_all_course_choices(involved_tracks=involved_tracks, is_locked=is_locked) }}
         {% endif %}
     {% elif row.name == "PartSelection" %}
         {% if ambience['event'].parts|length > 1 %}
@@ -289,7 +298,7 @@
             {% set readonly = registration and not preview %}
             {{ util.h(heading.title, level=heading.level, underline=True) }}
             {{ util.form_input_checkboxes(
-                    name="parts", label=gettext("Event Parts"), entries=part_options, readonly=readonly,
+                    name="parts", label=gettext("Event Parts"), entries=part_options, actualreadonly=is_locked or readonly,
                     defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.") if readonly
                 ) }}
         {% elif ambience['event'].parts|length == 1 %}
@@ -297,7 +306,7 @@
         {% endif %}
     {% elif row.name == "ListConsent" %}
         {{ util.form_input_checkbox(
-                name="reg.list_consent", defaultvalue='True', label=gettext("Participant List Consent"),
+                name="reg.list_consent", defaultvalue='True', label=gettext("Participant List Consent"), actualreadonly=is_locked,
                 info=gettext(
                     "I agree that my data, including my name, address and my email, may be sent"
                     " to other participants of this event beforehand."
@@ -314,7 +323,7 @@
                 {% set mix_info = "" %}
             {% endif %}
             {{ util.form_input_select(
-                    name="reg.mixed_lodging",
+                    name="reg.mixed_lodging", actualreadonly=is_locked,
                     entries=(
                         (True, gettext("I agree to mixed lodging.")),
                         (False, gettext("I want to be lodged separated by gender.")),
@@ -334,12 +343,14 @@
         {%- else %}
             {%- set noteslabel = gettext("Notes for Orgas") %}
         {%- endif %}
-        {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5") }}
+        {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5", actualreadonly=is_locked) }}
     {% elif row.name == "TableOfContents" %}
         <div class="toc">
             <ul>
                 {% for heading in row.questionnaire.get_toc_entries() %}
-                    <li>{{ util.href("#" + heading.anchor, gettext(heading.title) if heading.translate else heading.title) }}</li>
+                    <li class="{{ "fw-bold" if heading.level < 3 }}">
+                        {{ util.href("#" + heading.anchor, gettext(heading.title) if heading.translate else heading.title) }}
+                    </li>
                 {% endfor %}
             </ul>
         </div>
@@ -394,7 +405,7 @@
 {# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro questionnaire_config_entry(part_id, kind, aclass="", entry=none) %}
+{% macro questionnaire_config_entry(part_id, kind, aclass="", entry=None) %}
     <div class="panel panel-default {{ aclass }} {{ entry.entry_get_drow_html_classes()|join(" ") if entry }}"
          data-drow-id="{{ part_id }}">
         <div class="panel-heading">
@@ -402,12 +413,12 @@
                 <span class="drow-hide">
                     {% if not entry %}
                         {{ util.input_checkbox(
-                                "create_" ~ part_id, label=gettext("Add"), aclass='drow-indicator',
-                                attributes={"data-basename": "create_"}|xmlattr
+                                drow_create(part_id, kind.name), label=gettext("Add"), aclass="drow-indicator",
+                                attributes={"data-basename": drow_basename("create", kind.name)}|xmlattr
                             ) }}
                     {% else %}
                         {{ util.input_checkbox(
-                                "delete_" ~ part_id, label=gettext("Remove"), aclass='drow-indicator'
+                                drow_delete(part_id, kind.name), label=gettext("Remove"), aclass="drow-indicator"
                             ) }}
                     {% endif %}
                 </span>
@@ -429,24 +440,30 @@
                 <span class="drow-buttonspace"></span>
             </div>
             {{ util.input_hidden(
-                    "pos_" ~ part_id, defaultvalue=part_id, aclass="input-pos drow-input",
-                    attributes={"data-basename": "pos_"}|xmlattr) }}
-            {% if not entry %}
+                    drow_name("pos", part_id, kind.name), defaultvalue=part_id, aclass="input-pos drow-input",
+                    attributes={"data-basename": drow_basename("pos", kind.name)}|xmlattr) }}
+            {% if part_id < 0 %}
                 <div>
                     {{ util.form_input_select(
-                            "role_" ~ part_id, label=gettext("Role"),
-                            entries=available_magic_roles|enum_entries(processing=gettext),
-                            aclass='input-role drow-input', horizontal=False, small=True,
+                            drow_name("role", part_id, kind.name), label=gettext("Role"),
+                            entries=all_questionnaires[kind].get_available_magic_roles()|enum_entries(processing=gettext),
+                            aclass="input-role drow-input", horizontal=False, small=True,
                             attributes={
-                                "data-basename": "role_",
+                                "data-basename": drow_basename("role", kind.name)
                             }|xmlattr
                         ) }}
                 </div>
             {% else %}
                 <h3 class="panel-title">
-                    {{ util.make_icon(entry.get_icon()) }}
-                    {{ gettext(values["role_" ~ part_id]|string) }}
-                    {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
+                    {% set role = values[drow_name("role", part_id, kind.name)] %}
+                    {% if role is string %}
+                        {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
+                    {% endif %}
+                    {% if role %}
+                        {{ util.make_icon(role.get_class().get_icon()) }}
+                        {{ gettext(values[drow_name("role", part_id, kind.name)]|string) }}
+                        {{ util.input_hidden(drow_name("role", part_id, kind.name), aclass="input-role") }}
+                    {% endif %}
                 </h3>
             {% endif %}
             <div style="clear:both;"></div>
@@ -455,79 +472,81 @@
             <div class="row">
                 <div class="col-md-6">
                     {{ util.form_input_select(
-                            "field_id_" ~ part_id, label=gettext("Custom Field"),
-                            entries=available_fields|entries(
-                                'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                            drow_name("field_id", part_id, kind.name), label=gettext("Custom Field"),
+                            entries=all_questionnaires[kind].get_available_fields()|entries(
+                                "id", "field_name", group="sort_group", default_group=gettext("Other Fields")
                             ),
                             nulloption=gettext("— select a field —"),
-                            aclass='input-field drow-input', horizontal=False,
+                            aclass="input-field drow-input", horizontal=False,
                             attributes={
-                                "data-basename": "field_id_",
+                                "data-basename": drow_basename("field_id", kind.name),
                                 "data-show_for_role": get_roles_with_field("field_id")|map("string")|list,
                             }|xmlattr
                         ) }}
                     {{ util.form_input_text(
-                            "default_value_" ~ part_id, label=gettext("Default Value"),
-                            aclass='input-defaultvalue drow-input', horizontal=False,
+                            drow_name("default_value", part_id, kind.name), label=gettext("Default Value"),
+                            aclass="input-defaultvalue drow-input", horizontal=False,
                             attributes={
-                                "data-basename": "default_value_",
+                                "data-basename": drow_basename("default_value", kind.name),
                                 "data-show_for_role": get_roles_with_field("default_value")|map("string")|list,
                             }|xmlattr
                         ) }}
                     <div class="checkbox">
                         {{ util.input_checkbox(
-                                "readonly_" ~ part_id, label=gettext("read-only"), aclass='input-readonly drow-input',
+                                drow_name("readonly", part_id, kind.name), label=gettext("read-only"),
+                                aclass="input-readonly drow-input",
                                 attributes={
-                                    "data-basename": "readonly_",
+                                    "data-basename": drow_basename("readonly", kind.name),
                                     "data-show_for_role": get_roles_with_field("readonly")|map("string")|list,
                                 }|xmlattr,
-                                readonly=(("readonly_" ~ part_id not in values or not values["readonly_" ~ part_id]) and (kind and not kind.allow_readonly()))
+                                readonly=(("readonly_" ~ part_id not in values or not values[drow_name("readonly", part_id, kind.name)]) and (kind and not kind.allow_readonly()))
                             ) }}
-                        {{ util.output_errors("readonly_" ~ part_id, wrapper=True) }}
+                        {{ util.output_errors(drow_name("readonly", part_id, kind.name), wrapper=True) }}
                     </div>
                     {{ util.form_input_select(
-                            "panel_kind_" ~ part_id, label=gettext("Panel Kind"),
+                            drow_name("panel_kind", part_id, kind.name), label=gettext("Panel Kind"),
                             entries=enums["QuestionnairePanelKind"]|enum_entries(processing=gettext),
                             aclass="input-label drow-input", horizontal=False,
                             attributes={
-                                "data-basename": "panel_kind_",
+                                "data-basename": drow_basename("panel_kind", kind.name),
                                 "data-show_for_role": get_roles_with_field("panel_kind")|map("string")|list,
                             }|xmlattr
                         ) }}
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_text(
-                            "label_" ~ part_id, label=gettext("Label"),
-                            aclass='input-label drow-input', horizontal=false,
+                            drow_name("label", part_id, kind.name), label=gettext("Label"),
+                            aclass="input-label drow-input", horizontal=false,
                             attributes={
-                                "data-basename": "label_",
+                                "data-basename": drow_basename("label", kind.name),
                                 "data-show_for_role": get_roles_with_field("label")|map("string")|list,
                             }|xmlattr
                         ) }}
                     {{ util.form_input_textarea(
-                            "info_" ~ part_id, label=gettext("Info"), markdown=True,
-                            aclass='input-info drow-input', horizontal=False, rows=5,
+                            drow_name("info", part_id, kind.name), label=gettext("Info"), markdown=True,
+                            aclass="input-info drow-input", horizontal=False, rows=5,
                             attributes={
-                                "data-basename": "info_",
+                                "data-basename": drow_basename("info", kind.name),
                                 "data-show_for_role": get_roles_with_field("info")|map("string")|list,
                             }|xmlattr
                         ) }}
                 </div>
             </div>
             {{ util.form_input_text(
-                    "title_" ~ part_id, label=gettext("Title"),
-                    aclass='input-title drow-input', horizontal=false,
+                    drow_name("title", part_id, kind.name), label=gettext("Title"),
+                    aclass="input-title drow-input", horizontal=false,
                     attributes={
-                        "data-basename": "title_",
+                        "data-basename": drow_basename("title", kind.name),
                         "data-show_for_role": get_roles_with_field("title")|map("string")|list,
                     }|xmlattr
                 ) }}
             {{ util.form_input_textarea(
-                    "text_" ~ part_id, label=gettext("Text"), markdown=True,
-                    aclass='input-text drow-input', horizontal=False, rows=5,
+                    drow_name("text", part_id, kind.name), label=gettext("Text"), markdown=True,
+                    aclass='input-text drow-input', horizontal=False,
                     attributes={
-                        "data-basename": "text_",
+                        "data-basename": drow_basename("text", kind.name),
                         "data-show_for_role": get_roles_with_field("text")|map("string")|list,
+                        "style": "field-sizing: content; min-height: 100px",
                     }|xmlattr
                 ) }}
         </div>
