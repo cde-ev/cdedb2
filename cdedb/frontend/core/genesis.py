@@ -715,11 +715,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     "success",
                     n_("Account upgraded.")
                     if case.is_upgrade
+                    else n_("User updated.")
+                    if not creation
                     else n_("Case approved."),
                 )
 
             else:
-                # TODO: offer checkbox to also send welcome mail in this case
                 reset_link = self._password_reset_link(rs, persona_id)
                 self.do_mail(
                     rs,
