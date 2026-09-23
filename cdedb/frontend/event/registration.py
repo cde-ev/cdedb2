@@ -442,8 +442,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         elif not self.is_privileged(rs, EventPrivileges.basic_read):
             raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
 
-        user = self.coreproxy.get_event_user(rs, rs.user.persona_id)
-        if user.birthday == datetime.date.min:
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        if persona.birthday == datetime.date.min:
             rs.notify(
                 "error",
                 n_(

@@ -263,6 +263,15 @@ class CoreBaseFrontend(AbstractFrontend):
                 dashboard['events'] = final
                 dashboard['events_registration'] = events_registration
                 dashboard['events_payment_pending'] = events_payment_pending
+                persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+                if persona.birthday == datetime.date.min:
+                    rs.notify(
+                        "warning",
+                        n_(
+                            "No birthday set yet. For registering to events, a birthday"
+                            " is mandatory. Please set your birthday under “My Data”."
+                        ),
+                    )
             # open assemblies
             if Roles.assembly in rs.user.new_roles:
                 assembly_ids = self.assemblyproxy.list_assemblies(
