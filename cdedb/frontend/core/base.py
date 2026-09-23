@@ -1476,7 +1476,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 persona.donation = persona.REDACTED
             if admin_access:
                 status_bits_to_be_redacted.remove("is_searchable")
-            if not admin_access:
+            if not admin_access and persona.birthday != datetime.date.min:
                 persona.birthday = persona.REDACTED
         elif status.is_event_realm:
             persona = models.EventPersona.from_database(data, allow_superfluous=True)
