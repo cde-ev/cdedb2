@@ -226,6 +226,29 @@ class TestCoreFrontend(FrontendTest):
 
         self.check_sidebar(ins, out)
 
+    @prepsql(
+        f"UPDATE core.personas SET birthday = '0001-01-01' WHERE id = {USER_DICT["berta"]["id"]};"
+    )
+    def test_missing_birthday(self) -> None:
+        """Users are warned for missing birthday on login, and forced to set for event registration."""
+        user = USER_DICT["berta"]
+        self.get("/")
+        f = self.response.forms["loginform"]
+        f["username"] = user["username"]
+        f["password"] = user["password"]
+        self.submit(f, check_notification=False)
+        self.assertTitle("Eigene Daten bearbeiten")
+        self.assertNotification(
+            "Um dich zu Veranstaltungen anzumelden, benötigen wir dein Geburtsdatum.",
+            "warning",
+        )
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Anmelden")
+        self.assertTitle("Eigene Daten bearbeiten")
+        self.assertNotification(
+            "Um dich zu Veranstaltungen anzumelden, benötigen wir dein Geburtsdatum.",
+            "error",
+        )
+
     @as_users(
         "anton",
         "berta",
