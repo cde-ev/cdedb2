@@ -338,12 +338,26 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if wants:
             response = basic_redirect(rs, wants)
-        elif Roles.member in rs.user.new_roles:
-            user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-            if not user.decided_search:
-                response = self.redirect(rs, "cde/consent_decision_form")
-            else:
-                response = self.redirect(rs, "core/index")
+        elif (
+            # prompt do decide about member search visibility
+            Roles.member in rs.user.new_roles
+            and not self.coreproxy.get_cde_user(rs, rs.user.persona_id).decided_search
+        ):
+            response = self.redirect(rs, "cde/consent_decision_form")
+        elif (
+            # ask for a birthday if not given
+            Roles.event in rs.user.new_roles
+            and self.coreproxy.get_event_user(rs, rs.user.persona_id).birthday
+            == datetime.date.min
+        ):
+            rs.notify(
+                "warning",
+                n_(
+                    "No birthday set yet. For registering to events,"
+                    " a birthday is mandatory. Please set your birthday below."
+                ),
+            )
+            response = self.redirect(rs, "core/change_user")
         else:
             response = self.redirect(rs, "core/index")
         response.set_cookie(

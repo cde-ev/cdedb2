@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-21 09:47+0000\n"
+"POT-Creation-Date: 2026-09-23 13:57+0000\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -4449,6 +4449,9 @@ msgstr "Ungültige Eingabe für ein Datum."
 msgid "Must be a datetime.date."
 msgstr "Kein Datum gefunden."
 
+msgid "Invalid date."
+msgstr "Unzulässiges Datum."
+
 msgid "A birthday must be in the past."
 msgstr "Ein Geburtsdatum muss in der Vergangenheit liegen."
 
@@ -5606,6 +5609,14 @@ msgstr "Mailinglistenaccount"
 
 msgid "Login failure."
 msgstr "Login fehlgeschlagen."
+
+msgid ""
+"No birthday set yet. For registering to events, a birthday is mandatory. "
+"Please set your birthday below."
+msgstr ""
+"Du hast bisher kein Geburtsdatum angegeben. Um dich zu Veranstaltungen "
+"anzugeben, benötigen wir dein Geburtsdatum. Bitte gebe dein Geburtsdatum "
+"unten ein."
 
 #, python-format
 msgid "%(count)s session(s) terminated."
@@ -9418,6 +9429,9 @@ msgstr "Pronomen auf Namensschildern anzeigen"
 
 msgid "Show pronouns on profile"
 msgstr "Pronomen auf Profil anzeigen"
+
+msgid "Impossible to change afterwards."
+msgstr "Kann später nicht mehr geändert werden."
 
 msgid "Account & Membership"
 msgstr "Account & Mitgliedschaft"
