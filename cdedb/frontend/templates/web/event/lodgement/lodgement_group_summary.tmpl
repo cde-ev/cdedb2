@@ -25,7 +25,8 @@
 
 
 {% block content %}
-    <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform">
+    <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform"
+          class="protect">
         {{ util.anti_csrf_token('event/lodgement_group_summary') }}
         <table class="table table-condensed" id="drow-table">
             <thead>
@@ -72,7 +73,6 @@
             $('#drow-table').cdedbDynamicRow({
                 addButton: $('#drow-addbutton'),
                 delButtonTitle: "{{ gettext("Delete line") }}"});
-            $('#lodgementgroupsummaryform').cdedbProtectChanges();
         });
     </script>
 {% endblock %}

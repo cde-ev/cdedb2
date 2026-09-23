@@ -78,7 +78,7 @@
         {% set action = 'event/create_custom_filter' %}
     {% endif %}
 
-    <form action="{{ cdedblink(action) }}" method="POST" id="configurecustomfilterform">
+    <form action="{{ cdedblink(action) }}" method="POST" id="configurecustomfilterform" class="protect">
         {{ util.anti_csrf_token(action) }}
         {{ util.form_input_text(name="title", label=gettext("Title"), horizontal=False) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), horizontal=False) }}
@@ -109,8 +109,4 @@
 
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/custom_filter_summary"), horizontal=False) }}
     </form>
-
-    <script nonce="{{ csp_nonce }}">
-        $('#configurecustomfilterform').cdedbProtectChanges();
-    </script>
 {% endblock %}

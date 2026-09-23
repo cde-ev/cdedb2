@@ -10,8 +10,10 @@ from typing_extensions import TypeForm as _TypeForm
 
 if TYPE_CHECKING:
     from cdedb.common.query import Query as _Query
+    from cdedb.database.constants import QuestionnaireUsages as _QuestionnaireUsages
 else:
     _Query = None
+    _QuestionnaireUsages = None
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, _Any]
@@ -107,8 +109,9 @@ Registration = _NewType("Registration", CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", CdEDBObject)
-# TODO why is this still in usage?
-Questionnaire = _NewType("Questionnaire", list[CdEDBObject])
+AllQuestionnaires = _NewType(
+    "AllQuestionnaires", dict[_QuestionnaireUsages, list[CdEDBObject]]
+)
 
 SerializedEvent = _NewType("SerializedEvent", CdEDBObject)
 SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)

@@ -483,14 +483,12 @@ rules = [
                 post("/register", endpoint="register"),
                 sub(
                     "/register",
-                    get_("/config", endpoint="configure_registration_form"),
-                    post("/config", endpoint="configure_registration"),
                     get_("/fee", endpoint="precompute_fee"),
                 ),
                 sub(
                     "/questionnaire",
-                    get_("/config", endpoint="configure_additional_questionnaire_form"),
-                    post("/config", endpoint="configure_additional_questionnaire"),
+                    get_("/config", endpoint="configure_questionnaire_form"),
+                    post("/config", endpoint="configure_questionnaire"),
                     get_("/reorder", endpoint="reorder_questionnaire_form"),
                     post("/reorder", endpoint="reorder_questionnaire"),
                 ),

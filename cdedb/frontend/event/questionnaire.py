@@ -20,7 +20,6 @@ import cdedb.models.event as models
 from cdedb.backend.event.registration import ComplexRegistrationFee
 from cdedb.common import (
     CdEDBObject,
-    DefaultReturnCode,
     RequestState,
     get_hash,
     json_serialize,
@@ -35,6 +34,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     access,
     check_validation as check,
+    drow_basename,
     drow_create,
     drow_delete,
     drow_last_index,
@@ -48,63 +48,44 @@ if TYPE_CHECKING:
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):
-    @access(Roles.event)
-    @event_guard(EventPrivileges.basic_read)
-    def configure_registration_form(
-        self, rs: RequestState, event_id: vtypes.EventID
-    ) -> Response:
-        """Render form."""
-        return self.configure_questionnaire_form(
-            rs,
-            event_id,
-            const.QuestionnaireUsages.registration,
-        )
-
-    @access(Roles.event)
-    @event_guard(EventPrivileges.basic_read)
-    def configure_additional_questionnaire_form(
-        self, rs: RequestState, event_id: vtypes.EventID
-    ) -> Response:
-        """Render form."""
-        return self.configure_questionnaire_form(
-            rs,
-            event_id,
-            const.QuestionnaireUsages.additional,
-        )
-
     def _prepare_questionnaire_form(
-        self,
-        rs: RequestState,
-        event_id: vtypes.EventID,
-        kind: const.QuestionnaireUsages,
-    ) -> tuple[
-        models.questionnaire.QuestionnaireContainer,
-        models.questionnaire.Questionnaire,
-        str,
-    ]:
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> tuple[models.questionnaire.QuestionnaireContainer, str]:
         """Helper to retrieve some data for questionnaire configuration."""
-        full_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
-        questionnaire = full_questionnaire[kind]
-        current = {
-            f"{key}_{i}": value
-            for i, entry in enumerate(questionnaire)
-            for key, value in entry.as_dict().items()
-        }
-        merge_dicts(rs.values, current)
+        all_questionnaires = self.eventproxy.get_all_questionnaires(rs, event_id)
+        if "checksum" not in rs.values:
+            current = {
+                drow_name(key, i, kind.name): value
+                for kind, questionnaire in all_questionnaires.items()
+                for i, entry in enumerate(questionnaire)
+                for key, value in entry.as_dict().items()
+            }
+            merge_dicts(rs.values, current)
+        # Determine the max of previously submitted rows and current rows.
+        for kind in const.QuestionnaireUsages:
+            max_index = 0
+            while drow_name("role", max_index, kind.name) in rs.values:
+                max_index += 1
+            rs.values[drow_basename("current", kind.name)] = max_index
 
-        checksum = get_hash(json_serialize(questionnaire).encode())
+        checksum = get_hash(json_serialize(all_questionnaires).encode())
 
-        return (full_questionnaire, questionnaire, checksum)
+        return (all_questionnaires, checksum)
 
+    @access(Roles.event)
+    @event_guard(EventPrivileges.basic_read)
     def configure_questionnaire_form(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        kind: const.QuestionnaireUsages,
+        kind: const.QuestionnaireUsages | None = None,
     ) -> Response:
-        full_questionnaire, questionnaire, checksum = self._prepare_questionnaire_form(
-            rs, event_id, kind
-        )
+        all_questionnaires, checksum = self._prepare_questionnaire_form(rs, event_id)
+
+        # This preselects the previously active tab.
+        if kind:
+            rs.values["nav_tab_active"] = f"#tab_{kind.name}"
+
         spec_per_role = {
             role: dict(role.get_class().requestdict_fields(creation=True))
             for role in const.QuestionnaireRowRole
@@ -120,61 +101,25 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             rs,
             "questionnaire/configure_questionnaire",
             {
-                "questionnaire": questionnaire,
+                "all_questionnaires": all_questionnaires,
                 "checksum": checksum,
-                "available_fields": full_questionnaire.get_available_fields(kind),
-                "available_magic_roles": full_questionnaire.get_available_magic_roles(
-                    kind
-                ),
                 "drow_classes_by_role": drow_classes_by_role,
                 "all_drow_classes": set().union(*drow_classes_by_role.values()),
                 "get_roles_with_field": get_roles_with_field,
-                "kind": kind,
             },
         )
 
-    @access(Roles.event, modi={"POST"})
-    @event_guard(EventPrivileges.basic_write)
-    def configure_registration(
-        self, rs: RequestState, event_id: vtypes.EventID
-    ) -> Response:
-        """Manipulate the questionnaire form.
-
-        This allows the orgas to design a form without interaction with an
-        administrator.
-        """
-        kind = const.QuestionnaireUsages.registration
-        code = self._set_questionnaire(rs, event_id, kind)
-        if code <= 0:
-            return self.configure_registration_form(rs, event_id)
-        rs.notify_return_code(code)
-        return self.redirect(rs, "event/configure_registration_form")
-
-    @access(Roles.event, modi={"POST"})
-    @event_guard(EventPrivileges.basic_write)
-    def configure_additional_questionnaire(
-        self, rs: RequestState, event_id: vtypes.EventID
-    ) -> Response:
-        """Manipulate the additional questionnaire form.
-
-        This allows the orgas to design a form without interaction with an
-        administrator.
-        """
-        kind = const.QuestionnaireUsages.additional
-        code = self._set_questionnaire(rs, event_id, kind)
-        if code <= 0:
-            return self.configure_additional_questionnaire_form(rs, event_id)
-        rs.notify_return_code(code)
-        return self.redirect(rs, "event/configure_additional_questionnaire_form")
-
     def _extract_questionnaire_row(
-        self, rs: RequestState, drow_id: int
+        self, rs: RequestState, drow_id: int, kind: const.QuestionnaireUsages
     ) -> CdEDBObject | None:
-        if unwrap(request_extractor(rs, {drow_delete(drow_id): bool})):
+
+        if unwrap(request_extractor(rs, {drow_delete(drow_id, kind.name): bool})):
             return None
-        role: const.QuestionnaireRowRole | None = unwrap(
+        qrrn = const.QuestionnaireRowRole | None
+        role: qrrn = unwrap(
             request_extractor(
-                rs, {drow_name("role", drow_id): const.QuestionnaireRowRole | None}
+                rs,
+                {drow_name("role", drow_id, kind.name): (qrrn)},
             )
         )
         if not role:
@@ -183,57 +128,76 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         spec = cls.requestdict_fields(creation=True)
         data = request_extractor(
             rs,
-            {drow_name(key, drow_id): val for key, val in spec},  # type: ignore[misc]
+            {drow_name(key, drow_id, kind.name): val for key, val in spec},  # type: ignore[misc]
             postpone_validation=True,
         )
         # Pass 'drow_id' as 'id' to correctly map validation errors.
-        return {key: data[drow_name(key, drow_id)] for key, _ in spec} | {"id": drow_id}
+        return {key: data[drow_name(key, drow_id, kind.name)] for key, _ in spec} | {
+            "id": drow_id
+        }
 
-    def _set_questionnaire(
+    @access(Roles.event, modi={"POST"})
+    @event_guard(EventPrivileges.basic_write)
+    @REQUESTdata("submitted_kind", "checksum")
+    def configure_questionnaire(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        kind: const.QuestionnaireUsages,
-    ) -> DefaultReturnCode:
-        """Deduplicated code to set questionnaire rows of one kind."""
-        checksum = request_extractor(rs, {"checksum": str | None})["checksum"]
-        all_questionnaires, questionnaire, old_checksum = (
-            self._prepare_questionnaire_form(rs, event_id, kind)
+        submitted_kind: const.QuestionnaireUsages,
+        checksum: str | None,
+    ) -> Response:
+        """Set questionnaires (of all kinds at once)."""
+        all_questionnaires, old_checksum = self._prepare_questionnaire_form(
+            rs, event_id
         )
+        if rs.has_validation_errors():
+            return self.configure_questionnaire_form(rs, event_id, kind=submitted_kind)
 
-        new_questionnaire = []
-        marker = 0
-        while True:
-            if unwrap(request_extractor(rs, {drow_name("role", marker): bool})):
-                if row := self._extract_questionnaire_row(rs, marker):
-                    new_questionnaire.append(row)
-            elif marker >= len(questionnaire):
-                break
-            marker += 1
+        new_all_questionnaires = {}
+        for kind in const.QuestionnaireUsages:
+            questionnaire = all_questionnaires[kind]
 
-        marker = 1
-        while marker < 2**10:
-            if unwrap(request_extractor(rs, {drow_create(-marker): bool})):
-                if row := self._extract_questionnaire_row(rs, -marker):
-                    new_questionnaire.append(row)
+            new_questionnaire = []
+            marker = 0
+            while True:
+                key = drow_name("role", marker, kind.name)
+                if unwrap(request_extractor(rs, {key: bool})):
+                    if row := self._extract_questionnaire_row(rs, marker, kind):
+                        new_questionnaire.append(row)
+                else:
+                    # The request_extractor check leaves an entry in the values that
+                    #  we do not want.
+                    rs.values.pop(key, None)
+                    if marker >= len(questionnaire):
+                        break
                 marker += 1
-            else:
-                break
-        rs.values[drow_last_index()] = marker - 1
 
-        tmp = {int(row["pos"]): row for row in new_questionnaire}
-        new_questionnaire = [tmp[pos] for pos in mixed_existence_sorter(tmp)]
+            marker = 1
+            while marker < 2**10:
+                if unwrap(
+                    request_extractor(rs, {drow_create(-marker, kind.name): bool})
+                ):
+                    if row := self._extract_questionnaire_row(rs, -marker, kind):
+                        new_questionnaire.append(row)
+                    marker += 1
+                else:
+                    break
+            rs.values[drow_last_index(kind.name)] = marker - 1
 
-        new_questionnaire = check(
+            tmp = {int(row["pos"]): row for row in new_questionnaire}
+            new_all_questionnaires[kind] = [
+                tmp[pos] for pos in mixed_existence_sorter(tmp)
+            ]
+
+        new_all_questionnaires = check(
             rs,
-            vtypes.Questionnaire,
-            new_questionnaire,
-            kind=kind,
+            vtypes.AllQuestionnaires,
+            new_all_questionnaires,
             all_questionnaires=all_questionnaires,
         )
 
-        if rs.has_validation_errors() or new_questionnaire is None:
-            return 0
+        if rs.has_validation_errors() or new_all_questionnaires is None:
+            return self.configure_questionnaire_form(rs, event_id, kind=submitted_kind)
 
         if checksum != old_checksum:
             rs.notify(
@@ -243,9 +207,15 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                     " override those changes. Submit form again to proceed."
                 ),
             )
-            return -1
+            return self.configure_questionnaire_form(rs, event_id, kind=submitted_kind)
 
-        return self.eventproxy.set_questionnaire(rs, event_id, kind, new_questionnaire)
+        code = self.eventproxy.set_questionnaires(rs, event_id, new_all_questionnaires)
+        rs.notify_return_code(code)
+        return self.redirect(
+            rs,
+            "event/configure_questionnaire_form",
+            anchor=f"tab_{submitted_kind.name}",
+        )
 
     @abc.abstractmethod
     def get_register_params(self, rs: RequestState) -> "RegisterParams": ...
@@ -266,9 +236,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, "event/show_event")
-        add_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
-            const.QuestionnaireUsages.additional
-        ]
+        kind = const.QuestionnaireUsages.additional
+        add_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[kind]
         wish_data = None
         reg_params = self.get_register_params(rs)
         if not preview:
@@ -301,9 +270,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             rs,
             "questionnaire/additional_questionnaire",
             {
-                'add_questionnaire': add_questionnaire,
-                'preview': preview,
-                'lodgement_wishes': wish_data or {},
+                "questionnaire": add_questionnaire,
+                "kind": kind,
+                "preview": preview,
+                "lodgement_wishes": wish_data or {},
                 **reg_params,
             },
         )
@@ -352,32 +322,21 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        kind: const.QuestionnaireUsages,
+        kind: const.QuestionnaireUsages | None = None,
     ) -> Response:
         """Render form."""
-        if rs.has_validation_errors():
-            if any(field == 'kind' for field, _ in rs.retrieve_validation_errors()):
-                rs.notify("error", n_("Unknown questionnaire kind."))
-                return self.redirect(rs, "event/show_event")
-            else:
-                # we want to render the errors from reorder_questionnaire on this page,
-                # so we only redirect to another page if 'kind' does not pass validation
-                pass
-        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[kind]
-        redirects = {
-            const.QuestionnaireUsages.registration: "event/configure_registration",
-            const.QuestionnaireUsages.additional: "event/configure_additional_questionnaire",
-        }
-        if not questionnaire:
-            rs.notify("info", n_("No questionnaire rows of this kind found."))
-            return self.redirect(rs, redirects[kind])
+        rs.ignore_validation_errors()
+        # This preselects the previously active tab.
+        if kind:
+            rs.values["nav_tab_active"] = f"#tab_{kind.name}"
+
+        all_questionnaires = self.eventproxy.get_all_questionnaires(rs, event_id)
+
+        # Fake fee for the fee preview mockup.
         fake_complex_fee = ComplexRegistrationFee(
             fees=[
                 (
-                    cast(
-                        models.EventFee,
-                        sn(id=-1, kind=const.EventFeeType.common),
-                    ),
+                    cast(models.EventFee, sn(id=-1, kind=const.EventFeeType.common)),
                     decimal.Decimal(200),
                 ),
                 (
@@ -394,9 +353,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             rs,
             "questionnaire/reorder_questionnaire",
             {
-                'questionnaire': questionnaire,
-                'kind': kind,
-                'redirect': redirects[kind],
+                'all_questionnaires': all_questionnaires,
                 'fake_complex_fee': fake_complex_fee,
                 **self.get_course_choice_params(rs, event_id),
             },
@@ -404,13 +361,12 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("order", "kind")
+    @REQUESTdata("submitted_kind")
     def reorder_questionnaire(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        kind: const.QuestionnaireUsages,
-        order: list[int],
+        submitted_kind: const.QuestionnaireUsages,
     ) -> Response:
         """Shuffle rows of the orga designed form.
 
@@ -418,21 +374,36 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         laborious to do without.
         """
         if rs.has_validation_errors():
-            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
+            return self.reorder_questionnaire_form(rs, event_id, kind=submitted_kind)
 
-        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
-            kind
-        ].as_dicts()
+        all_questionnaires = self.eventproxy.get_all_questionnaires(
+            rs, event_id
+        ).as_dict()
 
-        if not set(order) == set(range(len(questionnaire))):
-            rs.append_validation_error((
-                "order",
-                ValueError(n_("Every row must occur exactly once.")),
-            ))
+        new_all_questionnaires = {}
+        for kind in const.QuestionnaireUsages:
+            key = drow_basename("order", kind.name)
+            order = request_extractor(rs, {key: list[int]})[key]
+            expected = set(range(len(all_questionnaires[kind])))
+
+            if order is not None:
+                if set(order) != expected or len(order) != len(expected):
+                    rs.append_validation_error((
+                        key,
+                        ValueError(n_("Every row must occur exactly once.")),
+                    ))
+                else:
+                    new_all_questionnaires[kind] = [
+                        all_questionnaires[kind][i] for i in order
+                    ]
+
         if rs.has_validation_errors():
-            return self.reorder_questionnaire_form(rs, event_id, kind=kind)
+            return self.reorder_questionnaire_form(rs, event_id)
 
-        new_questionnaire = [questionnaire[i] for i in order]
-        code = self.eventproxy.set_questionnaire(rs, event_id, kind, new_questionnaire)
+        code = self.eventproxy.set_questionnaires(rs, event_id, new_all_questionnaires)
         rs.notify_return_code(code)
-        return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
+        return self.redirect(
+            rs,
+            "event/reorder_questionnaire_form",
+            anchor=f"tab_{submitted_kind.name}",
+        )

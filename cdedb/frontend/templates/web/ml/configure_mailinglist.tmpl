@@ -88,7 +88,7 @@
         {% else %}
             {% set target = 'ml/create_mailinglist' %}
         {% endif %}
-        <form action="{{ cdedblink(target) }}" method="POST" id="configuremailinglistform" class="form-horizontal">
+        <form action="{{ cdedblink(target) }}" method="POST" id="configuremailinglistform" class="form-horizontal protect">
             {{ util.anti_csrf_token(target) }}
 
             <h3 class="heading-underline">{% trans %}Meta{% endtrans %}</h3>
@@ -115,9 +115,6 @@
                                       entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
 
             {# Needed for the javascript stuff to work #}
-            {% if 'mailinglist' in ambience %}
-                {% set ml_type = ambience['mailinglist'].ml_type %}
-            {% endif %}
             {{ util.input_hidden(name="ml_type", value=ml_type) }}
             {% if 'mailinglist' not in ambience or readonly %}
                 {{ util.form_input_static(
@@ -220,6 +217,9 @@
                                  " otherwise it is applied to every mail."
                                  " Disabling this may cause additional bounces for some subscribers"
                                  " and is not recommended for large mailinglists.")) }}
+                {{ util.form_input_checkbox(
+                    name="immediate_notify", defaultvalue=ml_class.immediate_notify,
+                    label=gettext("Receive immediate notifications upon new messages in need of moderation")) }}
                 {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                                         defaultvalue=maxsize_default,
                                         info=gettext("Larger messages will be held for moderation.")) }}
@@ -231,7 +231,6 @@
 
         <script nonce="{{ csp_nonce }}">
             $('#configuremailinglistform')
-                .cdedbProtectChanges()
                 .cdedbConfigureMailinglist(
                     '{{ gettext("Preview: %(preview)sMail Subject Here")|format(
                             preview='<span id="subject-prefix-preview"></span>')|s }}'

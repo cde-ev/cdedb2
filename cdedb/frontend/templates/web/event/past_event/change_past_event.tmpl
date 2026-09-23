@@ -17,13 +17,8 @@
         active=True) }}
 {% endblock %}
 {% block content %}
-    <script nonce="{{ csp_nonce }}">
-        $(function() {
-            $('#changeeventform').cdedbProtectChanges();
-        });
-    </script>
     <form action="{{ cdedblink('event/change_past_event') }}" method="POST" id="changeeventform"
-            class="form-horizontal">
+            class="form-horizontal protect">
         {{ util.anti_csrf_token('event/change_past_event') }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}

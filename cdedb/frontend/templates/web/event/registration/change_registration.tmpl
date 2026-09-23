@@ -36,7 +36,7 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform" autocomplete="off"
-          class="form-horizontal">
+          class="form-horizontal protect">
         {{ util.anti_csrf_token('event/change_registration') }}
 
         <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
@@ -112,6 +112,6 @@
             'is_member': {{ ambience['registration']['is_member']|tojson }},
             'is_orga': {{ (persona['id'] in ambience['event']['orgas'])|tojson }},
         }
-        $('#changeregistrationform').cdedbProtectChanges().cdedbFeePreview(feePreviewConstants);
+        $('#changeregistrationform').cdedbFeePreview(feePreviewConstants);
     </script>
 {% endblock %}

@@ -61,7 +61,6 @@ import decimal
 import enum
 import functools
 import io
-import itertools
 import json
 import logging
 import math
@@ -113,6 +112,8 @@ from cdedb.common import (
     LineResolutions,
     asciificator,
     compute_checkdigit,
+    drow_basename,
+    drow_name,
     get_mandatory_type,
     is_optional_type,
     normalize_field_entries,
@@ -207,11 +208,20 @@ class ValidationSummary(ValueError, Sequence[Exception]):
             yield self
 
     @contextlib.contextmanager
-    def modify_argname(self, *, prefix: str = "", suffix: str = "") -> Generator[Self]:
+    def modify_argname(
+        self,
+        *,
+        prefix: str = "",
+        suffix: str = "",
+        argname_callback: Callable[[str], str] | None = None,
+    ) -> Generator[Self]:
+
+        if argname_callback is None:
+            argname_callback = lambda argname: prefix + argname + suffix
 
         def callback(errors: Iterable[Exception]) -> list[Exception]:
             ret = [
-                exc.__class__(prefix + exc.args[0] + suffix, *exc.args[1:])
+                exc.__class__(argname_callback(exc.args[0]), *exc.args[1:])
                 for exc in errors
             ]
             return ret
@@ -248,6 +258,9 @@ class ValidatorStorage(dict[TypeForm[Any], Callable[..., Any]]):
 
     def __getitem__[T](self, type_: TypeForm[T]) -> Callable[..., Any]:
         origin = typing.get_origin(type_)
+        # Shortcut if the exact given type is registered, even if it is a composite type.
+        if super().get(type_, None) is not None:
+            return super().__getitem__(type_)
         if is_optional_type(type_):
             return cast(
                 Callable[..., T],
@@ -3157,9 +3170,7 @@ def _by_field_datatype(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.QuestionnaireTextRow,
-    models_event.questionnaire.QuestionnaireHeadingRow,
-    models_event.questionnaire.QuestionnairePanelRow,
+    *models_event.questionnaire.QuestionnaireTextRowMeta.__subclasses__(),
 )
 def _questionnaire_text_row(
     val: CdEDBObject, argname: str = "", **kwargs: Any
@@ -3199,7 +3210,7 @@ def _questionnaire_field_row(
     if field_id := val.get("field_id"):
         if not (field := available_fields.get(field_id)):
             errs.append(KeyError('field_id', n_("Invalid field.")))
-        if val.get('default_value') and field:
+        if "default_value" in val and field:
             val['default_value'] = _by_field_datatype(
                 val['default_value'],
                 "default_value",
@@ -3225,15 +3236,7 @@ def _questionnaire_field_row(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.CourseChoices,
-    models_event.questionnaire.PartSelection,
-    models_event.questionnaire.FeePreview,
-    models_event.questionnaire.ListConsent,
-    models_event.questionnaire.MixedLodging,
-    models_event.questionnaire.FotoNotice,
-    models_event.questionnaire.RegistrationNotes,
-    models_event.questionnaire.TableOfContents,
-    models_event.questionnaire.MyData,
+    *models_event.questionnaire.QuestionnaireMagicRow.__subclasses__(),
 )
 def _questionnaire_magic_row(
     val: CdEDBObject,
@@ -3255,6 +3258,7 @@ def _questionnaire_magic_row(
     return val
 
 
+# Pass additional kwargs to the automatic prevalidation.
 @_create_dataclass_validator(
     models_event.questionnaire.QuestionnaireRow,
     allow_superfluous=True,
@@ -3264,70 +3268,50 @@ def _questionnaire_row(
     val: CdEDBObject,
     argname: str = "",
     *,
+    # Remove the additional kwargs from above from the 'kwargs' again:
     allow_superfluous: bool,
     pass_superfluous: bool,
     **kwargs: Any,
 ) -> CdEDBObject:
+
+    # Extract the questionnare row role.
     tmp = _examine_dictionary_fields(
         val,
         {"role": const.QuestionnaireRowRole},
         allow_superfluous=True,
         **kwargs,
     )
+    # Delegate further validation to the appropriate validator.
     cls = models_event.questionnaire.QuestionnaireRow.get_class(tmp["role"])
     return _ALL_TYPED[cls](val, **kwargs)
 
 
-@_add_typed_validator
 def _questionnaire(
     val: Any,
     argname: str = "questionnaire",
     *,
     kind: const.QuestionnaireUsages,
-    all_questionnaires: models_event.questionnaire.QuestionnaireContainer,
+    pos_to_id: dict[int, int],
     **kwargs: Any,
-) -> Questionnaire:
+) -> list[CdEDBObject]:
     val = _ALL_TYPED[list[dict[str, Any]]](val, argname, **kwargs)
-
-    event = all_questionnaires.event
-    available_fields = all_questionnaires.get_available_fields(kind)
-    available_magic_roles = all_questionnaires.get_available_magic_roles(kind)
-
-    # Map list position to "id" to display errors at the correct place in the frontend.
-    pos_to_id: dict[int, int] = {}
 
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
-    for i, row in enumerate(val):
-        with errs.modify_argname(suffix=f"_{row.get('id', i)}"):
-            # See 'pos_to_id' above.
-            if "id" in row:
-                pos_to_id[i] = row.pop("id")
-
-            row["kind"] = kind
-            row["pos"] = i
-            row = _ALL_TYPED[models_event.questionnaire.QuestionnaireRow](
-                row,
-                available_fields=available_fields,
-                available_magic_roles=available_magic_roles,
+    for pos, row in enumerate(val):
+        # Associate the row errors with the correct drow input names.
+        with errs.modify_argname(
+            argname_callback=lambda argname: drow_name(
+                argname, pos_to_id.get(pos, pos), kind.name
             )
-            ret.append(row)
-
-    for e1, e2 in itertools.combinations(ret, 2):
-        if e1.get('field_id') is not None and e1.get('field_id') == e2.get('field_id'):
-            msg = n_("Must not duplicate field: '%(field_name)s'")
-            params = {'field_name': event.fields[e1['field_id']].field_name}
-            errs.extend([
-                ValueError(
-                    f'field_id_{pos_to_id.get(e1["pos"], e1["pos"])}', msg, params
-                ),
-                ValueError(
-                    f'field_id_{pos_to_id.get(e2["pos"], e2["pos"])}', msg, params
-                ),
-            ])
+        ):
+            ret.append(
+                _ALL_TYPED[models_event.questionnaire.QuestionnaireRow](row, **kwargs)
+            )
 
     magic_role_counts = collections.Counter(row["role"] for row in ret if "role" in row)
 
+    # Check missing and duplicate magic roles within this single questionnaire.
     for magic_role in const.QuestionnaireRowRole:
         count = magic_role_counts[magic_role]
         role_class = magic_role.get_class()
@@ -3336,7 +3320,7 @@ def _questionnaire(
             # count > 0 already checked.
             errs.append(
                 ValueError(
-                    argname,
+                    drow_basename("questionnaire", kind.name),
                     n_("Missing role: '%(magic_role)s'."),
                     {"magic_role": role_class.__name__},
                 ),
@@ -3348,7 +3332,7 @@ def _questionnaire(
                     idx = pos_to_id.get(pos, pos)
                     errs.append(
                         ValueError(
-                            f"role_{idx}",
+                            drow_name("role", idx, kind.name),
                             n_("Must not duplicate this role: '%(magic_role)s'."),
                             {"magic_role": role_class.__name__},
                         ),
@@ -3357,7 +3341,85 @@ def _questionnaire(
     if errs:
         raise errs
 
-    return Questionnaire(ret)
+    return ret
+
+
+@_add_typed_validator
+def _all_questionnaires(
+    val: Any,
+    argname: str = "all_questionnaires",
+    *,
+    all_questionnaires: models_event.questionnaire.QuestionnaireContainer,
+    **kwargs: Any,
+) -> AllQuestionnaires:
+
+    val = _ALL_TYPED[dict[const.QuestionnaireUsages, list[dict[str, Any]]]](
+        val, argname, **kwargs
+    )
+
+    pos_to_id: dict[const.QuestionnaireUsages, dict[int, int]] = {
+        kind: {} for kind in const.QuestionnaireUsages
+    }
+
+    # Map positions to "ids" (these can be negative for new rows) for all kinds.
+    #  This is used to correctly place the errors.
+    for kind, rows in val.items():
+        for pos, row in enumerate(rows):
+            if "id" in row:
+                pos_to_id[kind][pos] = row.pop("id")
+            row["pos"] = pos
+            row["kind"] = kind
+
+    errs = ValidationSummary()
+
+    # Validate each questionnaire kind separately.
+    ret = {}
+    for kind, rows in val.items():
+        # Get all generally available fields and magic roles for this kind.
+        #  Do not account for fields and magic roles already used in other kinds.
+        available_fields = all_questionnaires[kind].get_available_fields()
+        available_magic_roles = all_questionnaires[kind].get_available_magic_roles()
+        with errs:
+            ret[kind] = _questionnaire(
+                rows,
+                kind=kind,
+                available_fields=available_fields,
+                available_magic_roles=available_magic_roles,
+                pos_to_id=pos_to_id[kind],
+            )
+
+    if errs:
+        raise errs
+
+    # Fill in missing questionnaires with existing ones for the following checks.
+    for kind, existing in all_questionnaires.items():
+        if kind not in ret:
+            ret[kind] = existing.as_dicts()
+
+    # Check against duplicate field usage across all questionnaires.
+    fields = all_questionnaires.event.fields
+    field_id_counts = collections.Counter(
+        row["field_id"] for rows in ret.values() for row in rows if row.get("field_id")
+    )
+
+    for kind, rows in ret.items():
+        for row in rows:
+            if not (field_id := row.get("field_id")):
+                continue
+            if field_id_counts[field_id] > 1:
+                row_pos: int = row["pos"]
+                row_id = pos_to_id[kind].get(row_pos, row_pos)
+                errs.append(
+                    ValueError(
+                        drow_name("field_id", row_id, kind.name),
+                        n_("Must not duplicate field: '%(field_name)s'"),
+                        {'field_name': fields[field_id].field_name},
+                    )
+                )
+    if errs:
+        raise errs
+
+    return AllQuestionnaires(ret)
 
 
 # TODO move above
@@ -3864,9 +3926,6 @@ def _serialized_event_questionnaire_upload(
     )
 
 
-# TODO: adjust or drop:
-
-
 @_add_typed_validator
 def _serialized_event_questionnaire(
     val: Any,
@@ -3933,28 +3992,11 @@ def _serialized_event_questionnaire(
                 new_questionnaires[kind] = all_questionnaires[kind].as_dicts() + rows
             else:
                 new_questionnaires[kind] = rows
-            with errs.modify_argname(prefix=f"questionnaire[{kind.name}]."):
-                new_questionnaires[kind] = _ALL_TYPED[Questionnaire](
-                    new_questionnaires[kind],
-                    kind=kind,
-                    all_questionnaires=all_questionnaires,
-                )
-                all_questionnaires[kind] = models_event.questionnaire.Questionnaire(
-                    (
-                        models_event.questionnaire.QuestionnaireRow.get_class(
-                            row["role"]
-                        )(
-                            event_id=all_questionnaires.event.id,
-                            **{k: v for k, v in row.items() if k != "field_name"},
-                        )
-                        for row in new_questionnaires[kind]
-                    ),
-                    kind=kind,
-                )
-        for kind, existing in all_questionnaires.items():
-            if kind not in new_questionnaires:
-                new_questionnaires[kind] = existing.as_dicts()
-        val['questionnaire'] = new_questionnaires
+
+        with errs.modify_argname(prefix=f"questionnaire[{kind.name}]."):
+            val['questionnaire'] = _ALL_TYPED[AllQuestionnaires](
+                new_questionnaires, all_questionnaires=all_questionnaires
+            )
     else:
         val['questionnaire'] = {}  # pyrefly: ignore[implicit-any-empty-container]
 

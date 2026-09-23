@@ -23,12 +23,15 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience["event"].title, icon="chalkboard-teacher") }}
     {% if preview %}
-        {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire_form"), gettext("Configure Questionnaire")) }}
-        {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
-                                gettext("Questionnaire Preview"), active=True) }}
+        {{ util.breadcrumb_link(
+                cdedblink("event/configure_questionnaire_form") + "#tab_" + kind.name,
+                gettext("Configure Questionnaires")) }}
+        {{ util.breadcrumb_link(
+                cdedblink("event/additional_questionnaire", {"preview": True}),
+                gettext("Questionnaire Preview"), active=True) }}
     {% else %}
-        {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire"),
-                                gettext("Questionnaire"), active=True) }}
+        {{ util.breadcrumb_link(
+                cdedblink("event/additional_questionnaire"), gettext("Questionnaire"), active=True) }}
     {% endif %}
 {% endblock %}
 {% block heading %}
@@ -38,10 +41,15 @@
 
 {% macro button_par() %}
     <div class="p button-par">
-        {{ util.href(cdedblink("event/configure_additional_questionnaire_form", {"event_id": ambience["event"].id}),
-                     gettext("Configure Questionnaire"), icon="plus-square", aclass="btn btn-sm btn-warning") }}
-        {{ util.href(cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
-                         aclass="btn btn-default btn-sm", icon="eye") }}
+        {{ util.href(
+                cdedblink("event/configure_questionnaire_form") + "#tab_" + kind.name, gettext("Configure Questionnaire"),
+                aclass="btn btn-sm btn-warning", icon=kind.get_icon()) }}
+        {{ util.href(cdedblink("event/reorder_questionnaire_form") + "#tab_" + kind.name, gettext("Reorder Questionnaire"),
+                     aclass="btn btn-warning btn-sm", icon=kind.get_sort_icon(),
+                     readonly=not is_privileged_for("reorder_questionnaire_form")) }}
+        {{ util.href(
+                cdedblink("event/register", {"preview": True}), gettext("Registration Preview"),
+                aclass="btn btn-info btn-sm", icon=enums["QuestionnaireUsages"].registration.get_preview_icon()) }}
     </div>
 {% endmacro %}
 
@@ -50,18 +58,19 @@
         {{ button_par() }}
         <div class="form-horizontal" id="questionnaireform">
     {% else %}
-        {% if is_privileged_for("event/configure_additional_questionnaire") %}
+        {% if is_privileged_for("event/configure_questionnaire") %}
             <div class="p button-par">
-                {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
-                             gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
+                {{ util.href(
+                        cdedblink("event/additional_questionnaire_form", {"preview": True}), gettext("Questionnaire Preview"),
+                        aclass="btn btn-info btn-sm", icon=kind.get_preview_icon()) }}
             </div>
         {% endif %}
         <form action="{{ cdedblink('event/additional_questionnaire') }}" method="POST" id="questionnaireform"
               class="form-horizontal">
             {{ util.anti_csrf_token('event/additional_questionnaire') }}
     {% endif %}
-    {% for entry in add_questionnaire %}
-        {{ generic_event.print_questionnaire_entry(entry) }}
+    {% for entry in questionnaire %}
+        {{ generic_event.print_questionnaire_entry(entry, is_locked) }}
     {% endfor %}
     {% if not preview %}
         {{ util.form_input_submit(label=gettext("Submit"), cancellink=cdedblink("event/registration_status"),

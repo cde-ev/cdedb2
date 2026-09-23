@@ -25,7 +25,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/change_lodgement') }}" method="POST" id="changelodgementform"
-          class="form-horizontal">
+          class="form-horizontal protect">
         {{ util.anti_csrf_token('event/change_lodgement') }}
         <h3 class="heading-underline">{% trans %}Lodgement{% endtrans %}</h3>
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
@@ -42,7 +42,4 @@
 
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
     </form>
-    <script nonce="{{ csp_nonce }}">
-        $('#changelodgementform').cdedbProtectChanges();
-    </script>
 {% endblock %}

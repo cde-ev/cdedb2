@@ -113,6 +113,11 @@ from cdedb.common import (
     _tdelta,
     asciificator,
     decode_parameter,
+    drow_basename,
+    drow_create,
+    drow_delete,
+    drow_last_index,
+    drow_name,
     encode_parameter,
     get_hash,
     get_mandatory_form_fields,
@@ -299,7 +304,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         if not message:
             return None, None, None
         parts = message.split("--")
-        ntype = parts[0]
+        ntype = cast(NotificationType, parts[0])
         length = int(parts[1])
         remainder = "--".join(parts[2:])
         nmessage = remainder[:length]
@@ -464,6 +469,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             ),
             'docurl': docurl,
             "drow_name": drow_name,
+            "drow_basename": drow_basename,
             "drow_create": drow_create,
             "drow_delete": drow_delete,
             "drow_last_index": drow_last_index,
@@ -1996,10 +2002,6 @@ class CdEMailmanClient(mailmanclient.Client):
                 for message in held:
                     headers = email.parser.HeaderParser().parsestr(message.msg)
                     message.spam_score = headers.get("X-Spam-Score", "—")
-                    if isinstance(message.hold_date, str):
-                        message.hold_date = datetime.datetime.fromisoformat(
-                            message.hold_date
-                        )
 
                 return held
             except urllib.error.HTTPError:
@@ -3192,24 +3194,6 @@ def make_event_fee_reference(
         fn=asciificator(persona.family_name),
         cdedbid=cdedbid_filter(persona.id),
     )
-
-
-def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
-    prefix = prefix + "_" if prefix else ""
-    return f"{prefix}{field_name}_{entity_id}"
-
-
-def drow_create(entity_id: int, prefix: str = "") -> str:
-    return drow_name("create", entity_id, prefix)
-
-
-def drow_delete(entity_id: int, prefix: str = "") -> str:
-    return drow_name("delete", entity_id, prefix)
-
-
-def drow_last_index(prefix: str = "") -> str:
-
-    return f"{prefix}create_last_index"
 
 
 @overload

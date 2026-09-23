@@ -36,7 +36,7 @@
                                                  'title': settings.delButtonTitle,
                                                  'aria-label': settings.delButtonTitle,
                                                  'aria-pressed': 'false',
-                                                 'class': 'btn btn-danger btn-sm',
+                                                 'class': 'btn btn-danger btn-sm drow-delete-button',
                                                  'id': 'dynamicrow-delete-button-' + $row.data("drow-id"),})
                     .append($('<span></span>', {'class': 'far fa-trash-alt'}));
 
@@ -68,6 +68,7 @@
                         $(this).addClass('active')
                             .attr('aria-pressed','true');
                     }
+                    $row.find(":input").trigger("change");
                 });
             }
             $row.find('.drow-buttonspace').after($deleteButton);
@@ -79,7 +80,6 @@
                     .removeClass('drow-prototype');
                 // Mark the creation indicator checkbox.
                 $row.find('.drow-indicator').prop("checked", true);
-                $row.find('.drow-input').first().focus();
             }
             addDeleteButton($row);
             // Add input handler for inline add button if it exists.
@@ -152,6 +152,7 @@
             // Call refresh and any given callback.
             refresh();
             settings.callback.call($row);
+            $row.find(".drow-input:visible").first().trigger("focus").trigger("scroll");
         };
 
         var moveRow = function($row, up) {

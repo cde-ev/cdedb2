@@ -34,7 +34,7 @@
         </p>
     </div>
 
-    <form action="{{ cdedblink('core/contact') }}" method="POST" id="contactform" class="form-horizontal">
+    <form action="{{ cdedblink('core/contact') }}" method="POST" id="contactform" class="form-horizontal protect">
         {{ util.anti_csrf_token('core/contact') }}
         {{ util.form_input_select(name="to", label=gettext("To"), entries=addresses.items(), nulloption="", small=True, wide=True,
                                   info=gettext("Descriptions and Membership of these teams can be found on the %(website)s.")|format(
@@ -54,7 +54,6 @@
     </form>
     <script nonce="{{ csp_nonce }}">
         $(function() {
-            $('#contactform').cdedbProtectChanges();
             // fancy icon for anonymous message :)
             $('#anon_switch').on('change', function() {
                 if ($(this).val() === "yes") {

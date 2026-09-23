@@ -24,7 +24,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/create_lodgement') }}" method="POST" id="createlodgementform"
-          class="form-horizontal">
+          class="form-horizontal protect">
         {{ util.anti_csrf_token('event/create_lodgement') }}
         <h3 class="heading-underline">{% trans %}Lodgement{% endtrans %}</h3>
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
@@ -49,7 +49,6 @@
         {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("event/lodgements")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
-        $('#createlodgementform').cdedbProtectChanges();
         var group_id_input = $('#createlodgementform').find("[name='group_id']");
         var new_group_title_input_group = $('#createlodgementform').find("[name='new_group_title']").closest(".form-group");
         function show_hide_new_group_title() {

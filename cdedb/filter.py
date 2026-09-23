@@ -7,6 +7,7 @@ import enum
 import logging
 import re
 import threading
+import xml.etree.ElementTree as etree
 import zoneinfo
 from collections import Counter
 from collections.abc import (
@@ -31,6 +32,7 @@ import icu
 import jinja2
 import jinja2.filters
 import markdown
+import markdown.extensions.tables
 import markdown.extensions.toc
 import markupsafe
 import phonenumbers
@@ -142,11 +144,24 @@ def datetime_filter(
     :param formatstr: Formatting used, if no l10n happens.
     :param lang: If not None, then localize to the passed language.
     :param passthrough: If True return strings unmodified.
+
+    >>> datetime_filter("2026-09-21 12:00:00+00:00")
+    '2026-09-21 14:00 (CEST)'
+    >>> datetime_filter("abc")
+
+    >>> datetime_filter("2026-09-21 12:00:00+00:00", passthrough=True)
+    '2026-09-21 12:00:00+00:00'
     """
     if not val or not isinstance(val, datetime.datetime):
-        if passthrough and isinstance(val, str) and val:
-            return val
-        return None
+        if isinstance(val, str) and val:
+            if passthrough:
+                return val
+            try:
+                val = datetime.datetime.fromisoformat(val)
+            except Exception:
+                return None
+        else:
+            return None
 
     if val.tzinfo is not None:
         val = val.astimezone(_CONFIG["DEFAULT_TIMEZONE"])
@@ -543,6 +558,29 @@ def md_id_wrapper(val: str, sep: str) -> str:
     return id_prefix + markdown.extensions.toc.slugify(val, sep)
 
 
+# Taken from https://stackoverflow.com/a/79989982
+
+
+class BootstrapTableProcessor(markdown.extensions.tables.TableProcessor):
+    """Extend the default markdown table processor to add bootstrap classes."""
+
+    def run(self, parent: etree.Element, blocks: list[str]) -> None:
+        super().run(parent, blocks)
+        for table in parent.findall("table"):
+            # Add bootstrap classes to markdown tables.
+            table.set("class", "table table-slim")
+
+
+class BootstrapTableExtension(markdown.extensions.tables.TableExtension):
+    """Extension that registers the above custom table processor."""
+
+    def extendMarkdown(self, md: markdown.Markdown) -> None:
+        if '|' not in md.ESCAPED_CHARS:
+            md.ESCAPED_CHARS.append('|')
+        processor = BootstrapTableProcessor(md.parser, self.getConfigs())
+        md.parser.blockprocessors.register(processor, 'table', 75)
+
+
 def get_markdown_parser() -> markdown.Markdown:
     """Constructs a markdown parser for general use.
 
@@ -570,7 +608,14 @@ def get_markdown_parser() -> markdown.Markdown:
             },
         }
         md = markdown.Markdown(
-            extensions=["extra", "sane_lists", "smarty", "toc", "footnotes"],
+            extensions=[
+                "extra",
+                "sane_lists",
+                "smarty",
+                "toc",
+                "footnotes",
+                BootstrapTableExtension(),
+            ],
             extension_configs=extension_configs,
         )
 

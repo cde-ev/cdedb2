@@ -1,0 +1,19 @@
+name: Extract and recompile i18n messages
+on:
+    workflow_dispatch:
+
+jobs:
+    i18n-refresh:
+        runs-on: docker
+        container:
+            image: ghcr.io/astral-sh/uv:python3.13-trixie-slim
+        steps:
+            - name: checkout
+              uses: actions/checkout@v4
+            - name: make i18n-refresh
+              run: |
+                make i18n-refresh
+                git add i18n/
+                git commit -m "Refresh translations"
+                echo ${{ github.event.sender }}
+                git push

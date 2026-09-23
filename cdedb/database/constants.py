@@ -147,18 +147,38 @@ class FieldAssociations(CdEIntEnum):
 class FieldDatatypes(CdEIntEnum):
     """Spec for the datatypes available as custom data fields."""
 
+    # Text
     str = 1  #:
     str_multiline = 50  #:
     str_monospace = 55  #:
-    bool = 2  #:
+
+    # Numbers
     int = 3  #:
     float = 4  #:
-    date = 5  #:
-    datetime = 6  #:
     non_negative_int = 10  #:
     non_negative_float = 12  #:
+
+    # Dates
+    date = 5  #:
+    datetime = 6  #:
+
+    # Other
+    bool = 2  #:
     phone = 20  #:
     iban = 30  #:
+
+    def optgroup_label(self) -> builtins.str:
+        return {
+            self.str: n_("Text"),
+            self.str_multiline: n_("Text"),
+            self.str_monospace: n_("Text"),
+            self.int: n_("Numbers"),
+            self.float: n_("Numbers"),
+            self.non_negative_int: n_("Numbers"),
+            self.non_negative_float: n_("Numbers"),
+            self.date: n_("Dates"),
+            self.datetime: n_("Dates"),
+        }.get(self, n_("Other"))
 
     @property
     def spec_type(self) -> builtins.str:
@@ -194,11 +214,29 @@ class QuestionnaireUsages(CdEIntEnum):
 
     def allow_readonly(self) -> bool:
         """Whether or not rows with this usage are allowed to be readonly."""
-        return self == QuestionnaireUsages.additional
+        return self != QuestionnaireUsages.registration
 
     def allow_fee_condition(self) -> bool:
         """Whether or not rows with this usage may use fee condition fields."""
         return self == QuestionnaireUsages.registration
+
+    def get_icon(self) -> str:
+        return {
+            self.registration: "sign-in-alt",
+            self.additional: "edit",
+        }[self]
+
+    @classmethod
+    def get_preview_icon(cls) -> str:
+        return "eye"
+
+    @classmethod
+    def get_edit_icon(cls) -> str:
+        return "edit"
+
+    @classmethod
+    def get_sort_icon(cls) -> str:
+        return "sort"
 
     @property
     def title_level(self) -> int:
@@ -265,6 +303,14 @@ class QuestionnairePanelKind(CdEIntEnum):
             self.info: "panel-info",
             self.warning: "panel-warning",
             self.danger: "panel-danger",
+        }[self]
+
+    def get_alert_class(self) -> str:
+        return {
+            self.default: "alert-default",
+            self.info: "alert-info",
+            self.warning: "alert-warning",
+            self.danger: "alert-danger",
         }[self]
 
 

@@ -27,11 +27,11 @@
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function () {
-            $('#changemltypeform').cdedbProtectChanges().cdedbConfigureMailinglist();
+            $('#changemltypeform').cdedbConfigureMailinglist();
         });
     </script>
     <h3 class="heading-underline">{% trans %}New Mailinglist Type{% endtrans %}</h3>
-    <form action="{{ cdedblink("ml/change_ml_type") }}" class="form-horizontal" id="changemltypeform" method="POST">
+    <form action="{{ cdedblink("ml/change_ml_type") }}" class="form-horizontal protect" id="changemltypeform" method="POST">
         {{ util.anti_csrf_token("ml/change_ml_type") }}
         {{ util.form_input_select(name="ml_type", entries=available_types|enum_entries(processing=gettext),
                 defaultvalue=ambience["mailinglist"].ml_type, label=gettext("Mailinglist Type")) }}
