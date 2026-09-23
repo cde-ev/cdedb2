@@ -5615,7 +5615,7 @@ msgid ""
 "Please set your birthday below."
 msgstr ""
 "Du hast bisher kein Geburtsdatum angegeben. Um dich zu Veranstaltungen "
-"anzugeben, benötigen wir dein Geburtsdatum. Bitte gebe dein Geburtsdatum "
+"anzumelden, benötigen wir dein Geburtsdatum. Bitte gebe dein Geburtsdatum "
 "unten ein."
 
 #, python-format

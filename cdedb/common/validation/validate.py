@@ -1685,8 +1685,6 @@ def _date(val: Any, argname: str | None = None, **kwargs: Any) -> datetime.date:
         val = val.date()
     if not isinstance(val, datetime.date):
         raise ValidationSummary(TypeError(argname, n_("Must be a datetime.date.")))
-    if val == datetime.date.min:
-        raise ValidationSummary(TypeError(argname, n_("Invalid date.")))
     return val
 
 
