@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-23 16:58+0000\n"
+"POT-Creation-Date: 2026-09-23 16:59+0000\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -10267,6 +10267,9 @@ msgstr "Benachrichtigungsmail"
 msgid "welcome email"
 msgstr "Willkommensmail"
 
+msgid "Send Welcome Mail again"
+msgstr "Willkommensmail erneut verschicken"
+
 #, python-format
 msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
 msgstr ""
@@ -10916,9 +10919,6 @@ msgstr ""
 "Sendet eine E-Mail mit einem Passwort-Rücksetz-Link an den Account. Das "
 "kommt aufs Gleiche hinaus, wie wenn die Person das „Passwort zurücksetzen“-"
 "Formular auf der Login-Seite nutzt."
-
-msgid "Send Welcome Mail again"
-msgstr "Willkommensmail erneut verschicken"
 
 #, python-format
 msgid ""
