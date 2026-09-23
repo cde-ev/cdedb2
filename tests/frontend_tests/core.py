@@ -2557,6 +2557,14 @@ class TestCoreFrontend(FrontendTest):
         'realm': Realms.cde,
     })
 
+    def test_genesis_legacy_links(self) -> None:
+        # ensure we accept old link format on printed flyers and Website without "Realms." prefix
+        for realm in ("ml", "event", "cde"):
+            self.get(f"/core/genesis/request?realm={realm}")
+            self.assertNonPresence("Validierung fehlgeschlagen", div="notifications")
+            f = self.response.forms["genesisform"]
+            self.assertEqual(f["realm"].value, f"Realms.{realm}")
+
     def test_genesis_event(self) -> None:
         self._genesis_request(self.EVENT_GENESIS_DATA)
 
