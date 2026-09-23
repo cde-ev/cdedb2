@@ -245,20 +245,20 @@ class TestCoreFrontend(FrontendTest):
         # birthday warning
         self.assertTitle("Eigene Daten bearbeiten")
         self.assertNotification(
-            "Um dich zu Veranstaltungen anzumelden, benötigen wir dein Geburtsdatum.",
+            "Um dich für Veranstaltungen anzumelden, benötigst du ein Geburtsdatum.",
             "warning",
         )
         # birthday error
         self.traverse("Veranstaltungen", "TripelAkademie", "Anmelden")
         self.assertTitle("Eigene Daten bearbeiten")
         self.assertNotification(
-            "Um dich zu Veranstaltungen anzumelden, benötigen wir dein Geburtsdatum.",
+            "Um dich für Veranstaltungen anzumelden, benötigst du ein Geburtsdatum.",
             "error",
         )
         # birthday warning
         self.traverse("Index")
         self.assertNotification(
-            "Um dich zu Veranstaltungen anzumelden, benötigen wir dein Geburtsdatum.",
+            "Um dich für Veranstaltungen anzumelden, benötigst du ein Geburtsdatum.",
             "warning",
         )
 
