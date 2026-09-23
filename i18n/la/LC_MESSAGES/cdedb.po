@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-18 21:23+0000\n"
+"POT-Creation-Date: 2026-09-23 16:58+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -11155,10 +11155,6 @@ msgstr "consocietanda"
 msgid "Change Status"
 msgstr "signum arcanum muta"
 
-#, fuzzy
-msgid "Send Welcome Mail again"
-msgstr "epistula electronica ad verificandum mitte"
-
 msgid "Data is visible for other Members."
 msgstr ""
 
@@ -11219,6 +11215,16 @@ msgid ""
 "Sends an email to this user, which contains a password reset link. This is "
 "basically the same as any non-admin user can achieve using the “Reset "
 "Password” form on the login page."
+msgstr ""
+
+#, fuzzy
+msgid "Send Welcome Mail again"
+msgstr "epistula electronica ad verificandum mitte"
+
+#, python-format
+msgid ""
+"Sends the %(welcome_mail)s again. Use this when there were problems with e-"
+"mail delivery."
 msgstr ""
 
 #, fuzzy

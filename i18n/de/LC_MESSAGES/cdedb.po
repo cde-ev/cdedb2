@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-18 21:23+0000\n"
+"POT-Creation-Date: 2026-09-23 16:58+0000\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -10856,9 +10856,6 @@ msgstr "Mitgliedschaft beantragen"
 msgid "Change Status"
 msgstr "Status ändern"
 
-msgid "Send Welcome Mail again"
-msgstr "Willkommensmail erneut verschicken"
-
 msgid "Data is visible for other Members."
 msgstr "Daten sind für andere Mitglieder sichtbar."
 
@@ -10919,6 +10916,17 @@ msgstr ""
 "Sendet eine E-Mail mit einem Passwort-Rücksetz-Link an den Account. Das "
 "kommt aufs Gleiche hinaus, wie wenn die Person das „Passwort zurücksetzen“-"
 "Formular auf der Login-Seite nutzt."
+
+msgid "Send Welcome Mail again"
+msgstr "Willkommensmail erneut verschicken"
+
+#, python-format
+msgid ""
+"Sends the %(welcome_mail)s again. Use this when there were problems with e-"
+"mail delivery."
+msgstr ""
+"Verschickt die %(welcome_mail)s erneut. Nutze dies, wenn es Probleme mit der "
+"Mailzustellung gab"
 
 msgid "Deactivate Account"
 msgstr "Account deaktivieren"

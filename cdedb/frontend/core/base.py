@@ -868,6 +868,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "show_user", {
             # TODO rename in template
             'data': persona,
+            "Realms": Realms,
             'admin_bits': admin_bits,
             'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view,
