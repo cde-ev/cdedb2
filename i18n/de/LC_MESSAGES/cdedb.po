@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-21 09:47+0000\n"
+"POT-Creation-Date: 2026-09-23 17:35+0000\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -5180,6 +5180,14 @@ msgstr "Zustimmung gespeichert."
 msgid "Decision noted."
 msgstr "Entscheidung gespeichert."
 
+msgid ""
+"No birthday set yet. For registering to events, a birthday is mandatory. "
+"Please set your birthday below."
+msgstr ""
+"Du hast bisher kein Geburtsdatum angegeben. Um dich für Veranstaltungen "
+"anzumelden, benötigst du ein Geburtsdatum. Bitte gib dein Geburtsdatum "
+"unten ein."
+
 msgid "Invalid choice."
 msgstr "Unzulässige Auswahl."
 
@@ -5603,6 +5611,14 @@ msgstr "Versammlungsaccount"
 
 msgid "Mailinglist user"
 msgstr "Mailinglistenaccount"
+
+msgid ""
+"No birthday set yet. For registering to events, a birthday is mandatory. "
+"Please set your birthday under “My Data”."
+msgstr ""
+"Du hast bisher kein Geburtsdatum angegeben. Um dich für Veranstaltungen "
+"anzumelden, benötigst du ein Geburtsdatum. Bitte gib dein Geburtsdatum "
+"unter „Meine Daten“ an."
 
 msgid "Login failure."
 msgstr "Login fehlgeschlagen."
@@ -9418,6 +9434,9 @@ msgstr "Pronomen auf Namensschildern anzeigen"
 
 msgid "Show pronouns on profile"
 msgstr "Pronomen auf Profil anzeigen"
+
+msgid "Impossible to change afterwards."
+msgstr "Kann später nicht mehr geändert werden."
 
 msgid "Account & Membership"
 msgstr "Account & Mitgliedschaft"

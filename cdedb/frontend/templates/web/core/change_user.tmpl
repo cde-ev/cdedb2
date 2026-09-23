@@ -75,7 +75,8 @@
             {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
         {% endif %}
         {% if pending_persona.hasattr("birthday") %}
-            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date") }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date",
+                                    info=gettext("Impossible to change afterwards.") if not is_admin_variant else "") }}
         {% endif %}
 
         {% if is_admin_variant %}

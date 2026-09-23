@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-21 09:47+0000\n"
+"POT-Creation-Date: 2026-09-23 17:35+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5600,6 +5600,11 @@ msgstr ""
 msgid "Decision noted."
 msgstr ""
 
+msgid ""
+"No birthday set yet. For registering to events, a birthday is mandatory. "
+"Please set your birthday below."
+msgstr ""
+
 #, fuzzy
 msgid "Invalid choice."
 msgstr "Annuntiationes"
@@ -6023,6 +6028,11 @@ msgstr "coetus"
 #, fuzzy
 msgid "Mailinglist user"
 msgstr "tabellae epistularum electronicarum"
+
+msgid ""
+"No birthday set yet. For registering to events, a birthday is mandatory. "
+"Please set your birthday under “My Data”."
+msgstr ""
 
 #, fuzzy
 msgid "Login failure."
@@ -9710,6 +9720,9 @@ msgid "Show pronouns on nametags"
 msgstr ""
 
 msgid "Show pronouns on profile"
+msgstr ""
+
+msgid "Impossible to change afterwards."
 msgstr ""
 
 #, fuzzy

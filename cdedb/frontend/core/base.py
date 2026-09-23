@@ -263,6 +263,15 @@ class CoreBaseFrontend(AbstractFrontend):
                 dashboard['events'] = final
                 dashboard['events_registration'] = events_registration
                 dashboard['events_payment_pending'] = events_payment_pending
+                persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+                if persona.birthday == datetime.date.min:
+                    rs.notify(
+                        "warning",
+                        n_(
+                            "No birthday set yet. For registering to events, a birthday"
+                            " is mandatory. Please set your birthday under “My Data”."
+                        ),
+                    )
             # open assemblies
             if Roles.assembly in rs.user.new_roles:
                 assembly_ids = self.assemblyproxy.list_assemblies(
@@ -338,12 +347,26 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if wants:
             response = basic_redirect(rs, wants)
-        elif Roles.member in rs.user.new_roles:
-            user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-            if not user.decided_search:
-                response = self.redirect(rs, "cde/consent_decision_form")
-            else:
-                response = self.redirect(rs, "core/index")
+        elif (
+            # prompt do decide about member search visibility
+            Roles.member in rs.user.new_roles
+            and not self.coreproxy.get_cde_user(rs, rs.user.persona_id).decided_search
+        ):
+            response = self.redirect(rs, "cde/consent_decision_form")
+        elif (
+            # ask for a birthday if not given
+            Roles.event in rs.user.new_roles
+            and self.coreproxy.get_event_user(rs, rs.user.persona_id).birthday
+            == datetime.date.min
+        ):
+            rs.notify(
+                "warning",
+                n_(
+                    "No birthday set yet. For registering to events,"
+                    " a birthday is mandatory. Please set your birthday below."
+                ),
+            )
+            response = self.redirect(rs, "core/change_user")
         else:
             response = self.redirect(rs, "core/index")
         response.set_cookie(
@@ -1476,7 +1499,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 persona.donation = persona.REDACTED
             if admin_access:
                 status_bits_to_be_redacted.remove("is_searchable")
-            if not admin_access:
+            if not admin_access and persona.birthday != datetime.date.min:
                 persona.birthday = persona.REDACTED
         elif status.is_event_realm:
             persona = models.EventPersona.from_database(data, allow_superfluous=True)
