@@ -37,10 +37,19 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access(Roles.anonymous)
     @REQUESTdata("realm")
     def genesis_request_form(
-        self, rs: RequestState, realm: Realms | None = None
+        # realm is a str to be compatible with old published links containing ?realm=event
+        self,
+        rs: RequestState,
+        realm: str | None = None,
     ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
+        realms_by_name = {
+            realm.name: realm for realm in Realms.get_available_genesis_realms()
+        }
+        rs.values["realm"] = realms_by_name.get(
+            (realm or "").removeprefix("Realms."), Realms.cde
+        )
         allowed_genders = set(
             x for x in const.Genders if x != const.Genders.not_specified
         )
