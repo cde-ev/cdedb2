@@ -9,6 +9,7 @@ The more involved batch admission and the finance log require the "cde_admin" ro
 import collections
 import copy
 import csv
+import datetime
 import decimal
 import itertools
 import operator
@@ -160,6 +161,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code, success=message)
         if not code:
             return self.consent_decision_form(rs)
+        if user.birthday == datetime.date.min:
+            rs.notify(
+                "warning",
+                n_(
+                    "No birthday set yet. For registering to events,"
+                    " a birthday is mandatory. Please set your birthday below."
+                ),
+            )
+            return self.redirect(rs, "core/change_user_form")
         if not user.decided_search:
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")

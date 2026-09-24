@@ -441,6 +441,18 @@ class EventRegistrationMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/show_event")
         elif not self.is_privileged(rs, EventPrivileges.basic_read):
             raise werkzeug.exceptions.Forbidden(n_("Must be Orga to use preview."))
+
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        if persona.birthday == datetime.date.min:
+            rs.notify(
+                "error",
+                n_(
+                    "No birthday set yet. For registering to events,"
+                    " a birthday is mandatory. Please set your birthday below."
+                ),
+            )
+            return self.redirect(rs, "core/change_user_form")
+
         semester_fee = self.conf["MEMBERSHIP_FEE"]
         # by default select all parts
         if 'parts' not in rs.values:
