@@ -7,9 +7,6 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-23 20:24+0200\n"
-"PO-Revision-Date: 2019-08-18 18:33+0200\n"
-"Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
 "Language: la\n"
 "MIME-Version: 1.0\n"
@@ -96,16 +93,13 @@ msgstr ""
 msgid "FieldDatatypes.str_monospace"
 msgstr ""
 
+msgid "FieldDatatypes.bool"
+msgstr ""
+
 msgid "FieldDatatypes.int"
 msgstr ""
 
 msgid "FieldDatatypes.float"
-msgstr ""
-
-msgid "FieldDatatypes.non_negative_int"
-msgstr ""
-
-msgid "FieldDatatypes.non_negative_float"
 msgstr ""
 
 msgid "FieldDatatypes.date"
@@ -114,7 +108,10 @@ msgstr ""
 msgid "FieldDatatypes.datetime"
 msgstr ""
 
-msgid "FieldDatatypes.bool"
+msgid "FieldDatatypes.non_negative_int"
+msgstr ""
+
+msgid "FieldDatatypes.non_negative_float"
 msgstr ""
 
 msgid "FieldDatatypes.phone"
@@ -685,10 +682,6 @@ msgstr "Inscriptiones pro exPulso probatae"
 
 #, fuzzy
 msgid "CoreLogCodes.password_invalidated"
-msgstr "Proximus exPulsus"
-
-#, fuzzy
-msgid "CoreLogCodes.genesis_upgrade_requested"
 msgstr "Proximus exPulsus"
 
 #, fuzzy
@@ -2805,6 +2798,10 @@ msgstr ""
 
 msgid "CountryCodes.ZW"
 msgstr ""
+
+#, fuzzy
+msgid "CoreLogCodes.genesis_upgrade_requested"
+msgstr "Proximus exPulsus"
 
 msgid "No vote found."
 msgstr ""
