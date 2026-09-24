@@ -7,9 +7,6 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-23 20:24+0200\n"
-"PO-Revision-Date: 2024-08-18 18:16+0200\n"
-"Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -90,17 +87,14 @@ msgstr "Text (mehrzeilig)"
 msgid "FieldDatatypes.str_monospace"
 msgstr "Text (mehrzeilig, monospace)"
 
+msgid "FieldDatatypes.bool"
+msgstr "Ja/Nein"
+
 msgid "FieldDatatypes.int"
 msgstr "Zahl"
 
 msgid "FieldDatatypes.float"
 msgstr "Dezimalzahl"
-
-msgid "FieldDatatypes.non_negative_int"
-msgstr "Nicht-negative Zahl"
-
-msgid "FieldDatatypes.non_negative_float"
-msgstr "Nicht-negative Dezimalzahl"
 
 msgid "FieldDatatypes.date"
 msgstr "Datum"
@@ -108,8 +102,11 @@ msgstr "Datum"
 msgid "FieldDatatypes.datetime"
 msgstr "Datum mit Zeit"
 
-msgid "FieldDatatypes.bool"
-msgstr "Ja/Nein"
+msgid "FieldDatatypes.non_negative_int"
+msgstr "Nicht-negative Zahl"
+
+msgid "FieldDatatypes.non_negative_float"
+msgstr "Nicht-negative Dezimalzahl"
 
 msgid "FieldDatatypes.phone"
 msgstr "Telefonnummer"
@@ -605,9 +602,6 @@ msgstr "Passwort zurückgesetzt"
 
 msgid "CoreLogCodes.password_invalidated"
 msgstr "Passwort gelöscht"
-
-msgid "CoreLogCodes.genesis_upgrade_requested"
-msgstr "Accountupgrade beantragt"
 
 msgid "CoreLogCodes.genesis_request"
 msgstr "Neue Accountanfrage"
@@ -2524,6 +2518,9 @@ msgstr "Sambia"
 
 msgid "CountryCodes.ZW"
 msgstr "Simbabwe"
+
+msgid "CoreLogCodes.genesis_upgrade_requested"
+msgstr "Accountupgrade beantragt"
 
 msgid "No vote found."
 msgstr "Konnte keine Eintrag finden."
