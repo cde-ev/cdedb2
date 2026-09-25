@@ -67,7 +67,7 @@
    arialabel  A screenreader-only text to append to the icon.
               Please make sure, to provide one (or a title) for every semantically important icon in support of a11y. #}
 {% macro make_icon(icon, fixed_width=True, aclass=none, title=none, arialabel=none) -%}
-    <span class="nowrap">
+    <span class="nowrap">{#- remove whitespace -#}
         <span{{ dict(
             class=" ".join([
                 aclass or '',
@@ -76,7 +76,7 @@
             ]),
             title=title,
             **{ "aria-hidden": "true" }
-        )|xmlattr }} />
+        )|xmlattr }}></span>
         {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif -%}
     </span>
 {%- endmacro %}
