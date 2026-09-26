@@ -2599,8 +2599,6 @@ class CoreBaseFrontend(AbstractFrontend):
     @access(Roles.cde_admin, modi={"POST"})
     def resend_welcome_mail(self, rs: RequestState, persona_id: int) -> Response:
         """Manually trigger (re)sending of the welcome mail."""
-        if rs.has_validation_errors():
-            return self.redirect_show_user(rs, persona_id)
         if rs.ambience["persona"].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
