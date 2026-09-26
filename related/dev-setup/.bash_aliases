@@ -30,3 +30,5 @@ alias test-logs="sudo journalctl --no-hostname -t cdedb-test -p info"
 alias test-logs-ldap="sudo journalctl --no-hostname -u cde-ldap-test -p info"
 
 alias doctest="uv run --directory=/cdedb2 --with pytest pytest --doctest-modules cdedb --ignore cdedb/database/evolutions"
+
+alias po-clean="PO_CLEAN_INPLACE=yes /cdedb2/i18n/git-filter-po-clean.sh /cdedb2/i18n/{de,en,la}/LC_MESSAGES/cdedb.po"
