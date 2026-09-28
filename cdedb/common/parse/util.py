@@ -16,8 +16,8 @@ class Accounts(CdEEnum):
 
     Sozialbank = "DE26370205000008068900"
     Sozialbank_Spenden = "DE96370205000008068901"
-    Festgeld = "DE45370205000010042605"
-    Festgeld2 = "DE05370205000010047205"
+    Festgeld = "DE26370205000010335305"
+    Festgeld2 = "DE42370205000010335405"
     Skatbank = "DE23830654080005374499"
     Tagesgeld = "DE96830654087005374499"
     # Fallback if Account is none of the above
