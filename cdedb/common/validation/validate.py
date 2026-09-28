@@ -3911,7 +3911,7 @@ def _partial_registration_checkin_period(
         return val
 
     val = _mapping(val, argname, **kwargs)
-    mandatory, optional = ReducedCheckinPeriod.validation_fields()
+    mandatory, optional = ReducedCheckinPeriod.validation_fields(creation=True)
 
     val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 

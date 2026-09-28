@@ -2044,7 +2044,7 @@ etc;anything else""",
             )
         elif self.user_in('rowena'):
             self.assertPresence(surcharge)
-            self.assertPresence("26.08.932")
+            self.assertPresence("31.08.1932")
             self.assertNonPresence("Gemischte Unterbringung nicht möglich")
             self.assertDivNotExists("#minor-with-guardian")
         else:

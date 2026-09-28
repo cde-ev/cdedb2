@@ -138,7 +138,8 @@ class TestCoreBackend(BackendTest):
 
             persona = self.core.get_event_user(self.key, persona_id).as_dict()
             if persona_id != USER_DICT["inga"]["id"]:
-                affirm(vtypes.Persona, persona)
+                with self.subTest(persona=persona["given_names"]):
+                    affirm(vtypes.Persona, persona)
             else:
                 with self.assertRaises(ValueError) as cm:
                     affirm(vtypes.Persona, persona)

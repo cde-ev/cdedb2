@@ -1466,7 +1466,7 @@ class ReducedCheckinPeriod:
 
     @classmethod
     def validation_fields(
-        cls,
+        cls, *, creation: bool
     ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
