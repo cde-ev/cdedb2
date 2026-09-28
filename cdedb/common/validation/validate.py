@@ -1685,6 +1685,9 @@ def _batch_admission_entry(
     )
 
 
+_VALID_DATE_CUTOFF = datetime.datetime(1900, 1, 1, tzinfo=datetime.UTC)
+
+
 # TODO move this above _persona stuff?
 @_add_typed_validator
 def _date(val: Any, argname: str | None = None, **kwargs: Any) -> datetime.date:
@@ -1701,6 +1704,8 @@ def _date(val: Any, argname: str | None = None, **kwargs: Any) -> datetime.date:
         val = val.date()
     if not isinstance(val, datetime.date):
         raise ValidationSummary(TypeError(argname, n_("Must be a datetime.date.")))
+    if not val >= _VALID_DATE_CUTOFF.date():
+        raise ValidationSummary(ValueError(argname, n_("Must be after 1900.")))
     return val
 
 
@@ -1740,6 +1745,8 @@ def _datetime(
         raise ValidationSummary(TypeError(argname, n_("Must be a datetime.datetime.")))
     if val.tzinfo is None:
         raise ValidationSummary(TypeError(argname, n_("Must be timezone aware.")))
+    if not val >= _VALID_DATE_CUTOFF:
+        raise ValidationSummary(ValueError(argname, n_("Must be after 1900.")))
     return val
 
 
@@ -1756,29 +1763,6 @@ def _timedelta(
     if not isinstance(val, datetime.timedelta):
         raise ValidationSummary(TypeError(argname, n_("Must be a datetime.timedelta.")))
     return val
-
-
-_EVENT_DATE_CUTOFF = datetime.datetime(1900, 1, 1, tzinfo=datetime.UTC)
-
-
-@_add_typed_validator
-def _event_date(val: Any, argname: str | None = None, **kwargs: Any) -> EventDate:
-    """A date in the context of an event. Must be after 1900."""
-    val = _ALL_TYPED[datetime.date](val, argname=argname, **kwargs)
-    if not val >= _EVENT_DATE_CUTOFF.date():
-        raise ValidationSummary(ValueError(argname, n_("Must be after 1900.")))
-    return EventDate(val)
-
-
-@_add_typed_validator
-def _event_datetime(
-    val: Any, argname: str | None = None, **kwargs: Any
-) -> EventDateTime:
-    """A datetime in the context of an event. Must be after 1900."""
-    val = _ALL_TYPED[datetime.datetime](val, argname=argname, **kwargs)
-    if not val >= _EVENT_DATE_CUTOFF:
-        raise ValidationSummary(ValueError(argname, n_("Must be after 1900.")))
-    return EventDateTime(val)
 
 
 @_add_typed_validator

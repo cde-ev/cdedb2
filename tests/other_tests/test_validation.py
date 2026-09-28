@@ -1176,7 +1176,7 @@ class TestValidation(TestValidationBase):
 
     def test_event_dates(self) -> None:
         self.do_validator_test(
-            vtypes.EventDate,
+            datetime.date,
             [
                 ("1899-12-31", None, ValueError("Must be after 1900.")),
                 (
@@ -1202,7 +1202,7 @@ class TestValidation(TestValidationBase):
 
         tz = Config()["DEFAULT_TIMEZONE"]
         self.do_validator_test(
-            vtypes.EventDateTime,
+            datetime.datetime,
             [
                 ("1899-12-31 00:00:00", None, ValueError("Must be after 1900.")),
                 (

@@ -166,9 +166,9 @@ class _EventConfigurationMixin(CdEDataclass):
 
     institution: const.PastInstitutions
 
-    registration_start: vtypes.EventDateTime | None
-    registration_soft_limit: vtypes.EventDateTime | None
-    registration_hard_limit: vtypes.EventDateTime | None
+    registration_start: datetime.datetime | None
+    registration_soft_limit: datetime.datetime | None
+    registration_hard_limit: datetime.datetime | None
 
     iban: Accounts | None
     orga_address: vtypes.Email | None
@@ -377,11 +377,11 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
         return query, params
 
     @functools.cached_property
-    def begin(self) -> vtypes.EventDate:
+    def begin(self) -> datetime.date:
         return min(p.part_begin for p in self.parts.values())
 
     @functools.cached_property
-    def end(self) -> vtypes.EventDate:
+    def end(self) -> datetime.date:
         return max(p.part_end for p in self.parts.values())
 
     @functools.cached_property
@@ -486,8 +486,8 @@ class EventPart(EventDataclass):
     title: str
     shortname: vtypes.Identifier
 
-    part_begin: vtypes.EventDate
-    part_end: vtypes.EventDate
+    part_begin: datetime.date
+    part_end: datetime.date
 
     waitlist_field_id: vtypes.ID | None = dataclasses.field(
         metadata=EventFieldSpec(
@@ -837,8 +837,8 @@ class EventField(EventDataclass):
             const.FieldDatatypes.bool: bool,
             const.FieldDatatypes.int: int,
             const.FieldDatatypes.float: float,
-            const.FieldDatatypes.date: vtypes.EventDate,
-            const.FieldDatatypes.datetime: vtypes.EventDateTime,
+            const.FieldDatatypes.date: datetime.date,
+            const.FieldDatatypes.datetime: datetime.datetime,
             const.FieldDatatypes.non_negative_int: vtypes.NonNegativeInt,
             const.FieldDatatypes.non_negative_float: vtypes.NonNegativeFloat,
             const.FieldDatatypes.phone: vtypes.Phone,
@@ -1451,8 +1451,8 @@ class PersonalizedFee(EventDataclass):
 
 @dataclasses.dataclass
 class ReducedCheckinPeriod:
-    checkin_time: vtypes.EventDateTime
-    checkout_time: vtypes.EventDateTime | None
+    checkin_time: datetime.datetime
+    checkout_time: datetime.datetime | None
 
     def pretty(self) -> str:
         formatstr = "%Y-%m-%d %H:%M"

@@ -1605,8 +1605,8 @@ class EventEventMixin(EventBaseFrontend):
     def create_event(
         self,
         rs: RequestState,
-        part_begin: vtypes.EventDate,
-        part_end: vtypes.EventDate,
+        part_begin: datetime.date,
+        part_end: datetime.date,
         orga_ids: list[vtypes.PersonaID],
         caretaker_ids: list[vtypes.PersonaID],
         fee: vtypes.NonNegativeDecimal,
