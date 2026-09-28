@@ -353,7 +353,10 @@ def validate_assert[T](
             f"{old_format} for '{str(type_)}' with input {value!r}, {kwargs}."
         )
         e = errs[0]
-        e.args = (f"{e.args[1]} ({e.args[0]})",) + e.args[2:]
+        if e.args[0] is not None:
+            e.args = (f"{e.args[1]} ({e.args[0]})",) + e.args[2:]
+        else:
+            e.args = e.args[1:]
         raise e from errs
 
 
@@ -1753,6 +1756,29 @@ def _timedelta(
     if not isinstance(val, datetime.timedelta):
         raise ValidationSummary(TypeError(argname, n_("Must be a datetime.timedelta.")))
     return val
+
+
+_EVENT_DATE_CUTOFF = datetime.datetime(1900, 1, 1, tzinfo=datetime.UTC)
+
+
+@_add_typed_validator
+def _event_date(val: Any, argname: str | None = None, **kwargs: Any) -> EventDate:
+    """A date in the context of an event. Must be after 1900."""
+    val = _ALL_TYPED[datetime.date](val, argname=argname, **kwargs)
+    if not val >= _EVENT_DATE_CUTOFF.date():
+        raise ValidationSummary(ValueError(argname, n_("Must be after 1900.")))
+    return EventDate(val)
+
+
+@_add_typed_validator
+def _event_datetime(
+    val: Any, argname: str | None = None, **kwargs: Any
+) -> EventDateTime:
+    """A datetime in the context of an event. Must be after 1900."""
+    val = _ALL_TYPED[datetime.datetime](val, argname=argname, **kwargs)
+    if not val >= _EVENT_DATE_CUTOFF:
+        raise ValidationSummary(ValueError(argname, n_("Must be after 1900.")))
+    return EventDateTime(val)
 
 
 @_add_typed_validator
@@ -3901,13 +3927,9 @@ def _partial_registration_checkin_period(
         return val
 
     val = _mapping(val, argname, **kwargs)
+    mandatory, optional = ReducedCheckinPeriod.validation_fields()
 
-    mandatory_fields: TypeMapping = {
-        'checkin_time': datetime.datetime,
-        'checkout_time': datetime.datetime | None,
-    }
-
-    val = _examine_dictionary_fields(val, mandatory_fields, {}, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory, optional, **kwargs)
 
     if val['checkout_time'] and val['checkin_time'] >= val['checkout_time']:
         raise ValueError(n_("Checkout must be after checkin."))

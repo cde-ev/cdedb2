@@ -79,6 +79,8 @@ NonRegex = _NewType("NonRegex", str)
 APITokenString = _NewType("APITokenString", tuple[str, str])
 
 Birthday = _NewType("Birthday", _datetime.date)
+EventDate = _NewType("EventDate", _datetime.date)
+EventDateTime = _NewType("EventDateTime", _datetime.datetime)
 
 InputFile = _NewType("InputFile", bytes)
 CSVFile = _NewType("CSVFile", str)
