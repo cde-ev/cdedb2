@@ -1709,7 +1709,7 @@ def _birthday(val: Any, argname: str | None = None, **kwargs: Any) -> Birthday:
     if not val:
         val = datetime.date.min
     val = _date(val, argname=argname, **kwargs)
-    if now().date() < val:
+    if now().date() < val and not _CONFIG["CDEDB_DEV"]:
         raise ValidationSummary(
             ValueError(argname, n_("A birthday must be in the past."))
         )
