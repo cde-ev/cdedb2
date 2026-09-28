@@ -87,14 +87,17 @@ msgstr "Text (mehrzeilig)"
 msgid "FieldDatatypes.str_monospace"
 msgstr "Text (mehrzeilig, monospace)"
 
-msgid "FieldDatatypes.bool"
-msgstr "Ja/Nein"
-
 msgid "FieldDatatypes.int"
 msgstr "Zahl"
 
 msgid "FieldDatatypes.float"
 msgstr "Dezimalzahl"
+
+msgid "FieldDatatypes.non_negative_int"
+msgstr "Nicht-negative Zahl"
+
+msgid "FieldDatatypes.non_negative_float"
+msgstr "Nicht-negative Dezimalzahl"
 
 msgid "FieldDatatypes.date"
 msgstr "Datum"
@@ -102,11 +105,8 @@ msgstr "Datum"
 msgid "FieldDatatypes.datetime"
 msgstr "Datum mit Zeit"
 
-msgid "FieldDatatypes.non_negative_int"
-msgstr "Nicht-negative Zahl"
-
-msgid "FieldDatatypes.non_negative_float"
-msgstr "Nicht-negative Dezimalzahl"
+msgid "FieldDatatypes.bool"
+msgstr "Ja/Nein"
 
 msgid "FieldDatatypes.phone"
 msgstr "Telefonnummer"
@@ -602,6 +602,9 @@ msgstr "Passwort zurückgesetzt"
 
 msgid "CoreLogCodes.password_invalidated"
 msgstr "Passwort gelöscht"
+
+msgid "CoreLogCodes.genesis_upgrade_requested"
+msgstr "Accountupgrade beantragt"
 
 msgid "CoreLogCodes.genesis_request"
 msgstr "Neue Accountanfrage"
@@ -2518,9 +2521,6 @@ msgstr "Sambia"
 
 msgid "CountryCodes.ZW"
 msgstr "Simbabwe"
-
-msgid "CoreLogCodes.genesis_upgrade_requested"
-msgstr "Accountupgrade beantragt"
 
 msgid "No vote found."
 msgstr "Konnte keine Eintrag finden."
@@ -4445,6 +4445,9 @@ msgstr "Ungültige Eingabe für ein Datum."
 
 msgid "Must be a datetime.date."
 msgstr "Kein Datum gefunden."
+
+msgid "Must be after 1900."
+msgstr "Muss nach 1900 liegen."
 
 msgid "A birthday must be in the past."
 msgstr "Ein Geburtsdatum muss in der Vergangenheit liegen."
