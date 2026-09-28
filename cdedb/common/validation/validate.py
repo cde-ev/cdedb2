@@ -1704,7 +1704,7 @@ def _date(val: Any, argname: str | None = None, **kwargs: Any) -> datetime.date:
         val = val.date()
     if not isinstance(val, datetime.date):
         raise ValidationSummary(TypeError(argname, n_("Must be a datetime.date.")))
-    if not val >= _VALID_DATE_CUTOFF.date():
+    if not val >= _VALID_DATE_CUTOFF.date() and val != datetime.date.min:
         raise ValidationSummary(ValueError(argname, n_("Must be after 1900.")))
     return val
 
