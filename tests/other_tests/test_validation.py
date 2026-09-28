@@ -554,7 +554,7 @@ class TestValidation(TestValidationBase):
         self.do_validator_test(
             datetime.datetime,
             (
-                (now, None, TypeError("Must be timezone aware. (None)")),
+                (now, None, TypeError("Must be timezone aware.")),
                 (now_aware, now_aware, None),
                 (now_other, now_other, None),
                 (now.date(), None, TypeError),
@@ -595,7 +595,7 @@ class TestValidation(TestValidationBase):
         self.do_validator_test(
             datetime.datetime,
             (
-                (now, None, TypeError("Must be timezone aware. (None)")),
+                (now, None, TypeError("Must be timezone aware.")),
                 (now_aware, now_aware, None),
                 (now_other, now_other, None),
                 (now.date(), None, TypeError),

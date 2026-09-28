@@ -1626,7 +1626,7 @@ etc;anything else""",
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"
-        f['part_end'] = "1345-6-7"
+        f['part_end'] = "1945-6-7"
         f['orga_ids'] = "DB-10-8"
         f['fee'] = "123.45"
         f['nonmember_surcharge'] = "8"
