@@ -84,25 +84,25 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">{% trans %}Course{% endtrans %}</th>
-                {% for track in ambience['event']['tracks'].values()|sort %}
-                    <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
-                        {%- if ambience['event']['tracks']|length == 1 -%}
+                {% for track in ambience['event'].tracks.values() %}
+                    <th colspan="{{ track.num_choices + 2 }}" class="b-left" title="{{ track.title }}">
+                        {%- if ambience['event'].tracks|length == 1 -%}
                             {% trans %}Course Size & Choices{% endtrans %}
                         {%- else -%}
-                            {{ track['shortname'] }}
+                            {{ track.shortname }}
                         {%- endif -%}
                     </th>
                 {% endfor %}
                 <th colspan="2" class="b-left">{% trans %}Limit{% endtrans %}</th>
-                {% if ambience['event']['tracks']|length < 4 %}
+                {% if ambience['event'].tracks|length < 4 %}
                     <th rowspan="2" class="b-left"></th>
                 {% endif %}
             </tr>
             <tr>
-                {% for track in ambience['event']['tracks'].values()|sort %}
+                {% for track in ambience['event'].tracks.values() %}
                     <th class="b-left"></th>
                     <th class="text-right">{{ util.make_icon('crosshairs', title=gettext("Assigned")) }}</th>
-                    {% for i in range(track['num_choices']) %}
+                    {% for i in range(track.num_choices) %}
                         <th class="text-right">{{ (i + 1) }}</th>
                     {% endfor %}
                 {% endfor %}
@@ -111,62 +111,62 @@
             </tr>
         </thead>
         <tbody>
-            {% for course_id, course in courses.items() %}
+            {% for course in courses.values() %}
                 <tr>
                     {% set format = violations.get(course=course, track=None, track_group=None).course_stats_format -%}
                     {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
-                    <td class="{{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}">
+                    <td class="{{ aclass }}" title="{{ atitle }}" id="course-{{ course.id }}">
                         {{ course.nr }}
                     </td>
                     <td class="{{ aclass }}" title="{{ atitle }}">
-                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}), course.shortname,
+                        {{ util.href(cdedblink('event/show_course', {'course_id': course.id}), course.shortname,
                                      readonly=not is_privileged_for('show_course')) }}
                     </td>
-                    {% for track in ambience['event']['tracks'].values()|sort %}
+                    {% for track in ambience['event'].tracks.values() %}
                         {% set format = violations.get(course=course, track=track, track_group=None).course_stats_format -%}
                         {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
 
                         {% if track.id in course.segments %}
-                            <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}" id="course-{{ course_id }}-track-{{ track.id }}">
+                            <td class="b-left course-primary {{ aclass }}" title="{{ atitle }}" id="course-{{ course.id }}-track-{{ track.id }}">
                                 {% for icon, icon_title in format.icons %}
                                     {{ util.make_icon(icon, title=gettext(icon_title)) }}
                                 {% endfor %}
                             </td>
                             <td class="text-right course-primary {{ aclass }}" title="{{ atitle }}">
                                 {{ util.href(cdedblink('event/course_choices', {'track_id': track.id,
-                                                                                'course_id': course_id,
+                                                                                'course_id': course.id,
                                                                                 'position': enums.CourseFilterPositions.assigned.value,
                                                                                 'include_active': include_active,
                                                                                 'submitform': True}),
-                                             "%s%s+%s%s"|format(violation_data['attendee_stats'].involved[(course_id, track.id)].num_learners, nbsp, nbsp,
-                                                                violation_data['attendee_stats'].involved[(course_id, track.id)].num_instructors),
+                                             "%s%s+%s%s"|format(violation_data['attendee_stats'].involved[(course.id, track.id)].num_learners, nbsp, nbsp,
+                                                                violation_data['attendee_stats'].involved[(course.id, track.id)].num_instructors),
                                              readonly=not is_privileged_for('course_choices')) }}
                             </td>
-                            {% for i in range(track['num_choices']) %}
+                            {% for i in range(track.num_choices) %}
                                 <td class="text-right">
                                     {{ util.href(cdedblink('event/course_choices', {'track_id': track.id,
-                                                                                    'course_id': course_id,
+                                                                                    'course_id': course.id,
                                                                                     'position': i,
                                                                                     'include_active': include_active,
                                                                                     'submitform': True}),
-                                             choice_counts[(course_id, track.id)][i],
+                                             choice_counts[(course.id, track.id)][i],
                                              readonly=not is_privileged_for('course_choices')) }}
                             {% endfor %}
                         {% else %}
-                            <td class="b-left" id="course-{{ course_id }}-track-{{ track.id }}"></td>
-                            <td colspan="{{ track['num_choices'] + 1 }}"></td>
+                            <td class="b-left" id="course-{{ course.id }}-track-{{ track.id }}"></td>
+                            <td colspan="{{ track.num_choices + 1 }}"></td>
                         {% endif %}
                     {% endfor %}
                     <td class="b-left text-right">{{ course.min_size }}</td>
                     <td class="text-right">{{ course.max_size }}</td>
-                    {% if ambience['event']['tracks']|length < 4 %}
+                    {% if ambience['event'].tracks|length < 4 %}
                         <td class="b-left text-nowrap">
-                            {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),
+                            {{ util.href(cdedblink("event/change_course_form", {'course_id': course.id}),
                                          label=none, readonly=not is_privileged_for('change_course'),
                                          aclass='btn btn-xs btn-warning', icon='pen',
                                          title=gettext("Edit")) }}
-                            {{ util.href(cdedblink("event/manage_attendees_form", {'course_id': course_id}),
+                            {{ util.href(cdedblink("event/manage_attendees_form", {'course_id': course.id}),
                                          label=none, readonly=not is_privileged_for('manage_attendees'),
                                          aclass='btn btn-xs btn-warning', icon='user',
                                          title=gettext("Manage Attendees")) }}
@@ -178,12 +178,12 @@
                 <tr style="display: none;">
                     <th></th>
                     <th></th>
-                    {% for track in ambience['event']['tracks'].values()|sort -%}
-                        <th colspan="{{ track['num_choices'] + 2 }}"></th>
+                    {% for track in ambience['event'].tracks.values() -%}
+                        <th colspan="{{ track.num_choices + 2 }}"></th>
                     {%- endfor %}
                     <th></th>
                     <th></th>
-                    {% if ambience['event']['tracks']|length < 4 %}<th></th>{% endif %}
+                    {% if ambience['event'].tracks|length < 4 %}<th></th>{% endif %}
                 </tr>
             {% endfor %}
         </tbody>
