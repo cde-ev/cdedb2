@@ -187,7 +187,7 @@ class TestCdEBackend(BackendTest):
                 (
                     "birthday",
                     QueryOperators.between,
-                    (datetime.datetime(1000, 1, 1), datetime.datetime.now()),
+                    (datetime.datetime(1900, 1, 1), datetime.datetime.now()),
                 ),
             ],
             order=(("family_name", True),),

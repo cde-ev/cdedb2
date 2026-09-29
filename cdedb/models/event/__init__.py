@@ -1464,6 +1464,16 @@ class ReducedCheckinPeriod:
         else:
             return f"{datetime_filter(self.checkin_time, formatstr)} – "
 
+    @classmethod
+    def validation_fields(
+        cls, *, creation: bool
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory: vtypes.MutableTypeMapping = {}
+        optional: vtypes.MutableTypeMapping = {}
+        for field in dataclasses.fields(cls):
+            mandatory[field.name] = cast(type[Any], field.type)
+        return mandatory, optional
+
 
 @dataclasses.dataclass
 class CheckinPeriod(EventDataclass, ReducedCheckinPeriod):

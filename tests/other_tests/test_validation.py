@@ -40,7 +40,10 @@ from cdedb.config import Config
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import GenesisCaseEvent
 
+# Use this as expected value to compare the validation result to the given input.
 INVAL = object()
+# Use this as expected value to skip the comparison of the validation result entirely.
+#  This will still assert that the validation suceeds without validation errors.
 NO_COMPARE = object()
 
 
@@ -65,7 +68,7 @@ class TestValidationBase(unittest.TestCase):
         """
         extraparams = extraparams or {}
         for inval, retval, exception in spec:
-            with self.subTest(inval=inval, exception=exception):
+            with self.subTest(type=type_, inval=inval, exception=exception):
                 if retval is INVAL:
                     retval = inval
                 if not exception:
@@ -554,7 +557,7 @@ class TestValidation(TestValidationBase):
         self.do_validator_test(
             datetime.datetime,
             (
-                (now, None, TypeError("Must be timezone aware. (None)")),
+                (now, None, TypeError("Must be timezone aware.")),
                 (now_aware, now_aware, None),
                 (now_other, now_other, None),
                 (now.date(), None, TypeError),
@@ -595,7 +598,7 @@ class TestValidation(TestValidationBase):
         self.do_validator_test(
             datetime.datetime,
             (
-                (now, None, TypeError("Must be timezone aware. (None)")),
+                (now, None, TypeError("Must be timezone aware.")),
                 (now_aware, now_aware, None),
                 (now_other, now_other, None),
                 (now.date(), None, TypeError),
@@ -1172,4 +1175,158 @@ class TestValidation(TestValidationBase):
                 "id_": None,
                 "creation": True,
             },
+        )
+
+    def test_event_dates(self) -> None:
+        early_date = datetime.date(1899, 12, 31)
+        valid_date = datetime.date(1900, 1, 1)
+        self.do_validator_test(
+            datetime.date,
+            [
+                ("1899-12-31", None, ValueError("Must be after 1900.")),
+                (early_date, None, ValueError("Must be after 1900.")),
+                ("1900-01-01", datetime.date(1900, 1, 1), None),
+                (valid_date, INVAL, None),
+                ("2000-01-01", datetime.date(2000, 1, 1), None),
+                (datetime.date(2000, 1, 1), INVAL, None),
+                ("2100-01-01", datetime.date(2100, 1, 1), None),
+                (datetime.date(2100, 1, 1), INVAL, None),
+                ("3000-01-01", datetime.date(3000, 1, 1), None),
+                (datetime.date(3000, 1, 1), INVAL, None),
+                (now().date(), INVAL, None),
+            ],
+        )
+
+        tz = Config()["DEFAULT_TIMEZONE"]
+        early_time = datetime.datetime(1899, 12, 31, 0, 0, 0, tzinfo=datetime.UTC)
+        valid_time = datetime.datetime(1900, 1, 2, 0, 0, 0, tzinfo=datetime.UTC)
+        self.do_validator_test(
+            datetime.datetime,
+            [
+                ("1899-12-31 00:00:00", None, ValueError("Must be after 1900.")),
+                (early_time, None, ValueError("Must be after 1900.")),
+                (
+                    "1900-01-02 00:00:00",
+                    datetime.datetime(1900, 1, 2, 0, 0, 0, tzinfo=tz),
+                    None,
+                ),
+                (valid_time, INVAL, None),
+                (
+                    "2000-01-01 00:00:00",
+                    datetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=tz),
+                    None,
+                ),
+                (
+                    datetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
+                    INVAL,
+                    None,
+                ),
+                (
+                    "2100-01-01 00:00:00",
+                    datetime.datetime(2100, 1, 1, 0, 0, 0, tzinfo=tz),
+                    None,
+                ),
+                (
+                    datetime.datetime(2100, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
+                    INVAL,
+                    None,
+                ),
+                (
+                    "3000-01-01 00:00:00",
+                    datetime.datetime(3000, 1, 1, 0, 0, 0, tzinfo=tz),
+                    None,
+                ),
+                (
+                    datetime.datetime(3000, 1, 1, 0, 0, 0, tzinfo=datetime.UTC),
+                    INVAL,
+                    None,
+                ),
+                (now(), INVAL, None),
+            ],
+        )
+
+        self.do_validator_test(
+            models_event.EventPart,
+            [
+                (
+                    {"part_begin": early_date},
+                    None,
+                    ValueError("Must be after 1900. (part_begin)"),
+                ),
+                (
+                    {"part_end": early_date},
+                    None,
+                    ValueError("Must be after 1900. (part_end)"),
+                ),
+                ({"part_begin": valid_date}, INVAL, None),
+                ({"part_end": valid_date}, INVAL, None),
+            ],
+            {"event": None},
+        )
+
+        self.do_validator_test(
+            models_event.ReducedCheckinPeriod,
+            [
+                (
+                    {"checkin_time": early_time, "checkout_time": valid_time},
+                    None,
+                    ValueError("Must be after 1900. (checkin_time)"),
+                ),
+                (
+                    {"checkin_time": valid_time, "checkout_time": early_time},
+                    None,
+                    ValueError("Must be after 1900. (checkout_time)"),
+                ),
+                (
+                    {
+                        "checkin_time": valid_time,
+                        "checkout_time": valid_time + datetime.timedelta(days=1),
+                    },
+                    NO_COMPARE,
+                    None,
+                ),
+            ],
+        )
+
+        self.do_validator_test(
+            models_event._EventConfigurationMixin,
+            [
+                (
+                    {"registration_start": early_time},
+                    None,
+                    ValueError("Must be after 1900. (registration_start)"),
+                ),
+                ({"registration_start": valid_time}, INVAL, None),
+                (
+                    {"registration_soft_limit": early_time},
+                    None,
+                    ValueError("Must be after 1900. (registration_soft_limit)"),
+                ),
+                ({"registration_soft_limit": valid_time}, INVAL, None),
+                (
+                    {"registration_hard_limit": early_time},
+                    None,
+                    ValueError("Must be after 1900. (registration_hard_limit)"),
+                ),
+                ({"registration_hard_limit": valid_time}, INVAL, None),
+            ],
+            {"event": None},
+        )
+
+        self.do_validator_test(
+            vtypes.ByFieldDatatype,
+            [
+                (early_date, None, ValueError("Must be after 1900. (some field)")),
+                (valid_date, INVAL, None),
+            ],
+            {"kind": const.FieldDatatypes.date, "argname": "some field"},
+        )
+
+        self.do_validator_test(
+            vtypes.ByFieldDatatype,
+            [
+                (early_time, None, ValueError("Must be after 1900. (some field)")),
+                (valid_time, INVAL, None),
+            ],
+            {"kind": const.FieldDatatypes.datetime, "argname": "some field"},
         )

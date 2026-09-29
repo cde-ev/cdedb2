@@ -93,13 +93,16 @@ msgstr ""
 msgid "FieldDatatypes.str_monospace"
 msgstr ""
 
-msgid "FieldDatatypes.bool"
-msgstr ""
-
 msgid "FieldDatatypes.int"
 msgstr ""
 
 msgid "FieldDatatypes.float"
+msgstr ""
+
+msgid "FieldDatatypes.non_negative_int"
+msgstr ""
+
+msgid "FieldDatatypes.non_negative_float"
 msgstr ""
 
 msgid "FieldDatatypes.date"
@@ -108,10 +111,7 @@ msgstr ""
 msgid "FieldDatatypes.datetime"
 msgstr ""
 
-msgid "FieldDatatypes.non_negative_int"
-msgstr ""
-
-msgid "FieldDatatypes.non_negative_float"
+msgid "FieldDatatypes.bool"
 msgstr ""
 
 msgid "FieldDatatypes.phone"
@@ -682,6 +682,10 @@ msgstr "Inscriptiones pro exPulso probatae"
 
 #, fuzzy
 msgid "CoreLogCodes.password_invalidated"
+msgstr "Proximus exPulsus"
+
+#, fuzzy
+msgid "CoreLogCodes.genesis_upgrade_requested"
 msgstr "Proximus exPulsus"
 
 #, fuzzy
@@ -2799,10 +2803,6 @@ msgstr ""
 msgid "CountryCodes.ZW"
 msgstr ""
 
-#, fuzzy
-msgid "CoreLogCodes.genesis_upgrade_requested"
-msgstr "Proximus exPulsus"
-
 msgid "No vote found."
 msgstr ""
 
@@ -4819,6 +4819,10 @@ msgstr "Annuntiationes"
 
 msgid "Must be a datetime.date."
 msgstr ""
+
+#, fuzzy
+msgid "Must be after 1900."
+msgstr "administrator coetuum"
 
 msgid "A birthday must be in the past."
 msgstr ""
