@@ -11,4 +11,8 @@
 #       clean = i18n/git-filter-po-clean.sh
 #
 
-sed "/^#:/d" "$@"
+if [ -n "$PO_CLEAN_INPLACE" ]; then
+    sed -i "/^#:/d" "$@"
+else
+    sed "/^#:/d" "$@"
+fi
