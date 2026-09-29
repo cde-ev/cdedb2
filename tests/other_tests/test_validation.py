@@ -40,7 +40,10 @@ from cdedb.config import Config
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import GenesisCaseEvent
 
+# Use this as expected value to compare the validation result to the given input.
 INVAL = object()
+# Use this as expected value to skip the comparison of the validation result entirely.
+#  This will still assert that the validation suceeds without validation errors.
 NO_COMPARE = object()
 
 
@@ -1175,21 +1178,15 @@ class TestValidation(TestValidationBase):
         )
 
     def test_event_dates(self) -> None:
+        early_date = datetime.date(1899, 12, 31)
+        valid_date = datetime.date(1900, 1, 1)
         self.do_validator_test(
             datetime.date,
             [
                 ("1899-12-31", None, ValueError("Must be after 1900.")),
-                (
-                    (early_date := datetime.date(1899, 12, 31)),
-                    None,
-                    ValueError("Must be after 1900."),
-                ),
+                (early_date, None, ValueError("Must be after 1900.")),
                 ("1900-01-01", datetime.date(1900, 1, 1), None),
-                (
-                    (valid_date := datetime.date(1900, 1, 1)),
-                    INVAL,
-                    None,
-                ),
+                (valid_date, INVAL, None),
                 ("2000-01-01", datetime.date(2000, 1, 1), None),
                 (datetime.date(2000, 1, 1), INVAL, None),
                 ("2100-01-01", datetime.date(2100, 1, 1), None),
@@ -1201,38 +1198,19 @@ class TestValidation(TestValidationBase):
         )
 
         tz = Config()["DEFAULT_TIMEZONE"]
+        early_time = datetime.datetime(1899, 12, 31, 0, 0, 0, tzinfo=datetime.UTC)
+        valid_time = datetime.datetime(1900, 1, 2, 0, 0, 0, tzinfo=datetime.UTC)
         self.do_validator_test(
             datetime.datetime,
             [
                 ("1899-12-31 00:00:00", None, ValueError("Must be after 1900.")),
+                (early_time, None, ValueError("Must be after 1900.")),
                 (
-                    (
-                        early_time := datetime.datetime(
-                            1899, 12, 31, 0, 0, 0, tzinfo=datetime.UTC
-                        )
-                    ),
-                    None,
-                    ValueError("Must be after 1900."),
-                ),
-                (
-                    "1900-01-01 00:00:00",
-                    None,
-                    ValueError("Must be after 1900."),
-                ),
-                (
-                    "1900-01-01 12:00:00",
-                    datetime.datetime(1900, 1, 1, 12, 0, 0, tzinfo=tz),
+                    "1900-01-02 00:00:00",
+                    datetime.datetime(1900, 1, 2, 0, 0, 0, tzinfo=tz),
                     None,
                 ),
-                (
-                    (
-                        valid_time := datetime.datetime(
-                            1900, 1, 1, 0, 0, 0, tzinfo=datetime.UTC
-                        )
-                    ),
-                    INVAL,
-                    None,
-                ),
+                (valid_time, INVAL, None),
                 (
                     "2000-01-01 00:00:00",
                     datetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=tz),
@@ -1318,31 +1296,19 @@ class TestValidation(TestValidationBase):
                     None,
                     ValueError("Must be after 1900. (registration_start)"),
                 ),
-                (
-                    {"registration_start": valid_time},
-                    NO_COMPARE,
-                    None,
-                ),
+                ({"registration_start": valid_time}, INVAL, None),
                 (
                     {"registration_soft_limit": early_time},
                     None,
                     ValueError("Must be after 1900. (registration_soft_limit)"),
                 ),
-                (
-                    {"registration_soft_limit": valid_time},
-                    NO_COMPARE,
-                    None,
-                ),
+                ({"registration_soft_limit": valid_time}, INVAL, None),
                 (
                     {"registration_hard_limit": early_time},
                     None,
                     ValueError("Must be after 1900. (registration_hard_limit)"),
                 ),
-                (
-                    {"registration_hard_limit": valid_time},
-                    NO_COMPARE,
-                    None,
-                ),
+                ({"registration_hard_limit": valid_time}, INVAL, None),
             ],
             {"event": None},
         )
