@@ -9678,3 +9678,19 @@ Text mit Fußnote [^1]
 
         self.assertNoLink(r".*#fn:\d+$")
         self.assertHasLink(r".*#fn:\d+-\d+$")
+
+    @as_users("anton")
+    def test_4805(self) -> None:
+        # Register for only one part of a CCS track, then check that courses only
+        #  offered in other parts are still listed in the registration preview.
+        self.traverse("Veranstaltungen", "TripelAkademie", "Anmelden")
+        f = self.response.forms["registerform"]
+        f["parts"] = [7]
+        f["group1.course_choice_0"].select(text="2. All-Embracement")
+        f["group1.course_choice_1"].select(text="3. Nostalgie")
+        self.submit(f)
+        self.traverse("Anmeldungsvorschau")
+        f = self.response.forms["registerform"]
+
+        # This errors without the fix.
+        f["group1.course_choice_0"].select(text="1. Das Niebelungenlied")

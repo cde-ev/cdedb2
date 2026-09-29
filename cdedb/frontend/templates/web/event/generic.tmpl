@@ -57,7 +57,7 @@
             {% set all_course_choices = all_courses_per_track[cco.id] %}
         {% endif %}
         {% if involved_tracks is none or involved_tracks.intersection(cco.tracks) %}
-            {{ select_course_choice(cco, courses, course_choices, all_course_choices,
+            {{ select_course_choice(cco, courses, course_choices if not preview else all_course_choices, all_course_choices,
                                     show_track_title=choice_objects|length > 1, is_locked=is_locked) }}
         {% endif %}
     {% endfor %}
@@ -290,7 +290,7 @@
         {% if choice_objects %}
             {% set heading = row.get_toc_entries()[0] %}
             {{ util.h(heading.title, level=heading.level, underline=True) }}
-            {{ select_all_course_choices(involved_tracks=involved_tracks, is_locked=is_locked) }}
+            {{ select_all_course_choices(involved_tracks=involved_tracks if not preview else None, is_locked=is_locked) }}
         {% endif %}
     {% elif row.name == "PartSelection" %}
         {% if ambience['event'].parts|length > 1 %}

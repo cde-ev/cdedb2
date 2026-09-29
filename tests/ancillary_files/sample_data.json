@@ -6879,6 +6879,11 @@
             "course_id": 13,
             "track_id": 3,
             "is_active": true
+        },
+        {
+            "course_id": 11,
+            "track_id": 7,
+            "is_active": true
         }
     ],
     "event.orgas": [
