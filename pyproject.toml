@@ -46,7 +46,7 @@ dependencies = [
 dev = [
     "mypy[faster-cache]==2.3.1",
     "lxml-stubs",
-    "ruff==0.16.7",
+    "ruff==0.16.8",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
