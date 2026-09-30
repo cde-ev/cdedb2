@@ -1,0 +1,70 @@
+{% set sidenav_active="debug_emails" %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans %}
+        View E-Mail
+    {% endtrans %}
+{% endblock %}
+
+{% block styles %}
+    <style>
+        pre {
+            width: fit-content;
+            white-space: pre-line;
+        }
+        .table pre {
+            padding: 1px 4px;
+            margin-bottom: 0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <table class="table nosp">
+        {%- for header, value in email.important_headers.items() if value %}
+            <tr>
+                <th>
+                    {{ header }}
+                </th>
+                <td>
+                    {% if header == "Date" %}
+                        {{ value|datetime(lang=lang) }}
+                    {% else %}
+                        <pre>
+                            {{- value -}}
+                        </pre>
+                    {% endif %}
+                </td>
+            </tr>
+        {%- endfor -%}
+    </table>
+    <div class="p button-par">
+        <details>
+            <summary class="btn btn-default">
+                Other Headers
+            </summary>
+            <table class="table nosp">
+                {%- for header, value in email.other_headers.items() if value %}
+                    <tr>
+                        <th>
+                            {{ header }}
+                        </th>
+                        <td>
+                            <pre>
+                                {{- value -}}
+                            </pre>
+                        </td>
+                    </tr>
+                {%- endfor -%}
+            </table>
+        </details>
+    </div>
+    <pre>
+        {{- email.body -}}
+    </pre>
+    <hr />
+    <div class="p button-par">
+        {{ util.href(cdedblink("core/list_debug_emails"), gettext("Show All E-Mails"), icon="arrow-left", aclass="btn btn-default") }}
+    </div>
+{% endblock %}

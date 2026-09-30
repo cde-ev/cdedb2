@@ -6,11 +6,14 @@ import copy
 import dataclasses
 import datetime
 import decimal
+import email
+import email.headerregistry
 import logging
+import pathlib
 import re
 from enum import auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import Any, ClassVar, NotRequired, Self, TypedDict, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -21,14 +24,10 @@ from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.roles import Realms, RealmSet, Roles, RoleSet, extract_roles
-from cdedb.common.sorting import Sortkey
+from cdedb.common.sorting import Sortkey, collate
 from cdedb.config import Config
 from cdedb.filter import cdedbid_filter
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
-
-if TYPE_CHECKING:
-    from typing import Self
-
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG = Config()
@@ -924,3 +923,78 @@ class GenesisUpgrade(GenesisCase):
 
     def get_persona_creation(self) -> CorePersona:
         raise NotImplementedError
+
+
+class _Headers(TypedDict):
+    Subject: email.headerregistry.UnstructuredHeader
+    Date: email.headerregistry.DateHeader
+    From: email.headerregistry.AddressHeader
+    To: NotRequired[email.headerregistry.AddressHeader]
+    CC: NotRequired[email.headerregistry.AddressHeader]
+    BCC: NotRequired[email.headerregistry.AddressHeader]
+
+
+@dataclasses.dataclass(kw_only=True)
+class DebugEmail:
+    Subject: str
+    Date: datetime.datetime
+    From: str
+    To: str = ""
+    CC: str = ""
+    BCC: str = ""
+
+    other_headers: dict[str, str] = dataclasses.field(
+        default_factory=dict, metadata={"important": False}
+    )
+
+    body: str = dataclasses.field(metadata={"important": False})
+
+    filename: str = dataclasses.field(metadata={"important": False})
+
+    @classmethod
+    def _important_header_keys(cls) -> list[str]:
+        return [
+            field.name
+            for field in dataclasses.fields(cls)
+            if field.metadata.get("important", True)
+        ]
+
+    @property
+    def important_headers(self) -> dict[str, str]:
+        return {k: getattr(self, k) for k in self._important_header_keys()}
+
+    @classmethod
+    def from_file(cls, path: pathlib.Path) -> Self | pathlib.Path:
+        try:
+            raw = path.read_bytes()
+        except (FileNotFoundError, PermissionError):
+            return path
+
+        message = email.message_from_bytes(raw)
+
+        hr = email.headerregistry.HeaderRegistry()
+        headers: _Headers = {k: hr(k, v) for k, v in message.items()}  # type: ignore[assignment]
+
+        return cls(
+            Subject=str(headers["Subject"]),
+            Date=headers["Date"].datetime or datetime.datetime.min,
+            From=str(headers["From"]),
+            To=str(headers.get("To", "")),
+            CC=str(headers.get("CC", "")),
+            BCC=str(headers.get("BCC", "")),
+            other_headers={k: str(v) for k, v in headers.items()},
+            body=cast(bytes, message.get_payload(decode=True)).decode(),
+            filename=path.stem,
+        )
+
+    def get_sortkey(self) -> Sortkey:
+        return self.Date, self.Subject, self.From, self.To
+
+    def __lt__(self, other: "CdEDataclass") -> bool:
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+
+        # Ensure natural sort. See xsorted for details.
+        return tuple(map(collate, self.get_sortkey())) < tuple(
+            map(collate, other.get_sortkey())
+        )

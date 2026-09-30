@@ -8863,6 +8863,9 @@ msgstr ""
 msgid "Metadata"
 msgstr ""
 
+msgid "Debug E-Mails"
+msgstr ""
+
 msgid "User Review"
 msgstr ""
 
@@ -9503,7 +9506,13 @@ msgstr ""
 msgid "Account"
 msgstr ""
 
+msgid "View E-Mails"
+msgstr ""
+
 msgid "View E-Mail"
+msgstr ""
+
+msgid "Show All E-Mails"
 msgstr ""
 
 msgid "Set New Password"

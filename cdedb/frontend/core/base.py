@@ -10,7 +10,6 @@ import enum
 import itertools
 import operator
 import pathlib
-import quopri
 import tempfile
 from collections.abc import Collection
 from typing import Any, TypedDict
@@ -140,6 +139,11 @@ class CoreBaseFrontend(AbstractFrontend):
 
     realm = "core"
     admin_roles = (Roles.core_admin,)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.debug_mail_dir = pathlib.Path(tempfile.gettempdir()) / "cdedb-mail"
+        self.debug_mail_dir.mkdir(parents=True, exist_ok=True)
 
     @access(Roles.anonymous)
     @REQUESTdata("#wants")
@@ -3424,7 +3428,20 @@ class CoreBaseFrontend(AbstractFrontend):
         )
 
     @access(Roles.anonymous)
-    def debug_email(self, rs: RequestState, token: str) -> Response:
+    def list_debug_emails(self, rs: RequestState) -> Response:
+        if not self.conf["CDEDB_DEV"]:  # pragma: no cover
+            return self.redirect(rs, "core/index")
+
+        emails = xsorted(
+            email
+            for mail_file in self.debug_mail_dir.iterdir()
+            if mail_file.is_file() and (email := models.DebugEmail.from_file(mail_file))
+        )
+
+        return self.render(rs, "debug_email/list_debug_emails", {'emails': emails})
+
+    @access(Roles.anonymous)
+    def show_debug_email(self, rs: RequestState, token: str) -> Response:
         """Debug functionality to view emails stored to HDD.
 
         In test instances emails are stored to disk since most of the time
@@ -3440,14 +3457,13 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
-        filepath = pathlib.Path(tempfile.gettempdir(), "cdedb-mail", f"{token}.txt")
-        try:
-            rawtext = filepath.read_bytes()
-        except FileNotFoundError:
-            rs.notify("error", f"File {filepath.name!r} not found.")
-            return self.redirect(rs, "core/index")
-        emailtext = quopri.decodestring(rawtext).decode('utf-8')
-        return self.render(rs, "debug_email", {'emailtext': emailtext})
+
+        debug_email = models.DebugEmail.from_file(self.debug_mail_dir / f"{token}.txt")
+        if isinstance(debug_email, pathlib.Path):
+            rs.notify("error", f"File {debug_email.name!r} not found.")
+            return self.redirect(rs, "core/list_debug_emails")
+
+        return self.render(rs, "debug_email/show_debug_email", {'email': debug_email})
 
     def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:
         return self.coreproxy.get_cron_store(rs, name)

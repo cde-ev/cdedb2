@@ -125,6 +125,14 @@
                              icon="tags", active=(sidenav_active=='core_meta')) }}
             </div>
         {% endif %}
+
+        {% if CDEDB_DEV and not CDEDB_TEST %}
+            <div class="list-group tear-down">
+                {{ util.href(cdedblink("core/list_debug_emails"), gettext("Debug E-Mails"), aclass="list-group-item",
+                             icon="envelope", active=(sidenav_active=='debug_emails')) }}
+            </div>
+        {% endif %}
+
         <hr class="strong visible-xs visible-sm" />
     {% endif %}
 {% endblock %}

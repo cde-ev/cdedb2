@@ -9330,6 +9330,9 @@ msgstr "Fall-Log"
 msgid "Metadata"
 msgstr "Metadaten"
 
+msgid "Debug E-Mails"
+msgstr "Debug-E-Mails"
+
 msgid "User Review"
 msgstr "Account-Review"
 
@@ -10047,8 +10050,14 @@ msgstr ""
 msgid "Account"
 msgstr "Account"
 
+msgid "View E-Mails"
+msgstr "E-Mails ansehen"
+
 msgid "View E-Mail"
-msgstr "Email ansehen"
+msgstr "E-Mail ansehen"
+
+msgid "Show All E-Mails"
+msgstr "Alle E-Mails anzeigen"
 
 msgid "Set New Password"
 msgstr "Neues Passwort setzen"

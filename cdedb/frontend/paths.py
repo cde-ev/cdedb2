@@ -94,7 +94,8 @@ rules = [
             get_("/changelog/list", endpoint="list_pending_changes"),
             get_("/changelog/view", endpoint="view_changelog_meta"),
             get_("/foto/<filename:foto>", endpoint="get_foto"),
-            get_("/debugemail/<token>", endpoint="debug_email"),
+            get_("/debugemail/", endpoint="list_debug_emails"),
+            get_("/debugemail/<token>", endpoint="show_debug_email"),
             get_("/query/share", endpoint="query_by_name"),
             sub(
                 "/self",
