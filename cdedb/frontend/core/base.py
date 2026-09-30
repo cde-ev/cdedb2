@@ -3440,7 +3440,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
-        filepath = pathlib.Path(tempfile.gettempdir(), f"cdedb-mail-{token}.txt")
+        filepath = pathlib.Path(tempfile.gettempdir(), "cdedb-mail", f"{token}.txt")
         try:
             rawtext = filepath.read_bytes()
         except FileNotFoundError:
