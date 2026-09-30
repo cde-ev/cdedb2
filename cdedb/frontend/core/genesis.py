@@ -620,13 +620,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
         return self.redirect(rs, "core/genesis_show_case")
 
     @access(*Roles.all_genesis_realm_roles(), modi={"POST"})
-    @REQUESTdata("decision", "persona_id")
+    @REQUESTdata("decision", "persona_id", "resend_welcome_mail")
     def genesis_decide(
         self,
         rs: RequestState,
         genesis_case_id: int,
         decision: GenesisDecision,
         persona_id: vtypes.PersonaID | None,
+        resend_welcome_mail: bool,
     ) -> Response:
         """Approve or decline a genensis case.
 
@@ -715,7 +716,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             else:
                 trial_member = False
 
-            if case.is_upgrade or creation:
+            if case.is_upgrade or creation or resend_welcome_mail:
                 self.send_welcome_mail(
                     rs, persona, status, is_trial_member=trial_member
                 )
@@ -723,6 +724,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     "success",
                     n_("Account upgraded.")
                     if case.is_upgrade
+                    else n_("User updated.")
+                    if not creation
                     else n_("Case approved."),
                 )
 

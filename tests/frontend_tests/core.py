@@ -1700,6 +1700,22 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Änderung abgelehnt.", div="notifications")
 
     @as_users("vera")
+    def test_resend_welcome_mail(self) -> None:
+        # cde realm, but no member
+        self.admin_view_profile("werner")
+        f = self.response.forms["resendwelcomemailform"]
+        self.submit(f)
+        mailtext = self.fetch_mail_content()
+        self.assertIn("vor kurzem ein Aufnahmeangebot in den Club", mailtext)
+
+        # member
+        self.admin_view_profile("inga")
+        f = self.response.forms["resendwelcomemailform"]
+        self.submit(f)
+        mailtext = self.fetch_mail_content()
+        self.assertIn("Ein herzliches Willkommen im Club der Ehemaligen", mailtext)
+
+    @as_users("vera")
     def test_toggle_activity(self) -> None:
         for i, u in enumerate((
             "berta",
@@ -3318,8 +3334,11 @@ class TestCoreFrontend(FrontendTest):
         # Submit without selecting doppelganger.
         f = self.response.forms['genesisdecisionform']
         f['persona_id'] = f['persona_id'].options[1][0]
+        f["resend_welcome_mail"].checked = True
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         self.assertPresence("Account aktualisiert", div="notifications")
+        mailtext = self.fetch_mail_content()
+        self.assertIn("Dein Account für die CdE-Datenbank wurde erstellt.", mailtext)
         log_expectation.extend([
             {
                 'code': const.CoreLogCodes.genesis_change,

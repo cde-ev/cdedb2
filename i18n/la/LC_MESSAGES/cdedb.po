@@ -7,6 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
+"POT-Creation-Date: 2026-09-23 16:59+0000\n"
+"PO-Revision-Date: 2019-08-18 18:33+0200\n"
+"Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
 "Language: la\n"
 "MIME-Version: 1.0\n"
@@ -6166,6 +6169,9 @@ msgstr ""
 msgid "No promotion necessary."
 msgstr ""
 
+msgid "Email sent."
+msgstr ""
+
 msgid "Revoked active permit."
 msgstr ""
 
@@ -6193,9 +6199,6 @@ msgid "Password changed."
 msgstr "Signum arcanum"
 
 msgid "Email sent. Please also check your spam folder."
-msgstr ""
-
-msgid "Email sent."
 msgstr ""
 
 #, fuzzy
@@ -6444,10 +6447,10 @@ msgstr ""
 msgid "Account upgraded."
 msgstr "vestigium novum crea"
 
-msgid "Case approved."
+msgid "User updated."
 msgstr ""
 
-msgid "User updated."
+msgid "Case approved."
 msgstr ""
 
 msgid "This page can only be accessed by orgas."
@@ -10559,10 +10562,25 @@ msgid ""
 msgstr ""
 
 #, python-format
-msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
+msgid ""
+"When updating an existing account, the CdEDB will only send an "
+"%(update_mail)s to the user. You can choose to send the full "
+"%(welcome_mail)s instead:"
 msgstr ""
 
+#, fuzzy
+msgid "notification email"
+msgstr "epistula electronica ad verificandum mitte"
+
 msgid "welcome email"
+msgstr ""
+
+#, fuzzy
+msgid "Send Welcome Mail again"
+msgstr "epistula electronica ad verificandum mitte"
+
+#, python-format
+msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
 msgstr ""
 
 msgid "Approve"
@@ -11226,6 +11244,12 @@ msgid ""
 "Sends an email to this user, which contains a password reset link. This is "
 "basically the same as any non-admin user can achieve using the “Reset "
 "Password” form on the login page."
+msgstr ""
+
+#, python-format
+msgid ""
+"Sends the %(welcome_mail)s again. Use this when there were problems with e-"
+"mail delivery."
 msgstr ""
 
 #, fuzzy

@@ -2596,6 +2596,22 @@ class CoreBaseFrontend(AbstractFrontend):
             )
         return self.redirect_show_user(rs, persona_id)
 
+    @access(Roles.cde_admin, modi={"POST"})
+    def resend_welcome_mail(self, rs: RequestState, persona_id: int) -> Response:
+        """Manually trigger (re)sending of the welcome mail."""
+        if rs.ambience["persona"].is_archived:
+            rs.notify("error", n_("Persona is archived."))
+            return self.redirect_show_user(rs, persona_id)
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        self.send_welcome_mail(
+            rs,
+            persona,
+            self.coreproxy.get_persona_status(rs, persona_id),
+            is_trial_member=persona.trial_member,
+        )
+        rs.notify("success", n_("Email sent."))
+        return self.redirect_show_user(rs, persona_id)
+
     @access(Roles.cde_admin)
     def modify_membership_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""

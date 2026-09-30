@@ -7,6 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
+"POT-Creation-Date: 2026-09-23 16:59+0000\n"
+"PO-Revision-Date: 2024-08-18 18:16+0200\n"
+"Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -5756,6 +5759,9 @@ msgstr "Passwort eines neuen Admins ungültig gemacht."
 msgid "No promotion necessary."
 msgstr "Keine Änderung erforderlich."
 
+msgid "Email sent."
+msgstr "E-Mail abgeschickt."
+
 msgid "Revoked active permit."
 msgstr "Aktives Lastschriftmandat widerrufen."
 
@@ -5782,9 +5788,6 @@ msgstr "Passwort geändert."
 
 msgid "Email sent. Please also check your spam folder."
 msgstr "Email abgeschickt. Bitte sieh auch in deinem Spam-Ordner nach."
-
-msgid "Email sent."
-msgstr "E-Mail abgeschickt."
 
 msgid "Lockdown active. Try again later."
 msgstr "Datenbank für Wartungsarbeiten gesperrt. Versuch es später nochmal."
@@ -6019,11 +6022,11 @@ msgstr ""
 msgid "Account upgraded."
 msgstr "Accountupgrade durchgeführt."
 
-msgid "Case approved."
-msgstr "Antrag genehmigt."
-
 msgid "User updated."
 msgstr "Account aktualisiert."
+
+msgid "Case approved."
+msgstr "Antrag genehmigt."
 
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
@@ -10284,13 +10287,29 @@ msgstr ""
 "aktualisiert werden, anstatt einen neuen Account zu erstellen."
 
 #, python-format
+msgid ""
+"When updating an existing account, the CdEDB will only send an "
+"%(update_mail)s to the user. You can choose to send the full "
+"%(welcome_mail)s instead:"
+msgstr ""
+"Bei der Aktualisierung eines bestehenden Accounts sendet die CdEDB nur eine "
+"%(update_mail)s. Du kannst stattdessen die lange %(welcome_mail)s erneut "
+"verschicken:"
+
+msgid "notification email"
+msgstr "Benachrichtigungsmail"
+
+msgid "welcome email"
+msgstr "Willkommensmail"
+
+msgid "Send Welcome Mail again"
+msgstr "Willkommensmail erneut verschicken"
+
+#, python-format
 msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
 msgstr ""
 "Die CdEDB wird eine automatische %(welcome_mail)s an den neuen Account "
 "schicken."
-
-msgid "welcome email"
-msgstr "Willkommensmail"
 
 msgid "Approve"
 msgstr "Genehmigen"
@@ -10929,6 +10948,14 @@ msgstr ""
 "Sendet eine E-Mail mit einem Passwort-Rücksetz-Link an den Account. Das "
 "kommt aufs Gleiche hinaus, wie wenn die Person das „Passwort zurücksetzen“-"
 "Formular auf der Login-Seite nutzt."
+
+#, python-format
+msgid ""
+"Sends the %(welcome_mail)s again. Use this when there were problems with e-"
+"mail delivery."
+msgstr ""
+"Verschickt die %(welcome_mail)s erneut. Nutze dies, wenn es Probleme mit der "
+"Mailzustellung gab"
 
 msgid "Deactivate Account"
 msgstr "Account deaktivieren"
