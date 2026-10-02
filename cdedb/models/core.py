@@ -982,7 +982,11 @@ class DebugEmail:
             To=str(headers.get("To", "")),
             CC=str(headers.get("CC", "")),
             BCC=str(headers.get("BCC", "")),
-            other_headers={k: str(v) for k, v in headers.items()},
+            other_headers={
+                k: str(v)
+                for k, v in headers.items()
+                if k not in cls._important_header_keys()
+            },
             body=cast(bytes, message.get_payload(decode=True)).decode(),
             filename=path.stem,
         )
