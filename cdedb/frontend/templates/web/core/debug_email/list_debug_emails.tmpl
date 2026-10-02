@@ -1,0 +1,55 @@
+{% set sidenav_active="debug_emails" %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans %}
+        View E-Mails
+    {% endtrans %}
+{% endblock %}
+
+{% block styles %}
+    <style>
+        th {
+            width: 80px
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="list-group list-group-hover list-group-condensed">
+        {% for email in emails %}
+            {% call util.href(cdedblink("core/show_debug_email", {"token": email.filename}), aclass="no-color list-group-item") %}
+                    <table class="table table-layout-fixed table-condensed table-borderless nosp no-upper-border">
+                        <tr>
+                            <th>Date</th>
+                            <td>{{ email.Date|datetime(lang=lang) }}</td>
+                            <th>From</th>
+                            <td>{{ email.From }}</td>
+                        </tr>
+                        <tr>
+                            <th>Subject</th>
+                            <td colspan="3">{{ email.Subject }}</td>
+                        </tr>
+                        {% if email.To %}
+                        <tr>
+                            <th>To</th>
+                            <td colspan="3">{{ email.To }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if email.CC %}
+                        <tr>
+                            <th>To</th>
+                            <td colspan="3">{{ email.CC }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if email.BCC %}
+                        <tr>
+                            <th>To</th>
+                            <td colspan="3">{{ email.BCC }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+            {% endcall %}
+        {% endfor %}
+    </div>
+{% endblock %}

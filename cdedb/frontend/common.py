@@ -1342,9 +1342,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             s.send_message(msg)
             s.quit()
         else:
+            dir = pathlib.Path(tempfile.gettempdir(), "cdedb-mail")
+            dir.mkdir(parents=True, exist_ok=True)
             with tempfile.NamedTemporaryFile(
                 mode='w',
-                prefix="cdedb-mail-",
+                dir=dir,
+                prefix="",
                 suffix=".txt",
                 delete=False,
                 encoding='UTF-8',

@@ -29,11 +29,11 @@
                 $(function() {
                     $("div.alert-info").append(function(index, html){
                         /* search for paths of temporary mail files and create link */
-                        var pos = html.indexOf(" /tmp/cdedb-mail-");
+                        var pos = html.indexOf(" /tmp/cdedb-mail/");
                         if (pos >= 0) {
                             var endpos = html.indexOf(".txt", pos);
                             var token = html.substring(pos + 17, endpos);
-                            var link = "{{ cdedblink('core/debug_email', magic_placeholders=['token']) }}"
+                            var link = "{{ cdedblink('core/show_debug_email', magic_placeholders=['token']) }}"
                                 .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', token);
                             return '(<a href="' + link + '">{{ gettext("View E-Mail in Browser") }}</a>)';
                         }

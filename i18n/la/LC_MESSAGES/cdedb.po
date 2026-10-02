@@ -9629,6 +9629,10 @@ msgstr ""
 msgid "Metadata"
 msgstr ""
 
+#, fuzzy
+msgid "Debug E-Mails"
+msgstr "Singula"
+
 msgid "User Review"
 msgstr ""
 
@@ -10331,8 +10335,16 @@ msgid "Account"
 msgstr "vestigium novum crea"
 
 #, fuzzy
+msgid "View E-Mails"
+msgstr "spectare epistulam electronicam in perscrutatore"
+
+#, fuzzy
 msgid "View E-Mail"
 msgstr "spectare epistulam electronicam in perscrutatore"
+
+#, fuzzy
+msgid "Show All E-Mails"
+msgstr "tabellae epistularum electronicarum"
 
 msgid "Set New Password"
 msgstr "Signum arcanum novum afferre"

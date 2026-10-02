@@ -133,9 +133,11 @@ body{
     border-top-style: none;
     width: 20px;
 }
-table>tbody>tr.no-upper-border>td {
-    padding-top: 0 ;
-    border-top-style: none ;
+table tr.no-upper-border, table.no-upper-border {
+    & th, & td {
+        padding-top: 0;
+        border-top-style: none;
+    }
 }
 .aggregate-footer {
     border-top: solid 2px #999;
@@ -171,6 +173,9 @@ ul.slim {
 }
 .list-group-item-muted a:not(.btn), .text-muted a, a.text-muted {
     color: #96b4cd;
+}
+.list-group-item table {
+    background-color: inherit;
 }
 
 .list-group-condensed .list-group-item {
@@ -321,7 +326,7 @@ summary.btn {
 }
 
 /* no-space and more-space classes */
-p.nosp, .form-group.nosp {
+.nosp {
     margin-bottom: 0;
 }
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
@@ -660,6 +665,10 @@ a.headerlink {
     text-decoration: none;
     opacity: 0;
     transition: opacity 0.3s;
+}
+a.no-color {
+    color: inherit;
+    text-decoration: none;
 }
 *:hover > a.headerlink, a.headerlink:focus {
     opacity: 1;
