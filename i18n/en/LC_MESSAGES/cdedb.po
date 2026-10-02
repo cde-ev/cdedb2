@@ -14884,6 +14884,14 @@ msgid ""
 msgstr ""
 
 #, python-format
+msgid "Exactly full (%(num)s = %(max_size)s)."
+msgstr ""
+
+#, python-format
+msgid "%(course)s is exactly full (%(num)s = %(max_size)s) in %(track)s."
+msgstr ""
+
+#, python-format
 msgid "%(num)s attendees but no instructors."
 msgstr ""
 

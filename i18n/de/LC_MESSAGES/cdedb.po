@@ -16083,6 +16083,14 @@ msgstr ""
 "%(course)s hat zu viele Teilnehmende (%(num)s > %(max_size)s) in %(track)s."
 
 #, python-format
+msgid "Exactly full (%(num)s = %(max_size)s)."
+msgstr "Exakt voll (%(num)s > %(max_size)s)."
+
+#, python-format
+msgid "%(course)s is exactly full (%(num)s = %(max_size)s) in %(track)s."
+msgstr "%(course)s ist exakt voll (%(num)s > %(max_size)s) in %(track)s."
+
+#, python-format
 msgid "%(num)s attendees but no instructors."
 msgstr "%(num)s Teilnehmende aber keine Kursleitenden."
 
