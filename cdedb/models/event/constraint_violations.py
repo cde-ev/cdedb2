@@ -1968,8 +1968,13 @@ class IncorrectNumAttendeesCV(CourseTrackConstraintViolation):
                     "%(course)s has too many attendees (%(num)s > %(max_size)s)"
                     " in %(track)s."
                 )
-        else:
-            return [], {}
+        else:  # ruff: ignore[collapsible-else-if]
+            if entity_page:
+                msg = n_("Exactly full (%(num)s = %(max_size)s).")
+            else:
+                msg = n_(
+                    "%(course)s is exactly full (%(num)s = %(max_size)s) in %(track)s."
+                )
         params = {
             "course": self.course.shortlabel,
             "num": self.num,
