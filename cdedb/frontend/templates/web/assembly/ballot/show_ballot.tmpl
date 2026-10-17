@@ -37,7 +37,7 @@
     {% set is_classical = ambience['ballot']['votes'] %}
     {% set is_preferential = not ambience['ballot']['votes'] %}
 
-    {# Privileged modification options (delete and edit) #}
+    {# Privileged modification options (delete and edit) plus copy action for presiders of other assembly#}
     {% if is_privileged or user.presider %}
         <div class="p">
             {% if edit_mode %}
@@ -86,10 +86,23 @@
     {% else %}
         {% if edit_mode %}
             {{ ballot_voting.add_candidate_form() }}
-        {% else %}
+        {% endif %}
+
+        {% if is_privileged or not edit_mode %}
+        {# Show voting form preview to presiders even if not active #}
+            {% if is_privileged and edit_mode %}
+                <hr />
+                {{ util.h(gettext("Preview"), level=2) }}
+                <p class="text-info">
+                    {{ util.make_icon('info-circle') }}
+                    {% trans %}
+                        Voting has not started yet. This is a preview how the voting form will look like.
+                    {% endtrans %}
+                </p>
+            {% endif %}
             {# Classical voting, not tallied #}
             {% if is_classical %}
-                {% if ambience['ballot']['is_voting'] and attends %}
+                {% if is_privileged or ambience['ballot']['is_voting'] and attends %}
                     {{ ballot_voting.show_classical_voting() }}
                 {% else %}
                     {{ ballot_voting.show_classical_candidates() }}
@@ -97,7 +110,7 @@
             {# Preferential voting, not tallied #}
             {% else %}
                 {{ ballot_voting.show_preferential_candidates() }}
-                {% if ambience['ballot']['is_voting'] and attends %}
+                {% if is_privileged or ambience['ballot']['is_voting'] and attends %}
                     {{ ballot_voting.show_preferential_voting() }}
                 {% endif %}
             {% endif %}

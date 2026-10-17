@@ -7427,6 +7427,16 @@ msgstr "Ergebnisdetails"
 msgid "Ballot Comment"
 msgstr "Abstimmungskommentar"
 
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid ""
+"Voting has not started yet. This is a preview how the voting form will look "
+"like."
+msgstr ""
+"Die Abstimmung hat noch nicht begonnen. Dies ist eine Vorschau, wie das "
+"Abstimmungsformular aussehen wird."
+
 #, python-format
 msgid "Result (%(title)s)"
 msgstr "Ergebnis (%(title)s)"
@@ -14289,9 +14299,6 @@ msgstr "Fragebogen-Teil löschen"
 #, python-format
 msgid "Reorder Questionnaires (%(title)s)"
 msgstr "Fragebögen umordnen (%(title)s)"
-
-msgid "Preview"
-msgstr "Vorschau"
 
 msgid "Magic Role"
 msgstr "Spezialfunktion"

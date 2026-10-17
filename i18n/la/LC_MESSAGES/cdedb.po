@@ -7830,6 +7830,14 @@ msgstr "Singula"
 msgid "Ballot Comment"
 msgstr "epistula electronica ad verificandum mitte"
 
+msgid "Preview"
+msgstr ""
+
+msgid ""
+"Voting has not started yet. This is a preview how the voting form will look "
+"like."
+msgstr ""
+
 #, python-format
 msgid "Result (%(title)s)"
 msgstr ""
@@ -14411,9 +14419,6 @@ msgstr "Interrogatio"
 #, fuzzy, python-format
 msgid "Reorder Questionnaires (%(title)s)"
 msgstr "(ab %(date)s annuntiari potest)"
-
-msgid "Preview"
-msgstr ""
 
 #, fuzzy
 msgid "Magic Role"

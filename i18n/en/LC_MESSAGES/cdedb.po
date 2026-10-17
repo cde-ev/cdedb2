@@ -7163,6 +7163,14 @@ msgstr ""
 msgid "Ballot Comment"
 msgstr ""
 
+msgid "Preview"
+msgstr ""
+
+msgid ""
+"Voting has not started yet. This is a preview how the voting form will look "
+"like."
+msgstr ""
+
 #, python-format
 msgid "Result (%(title)s)"
 msgstr ""
@@ -13271,9 +13279,6 @@ msgstr ""
 
 #, python-format
 msgid "Reorder Questionnaires (%(title)s)"
-msgstr ""
-
-msgid "Preview"
 msgstr ""
 
 msgid "Magic Role"

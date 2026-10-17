@@ -31,7 +31,8 @@
             </div>
 
         {% endif %}
-        {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
+        {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True,
+                                  readonly=not ambience['ballot']['is_voting']) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         {% if ambience['ballot']['votes'] > 1 %}
@@ -245,7 +246,8 @@
                 {{ util.anti_csrf_token('assembly/vote') }}
                 {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
                                         anid='input-preferencelist') }}
-                {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
+                {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True,
+                                          readonly=not ambience['ballot']['is_voting']) }}
             </form>
             {{ show_manual_for_text_preferential_voting() }}
         </div>
@@ -264,7 +266,7 @@
                 </div>
             </div>
             <div class="p clearfix">
-                <button class="btn btn-primary" id="button-jsvote">
+                <button class="btn btn-primary" id="button-jsvote" {% if not ambience['ballot']['is_voting'] %}disabled{% endif %}>
                     {{ util.make_icon('check') }} {% trans %}Vote_[[to vote in a ballot]]{% endtrans %}
                 </button>
             </div>
