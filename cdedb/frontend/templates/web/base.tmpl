@@ -269,7 +269,9 @@
                                 }|tojson }},
                             );
                             // Protect all marked forms.
-                            $("form.protect").cdedbProtectChanges();
+                            window.onload = function() {  // after full page load to avoid race conditions with dynamic row hiding rows first.
+                                $("form.protect").cdedbProtectChanges();
+                            };
                             // Upon pressing Ctrl + Enter submit the currently active form by pressing the first visible submit button.
                             $(document).on("keydown", "form", (event) => {
                                 if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
