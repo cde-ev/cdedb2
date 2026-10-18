@@ -8680,11 +8680,11 @@ msgstr "Aktive Einzugsermächtigung"
 
 #, python-format
 msgid ""
-"In order to change the bank account or revoke the direct debit "
-"authorization, contact the %(management)s."
+"Please send changes in bank account or revocation of the direct debit "
+"authorization to the %(management)s."
 msgstr ""
-"Zur Änderung der Bankverbindung oder um die Einzugsermächtigung zu "
-"widerrufen melde dich bei der %(management)s."
+"Änderungen der Bankverbindung oder Widerruf der Einzugsermächtigung kannst "
+"du per E-Mail an die %(management)s senden."
 
 msgid "member management team"
 msgstr "Mitgliederverwaltung"
@@ -8753,6 +8753,13 @@ msgstr "Land (außer Deutschland)"
 
 msgid "Banking Information"
 msgstr "Bankdaten"
+
+msgid ""
+"Donation amount additionally to your yearly membership fee. You can change "
+"this later anytime on your profile."
+msgstr ""
+"Höhe der Spende zusätzlich zum jährlichen Mitgliedsbeitrag. Du kannst dies "
+"später jederzeit in deinem Profil ändern."
 
 msgid "Confirm"
 msgstr "Bestätigen"
