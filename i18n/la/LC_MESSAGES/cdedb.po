@@ -8988,8 +8988,8 @@ msgstr ""
 
 #, python-format
 msgid ""
-"In order to change the bank account or revoke the direct debit "
-"authorization, contact the %(management)s."
+"Please send changes in bank account or revocation of the direct debit "
+"authorization to the %(management)s."
 msgstr ""
 
 #, fuzzy
@@ -9063,6 +9063,11 @@ msgstr ""
 #, fuzzy
 msgid "Banking Information"
 msgstr "administrator tabellarum epistularum electronicarum"
+
+msgid ""
+"Donation amount additionally to your yearly membership fee. You can change "
+"this later anytime on your profile."
+msgstr ""
 
 msgid "Confirm"
 msgstr ""

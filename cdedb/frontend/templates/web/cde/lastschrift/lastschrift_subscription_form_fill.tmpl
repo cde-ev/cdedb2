@@ -43,7 +43,8 @@
         <h4 class="heading-underline">{% trans %}Banking Information{% endtrans %}</h4>
         {{ util.form_input_text(name="donation", label=gettext("Initial Donation"), type="number",
                                 attributes='min="%(min)s"" step="0.01"'|s|format(min=min_donation),
-                                defaultvalue=typical_donation) }}
+                                defaultvalue=typical_donation,
+                                info=gettext("Donation amount additionally to your yearly membership fee. You can change this later anytime on your profile.")|s) }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_holder", label=gettext("Account holder (if different)")) }}
 
