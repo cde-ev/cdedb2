@@ -5,3 +5,7 @@ uv run --project=/cddb2 python -c "from cdedb.models.droid import ZammadResolveT
 2. Store it in the secrets config:
 
 nano /etc/cdedb/secrets.py
+
+3. Configure the persona id of the zammad system user: 'ZAMMAD_SYSTEM_USER_PERSONA_ID = ...'
+
+nano /etc/cdedb/config.py
