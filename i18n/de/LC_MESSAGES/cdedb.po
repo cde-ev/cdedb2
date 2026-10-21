@@ -15305,7 +15305,7 @@ msgid "Moderation"
 msgstr "Moderation"
 
 msgid "Roster Visibility"
-msgstr "Sichtbarkeit für Abonnent:innen"
+msgstr "Sichtbarkeit der Abonnent:innen"
 
 #, python-format
 msgid ""

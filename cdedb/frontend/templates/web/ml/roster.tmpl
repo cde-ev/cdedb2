@@ -37,7 +37,7 @@
             <div class="col-sm-4">
                 <ul class="nosp slim">
                     {% for subscriber in list %}
-                        <li>{{ util.persona_anchor(subscriber) }}</li>
+                        <li>{{ util.persona_anchor(subscriber, ml_id=ambience['mailinglist'].id) }}</li>
                     {% endfor %}
                 </ul>
             </div>
