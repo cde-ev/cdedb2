@@ -37,7 +37,7 @@
     {% set is_classical = ambience['ballot']['votes'] %}
     {% set is_preferential = not ambience['ballot']['votes'] %}
 
-    {# Privileged modification options (delete and edit) plus copy action for presiders of other assembly#}
+    {# Privileged modification options (delete and edit) plus copy action for presiders of other assembly #}
     {% if is_privileged or user.presider %}
         <div class="p">
             {% if edit_mode %}
