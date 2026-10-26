@@ -970,6 +970,10 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             rs, ballot_id=ballot_id
         ):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.assemblyproxy.does_attend(rs, ballot_id=ballot_id):
+            # probably a presider that forgot to register theirselves (submitting the form preview)
+            rs.notify("error", n_("You are not participating in this assembly."))
+            return self.redirect(rs, "assembly/show_assembly")
         if not self.assemblyproxy.is_ballot_voting(rs, ballot_id):
             rs.notify("error", n_("Ballot is outside its voting period."))
             return self.redirect(rs, "assembly/show_ballot", {'ballot_id': ballot_id})
