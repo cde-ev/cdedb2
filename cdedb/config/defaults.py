@@ -254,6 +254,7 @@ CONTACT_ADDRESSES = {
     "vorstand@cde-ev.de": "Vorstand",
     "probleme-mit-dem-vorstand@lists.cde-ev.de": "Ansprechpartner für Probleme mit dem Vorstand",
     "fallkoordination@lists.cde-ev.de": "Vermittlungs- und Beschwerdestelle für personenbezogene Probleme",
+    "krisenkoordination@lists.cde-ev.de": "Krisenkoordination",
     "feedback@lists.cde-ev.de": "Feedback-Team",
 }
 
