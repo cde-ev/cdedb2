@@ -207,8 +207,14 @@ class Mailinglist(CdEDataclass):
 
     @classmethod
     def get_additional_fields(cls) -> dict[str, dataclasses.Field[Any]]:
-        additional_fields = set(fields(cls)) - set(fields(Mailinglist))
-        return {field.name: field for field in additional_fields}
+        additional_fields = {f.name for f in fields(cls)} - {
+            f.name for f in fields(Mailinglist)
+        }
+        return {
+            field.name: field
+            for field in fields(cls)
+            if field.name in additional_fields
+        }
 
     viewer_roles: ClassVar[Roles] = Roles.ml
 
