@@ -7,11 +7,11 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P14D"
 
 [options.exclude-newer-package]
-certifi = "2026-10-22T00:00:00Z"
+certifi = "2026-10-21T22:00:00Z"
 cryptography = { timestamp = "0001-01-01T00:00:00Z", span = "P1D" }
 gunicorn = { timestamp = "0001-01-01T00:00:00Z", span = "P1D" }
 passlib = { timestamp = "0001-01-01T00:00:00Z", span = "P1D" }
-pillow = "2026-10-18T00:00:00Z"
+pillow = "2026-10-17T22:00:00Z"
 schulze-condorcet = { timestamp = "0001-01-01T00:00:00Z", span = "PT1M" }
 subman = { timestamp = "0001-01-01T00:00:00Z", span = "PT1M" }
 werkzeug = { timestamp = "0001-01-01T00:00:00Z", span = "P1D" }
